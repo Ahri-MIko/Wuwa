@@ -1,0 +1,26 @@
+# ---- Unreal Engine generated / cache ----
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# ---- IDE / editor ----
+.vs/
+.idea/
+.vsconfig
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+*.xcodeproj/
+*.xcworkspace/
+
+# ---- Project-specific large dirs (excluded on purpose) ----
+Exports/
+Tools/
+
+# ---- Misc ----
+*.tmp
+*.log
