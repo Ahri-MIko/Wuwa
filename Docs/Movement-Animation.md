@@ -17,11 +17,11 @@
 
 ## 阅读顺序
 
-1. `Source/Wuwa/Public/Animation/WuwaAnimDataTypes.h`：采样需要哪些运动事实、游戏状态。
-2. `Source/Wuwa/Private/Animation/WuwaAnimDataLibrary.cpp`：每个字段具体从哪里取得。
-3. `Source/Wuwa/Private/Animation/WuwaAnimInstance.cpp`：何时采样，谁持有参数对象，何时清空。
-4. `Source/Wuwa/Public/Animation/WuwaLocomotionMath.h`：原始采样如何变为动画需要的局部方向、起停信号。
-5. `Source/Wuwa/Public/Animation/WuwaLocomotionTypes.h`：最终暴露给 AnimBP 的只读字段。
+1. `Source/Wuwa/Public/Game/NewWorld/Character/Common/Component/Anim/WuwaAnimDataTypes.h`：采样需要哪些运动事实、游戏状态。
+2. `Source/Wuwa/Private/Game/NewWorld/Character/Common/Component/Anim/WuwaAnimDataLibrary.cpp`：每个字段具体从哪里取得。
+3. `Source/Wuwa/Private/Game/NewWorld/Character/Common/Component/Anim/WuwaAnimInstance.cpp`：何时采样，谁持有参数对象，何时清空。
+4. `Source/Wuwa/Public/Game/NewWorld/Character/Common/Component/Anim/WuwaLocomotionMath.h`：原始采样如何变为动画需要的局部方向、起停信号。
+5. `Source/Wuwa/Public/Game/NewWorld/Character/Common/Component/Anim/WuwaLocomotionTypes.h`：最终暴露给 AnimBP 的只读字段。
 
 数据依次经过 `Movement → AnimDataLibrary → AnimLogicParams → BuildAnimationData → AnimInstance.LocomotionData`。动画不会反向写入 Movement，也不读取 Alt 按键。
 

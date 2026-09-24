@@ -23,23 +23,31 @@ Then right-click `Wuwa.uproject` → **Generate Visual Studio project files**, o
 | Path        | Description                                         |
 |-------------|-----------------------------------------------------|
 | `Source/`   | C++ game module source (`Wuwa`)                      |
+| `Script/ManagedWuwa/` | UnrealSharp C# gameplay code                 |
 | `Content/`  | Game assets — meshes, maps, blueprints (via Git LFS) |
 | `Config/`   | Project & engine configuration (`.ini`)             |
 | `Scripts/`  | Editor Python utility scripts                       |
 | `Docs/`     | Design & implementation notes                       |
 
-### Key Modules (`Source/Wuwa`)
+### Code Layout
 
-- **WuwaASC** — Gameplay Ability System: ability system component, attribute set, gameplay effects, ability base classes
-- **Input** — Enhanced Input routing: input router component, route handlers, input data assets
-- **Character** — character base, custom movement component and movement types
-- **Animation** — animation instance, locomotion math/types, anim data library
-- **Cores / PlayerController / UI** — game mode, player state, HUD and widget controllers
+The `Wuwa` C++ module keeps matching `Public/` and `Private/` trees. Within each tree:
+
+- **Core/Asset**, **Core/Utilities** — asset manager and shared debugging helpers
+- **Game/Input** — Enhanced Input, semantic input routing and input configuration
+- **Game/NewWorld/Character/Common** — character base and shared components: `Input`, `Move`, `Anim`, `Abilities`
+- **Game/NewWorld/Character/Role** — the playable character
+- **Game/Controller**, **Game/Framework**, **Game/UI**, **Game/Effect**, **Game/Common** — player controller, game mode/player state, UI, effect actors and shared gameplay tags
+- **Private/Tests** — existing tests grouped into `Input`, `Movement`, `Animation` and `Ability`
+
+C# animation windows live in `Script/ManagedWuwa/Game/AnimNotifyState/`.
+See [Code-Structure.md](Docs/Code-Structure.md) for file locations, ownership and the input-to-animation call chain.
 
 ## Documentation
 
 See the [`Docs/`](Docs) folder:
 
+- [Code-Structure.md](Docs/Code-Structure.md)
 - [CommonLocomotion-Stage1.md](Docs/CommonLocomotion-Stage1.md)
 - [Movement-Animation.md](Docs/Movement-Animation.md)
 - [Alt-WalkRun.md](Docs/Alt-WalkRun.md)

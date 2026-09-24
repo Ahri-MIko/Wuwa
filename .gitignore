@@ -4,6 +4,10 @@ DerivedDataCache/
 Intermediate/
 Saved/
 
+# ---- UnrealSharp managed build outputs ----
+/Script/**/bin/
+/Script/**/obj/
+
 # ---- IDE / editor ----
 .vs/
 .idea/

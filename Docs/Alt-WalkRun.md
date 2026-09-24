@@ -4,8 +4,8 @@
 
 ## 按这个顺序阅读
 
-1. `Source/Wuwa/Private/Character/WuwaMoveInputHandler.cpp` 的 `ResolveCommand`：只在走跑输入的 `Pressed` 且允许切换时产生 `SwitchWalk`，不修改角色。
-2. `Source/Wuwa/Private/Character/CharacterMovementComponent/WuwaMovementComponent.cpp` 的 `ExecuteInputCommand`：再次检查许可，然后切换唯一的 `DesiredGait`。
+1. `Source/Wuwa/Private/Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputHandler.cpp` 的 `ResolveCommand`：只在走跑输入的 `Pressed` 且允许切换时产生 `SwitchWalk`，不修改角色。
+2. `Source/Wuwa/Private/Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.cpp` 的 `ExecuteInputCommand`：再次检查许可，然后切换唯一的 `DesiredGait`。
 3. 同一文件的 `GetMaxSpeed`：Walk 使用 `WalkSpeed`（默认 200 cm/s），Run 沿用角色已有 `MaxWalkSpeed`。没有直接改写实际速度，也没有覆盖跑速配置。
 
 `FWuwaInputCommand` 在 `Input/WuwaInputCommand.h` 中，本阶段只有 `Type`；不要为了尚未实现的动作提前添加大批字段。
