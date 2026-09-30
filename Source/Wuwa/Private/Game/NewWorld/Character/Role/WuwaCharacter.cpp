@@ -2,74 +2,77 @@
 
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
-#include"Game/NewWorld/Character/Common/Component/Abilities/WuwaAbilitySystemComponent.h"
-#include"Game/NewWorld/Character/Common/Component/Abilities/WuwaAttributeSet.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
-#include "Game/Input/WuwaInputComponent.h"          // ← 新增：需要 UWuwaInputComponent 完整定义
 #include "InputActionValue.h"            // ← 新增：需要 FInputActionValue
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputHandler.h"
 #include "GameFramework/Controller.h"    // ← 新增：需要 Controller
-#include "Game/Framework/WuwaPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h" 
 #include "Game/Controller/WuwaPlayerController.h"
-#include "Core/Utilities/DebugHelper.h"
-#include "Game/UI/WuwaHUD.h"
-#include "Game/UI/WuwaWidgetController.h"
+#include "Game/Input/WuwaInputRouterComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaGameplayAbilityBase.h"
+#include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
+#include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Combat/WuwaFightStateBridgeComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Skill/WuwaSkillBridgeComponent.h"
 
 
 class UWuwaWidgetController;
 
-#pragma region Initializer
+namespace
+{
+    FVector2D CameraRelativeDirection(const FVector2D& InputAxis, const FRotator& ViewRotation)
+    {
+        const FRotator YawOnly(0.f, ViewRotation.Yaw, 0.f);
+        const FVector Direction = UKismetMathLibrary::GetForwardVector(YawOnly) * InputAxis.Y
+            + UKismetMathLibrary::GetRightVector(YawOnly) * InputAxis.X;
+        return FVector2D(Direction.X, Direction.Y).GetSafeNormal();
+    }
+}
+
+#pragma region LifeCycle
 
 // Sets default values
 AWuwaCharacter::AWuwaCharacter(const FObjectInitializer& ObjectInitializer) :
     Super(ObjectInitializer.SetDefaultSubobjectClass<UWuwaMovementComponent>(
         ACharacter::CharacterMovementComponentName))
 {
-
-    WuwaMovementComponent = Cast<UWuwaMovementComponent>(GetCharacterMovement());//重置MovementComponent组件
+    // UnrealSharp 当前生成类的实际包是 /Script/UnrealSharp，不是 C# namespace Blueprint 包。
+    UnifiedStateClass = TSoftClassPtr<UWuwaUnifiedStateBridgeComponent>(FSoftObjectPath(TEXT("/Script/UnrealSharp.WuwaUnifiedStateComponent_C")));
+    RoleGaitClass = TSoftClassPtr<UWuwaRoleGaitBridgeComponent>(FSoftObjectPath(TEXT("/Script/UnrealSharp.WuwaRoleGaitComponent_C")));
+    FightStateClass = TSoftClassPtr<UWuwaFightStateBridgeComponent>(FSoftObjectPath(TEXT("/Script/UnrealSharp.WuwaFightStateComponent_C")));
+    SkillClass = TSoftClassPtr<UWuwaSkillBridgeComponent>(FSoftObjectPath(TEXT("/Script/UnrealSharp.WuwaSkillComponent_C")));
 
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
-
-    //实例化输入组件
-    WuwaInputComponent = CreateDefaultSubobject<UWuwaInputComponent>(TEXT("WuwaInputComponent"));
-
-    //Camera And Spring Settings
-    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = CameraArmLength;          // 初始距离
-    CameraBoom->bUsePawnControlRotation = true;   // 弹簧臂跟随控制器旋转
-
-    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-    FollowCamera->bUsePawnControlRotation = false; // 摄像机自身不再额外旋转,交给弹簧臂
-
 }
 
-#pragma endregion
+void AWuwaCharacter::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+    if (GetWorld() && GetWorld()->IsGameWorld())
+    {
+        EnsureMovementStateSystem();
+        EnsureSkillSystem();
+    }
+}
 
-#pragma region BeginPlay
+
 
 // Called when the game starts or when spawned
 void AWuwaCharacter::BeginPlay()
 {
     Super::BeginPlay();
+    EnsureMovementStateSystem();
+    EnsureSkillSystem();
     const AWuwaPlayerController* PC =Cast<AWuwaPlayerController>( GetController());
     UWuwaMoveInputHandler* MovementInputHandler = PC ? PC->MoveInputHandler.Get() : nullptr;
     if (MovementInputHandler)
     {
         MovementInputHandler->OnMove.AddDynamic(this, &AWuwaCharacter::HandleMoveInput);
-        MovementInputHandler->OnLook.AddDynamic(this, &AWuwaCharacter::HandleLook);
     }
 }
-#pragma endregion
-
-#pragma region Update
 
 
 // Called every frame
@@ -79,18 +82,125 @@ void AWuwaCharacter::Tick(float DeltaTime)
 
 }
 
-
-#pragma endregion
-
-#pragma region Logical Functions
-
-
-UAbilitySystemComponent* AWuwaCharacter::GetAbilitySystemComponent() const
+void AWuwaCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    return AbilitySystemComponent;
+    bFightStateEnding = true;
+    // FightState 在自身 EndPlay 中先拒绝新申请，再清理状态，避免提前广播重置。
+    bMovementStateEnding = true;
+    bMovementStateReady = false;
+    if (IsValid(UnifiedStateComponent))
+    {
+        UnifiedStateComponent->OnStateChanged.RemoveAll(WuwaMovementComponent);
+        UnifiedStateComponent->OnStateChanged.RemoveAll(RoleGaitComponent);
+    }
+    if (IsValid(RoleGaitComponent)) RoleGaitComponent->ResetRuntime();
+    Super::EndPlay(EndPlayReason);
 }
 
 
+
+#pragma endregion
+
+#pragma region ensure each component
+//保证当前的角色身上有这个组件
+bool AWuwaCharacter::EnsureFightStateSystem()
+{
+    if (bFightStateEnding || bInitializingFightState || HasAnyFlags(RF_ClassDefaultObject)|| !GetWorld() || !GetWorld()->IsGameWorld()) return false;
+    if (IsValid(FightStateComponent) && FightStateComponent->IsRegistered()) return true;
+
+    TGuardValue<bool> InitializingGuard(bInitializingFightState, true);
+    FightStateComponent = FindComponentByClass<UWuwaFightStateBridgeComponent>();
+    if (!IsValid(FightStateComponent))
+    {
+        UClass* ManagedClass = FightStateClass.LoadSynchronous();
+        if (!ManagedClass || ManagedClass->HasAnyClassFlags(CLASS_Abstract))
+        {
+            UE_LOG(LogTemp, Error, TEXT("[Wuwa.Combat] Managed FightState class unavailable. Build/publish ManagedWuwa before playing. Class=%s"),
+                *FightStateClass.ToString());
+            return false;
+        }
+
+        FightStateComponent = NewObject<UWuwaFightStateBridgeComponent>(this, ManagedClass,
+            MakeUniqueObjectName(this, ManagedClass, TEXT("FightState")), RF_Transient);
+        AddInstanceComponent(FightStateComponent);
+    }
+    //这里的Register是让组件正式生效
+    if (!FightStateComponent->IsRegistered()) FightStateComponent->RegisterComponent();
+    return IsValid(FightStateComponent) && FightStateComponent->IsRegistered();
+}
+
+//确保一定有SkillSystem
+bool AWuwaCharacter::EnsureSkillSystem()
+{
+    if (bFightStateEnding || bInitializingSkill || !EnsureFightStateSystem()) return false;
+    if (IsValid(SkillComponent) && SkillComponent->IsRegistered()) return true;
+
+    TGuardValue<bool> InitializingGuard(bInitializingSkill, true);
+    SkillComponent = FindComponentByClass<UWuwaSkillBridgeComponent>();
+    if (!IsValid(SkillComponent))
+    {
+        UClass* ManagedClass = SkillClass.LoadSynchronous();
+        if (!ManagedClass || ManagedClass->HasAnyClassFlags(CLASS_Abstract))
+        {
+            UE_LOG(LogTemp, Error, TEXT("[Wuwa.Combat] Managed Skill class unavailable. Build/publish ManagedWuwa before playing. Class=%s"),
+                *SkillClass.ToString());
+            return false;
+        }
+        SkillComponent = NewObject<UWuwaSkillBridgeComponent>(this, ManagedClass,
+            MakeUniqueObjectName(this, ManagedClass, TEXT("Skill")), RF_Transient);
+        AddInstanceComponent(SkillComponent);
+    }
+    if (!SkillComponent->IsRegistered()) SkillComponent->RegisterComponent();
+    return IsValid(SkillComponent) && SkillComponent->IsRegistered();
+}
+
+
+//
+bool AWuwaCharacter::EnsureMovementStateSystem()
+{
+    if (bMovementStateReady && IsValid(UnifiedStateComponent) && IsValid(RoleGaitComponent)) return true;
+    bMovementStateReady = false;
+    if (bMovementStateEnding || bInitializingMovementState || HasAnyFlags(RF_ClassDefaultObject) || !GetWorld()
+        || !GetWorld()->IsGameWorld() || !WuwaMovementComponent) return false;
+    
+    
+    TGuardValue<bool> InitializingGuard(bInitializingMovementState, true);
+    UClass* StateClass = UnifiedStateClass.LoadSynchronous();
+    UClass* GaitClass = RoleGaitClass.LoadSynchronous();
+    if (!StateClass || !GaitClass || StateClass->HasAnyClassFlags(CLASS_Abstract) || GaitClass->HasAnyClassFlags(CLASS_Abstract))
+    {
+        UE_LOG(LogTemp, Error, TEXT("[Wuwa.State] Managed state classes unavailable. Build/publish ManagedWuwa before playing. State=%s Gait=%s"),
+            *UnifiedStateClass.ToString(), *RoleGaitClass.ToString());
+        return false;
+    }
+    UnifiedStateComponent = FindComponentByClass<UWuwaUnifiedStateBridgeComponent>();
+    RoleGaitComponent = FindComponentByClass<UWuwaRoleGaitBridgeComponent>();
+    if (!IsValid(UnifiedStateComponent))
+    {
+        UnifiedStateComponent = NewObject<UWuwaUnifiedStateBridgeComponent>(this, StateClass,
+            MakeUniqueObjectName(this, StateClass, TEXT("UnifiedState")), RF_Transient);
+        AddInstanceComponent(UnifiedStateComponent);
+    }
+    if (!IsValid(RoleGaitComponent))
+    {
+        RoleGaitComponent = NewObject<UWuwaRoleGaitBridgeComponent>(this, GaitClass,
+            MakeUniqueObjectName(this, GaitClass, TEXT("RoleGait")), RF_Transient);
+        AddInstanceComponent(RoleGaitComponent);
+    }
+    // 两个引用先就绪再注册，避免动态组件 BeginPlay 时只看到半套依赖。
+    if (!UnifiedStateComponent->IsRegistered()) UnifiedStateComponent->RegisterComponent();
+    if (!RoleGaitComponent->IsRegistered()) RoleGaitComponent->RegisterComponent();
+    
+    //初始化各种组件,包括Unified组件的默认值,RoleGait组件的默认值,以及CMC组件运动的默认值
+    UnifiedStateComponent->OnStateChanged.AddUniqueDynamic(WuwaMovementComponent, &UWuwaMovementComponent::HandleUnifiedStateChanged);
+    UnifiedStateComponent->InitializeState();
+    RoleGaitComponent->InitializePolicy();
+    UnifiedStateComponent->OnStateChanged.AddUniqueDynamic(RoleGaitComponent, &UWuwaRoleGaitBridgeComponent::HandleUnifiedStateChanged);
+    bMovementStateReady = true;
+    RoleGaitComponent->RefreshPolicy();
+    WuwaMovementComponent->RefreshMovementSettings();
+    return true;
+}
 
 #pragma endregion
 
@@ -100,41 +210,49 @@ FWuwaPlayerInputState AWuwaCharacter::GetPlayerInputState() const
 {
     FWuwaPlayerInputState State;
     const AWuwaPlayerController* PC = Cast<AWuwaPlayerController>(GetController());
-    if (PC && PC->GetPawn() == this)
-    {
-        const FWuwaInputActionState SprintInput = PC->GetSprintInputState();
-        State.bSprintHeld = SprintInput.bHeld;
-        State.SprintHeldSeconds = SprintInput.HeldSeconds;
-    }
+    if (!PC || !(PC->GetPawn() == this)) return State;//如果PC为空或者当前的Pawn不是这个直接返回空
+    
+    
+    const FWuwaInputActionState SprintInput = PC->GetInputRouter()->GetInputActionState(FWuwaGameTags::Get().Abilities_Movement_Dash);
+    State.bSprintHeld = SprintInput.bHeld;
+    State.SprintHeldSeconds = SprintInput.HeldSeconds;
     State.MoveAxis = MoveInput;
     const float Threshold = FMath::Clamp(MoveInputThreshold, 0.f, 1.f);
     State.bHasMoveInput = State.MoveAxis.SizeSquared() > FMath::Square(Threshold);
     if (State.bHasMoveInput)
     {
-        const FVector2D Direction = Vector2ToCameraDirNormalized(State.MoveAxis, FollowCamera);
+        const FVector2D Direction = GetCameraRelativeMoveDirection(State.MoveAxis);
         State.MoveWorldDirection = FVector(Direction.X, Direction.Y, 0.f);
     }
     return State;
+}
+
+void AWuwaCharacter::ResetPlayerInputState()
+{
+    MoveInput = FVector2D::ZeroVector;
+    MoveInputDir = FVector2D::ZeroVector;
+    ConsumeMovementInputVector();
+    if (WuwaMovementComponent)
+    {
+        WuwaMovementComponent->ClearSprintDesire();
+    }
 }
 
 void AWuwaCharacter::HandleMoveInput(const FInputActionValue& Value)
 {
     // 先记录意图，再判断能否移动：Dash 限制移动时，GA 仍能查询玩家是否按着方向。
     MoveInput = Value.Get<FVector2D>();
-    MoveInputDir = Vector2ToCameraDirNormalized(MoveInput, FollowCamera);
+    MoveInputDir = GetCameraRelativeMoveDirection(MoveInput);
+    if (WuwaMovementComponent)
+    {
+        WuwaMovementComponent->NotifyMoveInputChanged(GetPlayerInputState().bHasMoveInput);
+    }
     if (CanApplyMove())
     {
         Move(Value);
     }
 }
 
-
-void AWuwaCharacter::HandleLook(const FInputActionValue& Value)
-{
-    MouseMoveVec = Value.Get<FVector2D>();
-    AddControllerYawInput(MouseMoveVec.X);
-    AddControllerPitchInput(MouseMoveVec.Y);
-}
 
 void AWuwaCharacter::Move(const FInputActionValue& Value)
 {
@@ -146,7 +264,7 @@ void AWuwaCharacter::Move(const FInputActionValue& Value)
     }
     else
     {
-        MoveInputDir = Vector2ToCameraDirNormalized(MoveInput, FollowCamera);
+        MoveInputDir = GetCameraRelativeMoveDirection(MoveInput);
         AddMovementInput(FVector(MoveInputDir.X, MoveInputDir.Y, 0.f), 1.f);
     }
 
@@ -176,98 +294,19 @@ void AWuwaCharacter::HabdleClimbInput(const FInputActionValue& Value)
 }
 
 
+FVector2D AWuwaCharacter::GetCameraRelativeMoveDirection(FVector2D InputAxis) const
+{
+    // ControlRotation 是游戏操作朝向，镜头震动和演出偏移不会改变移动意图。
+    return CameraRelativeDirection(InputAxis, GetControlRotation());
+}
+
 FVector2D AWuwaCharacter::Vector2ToCameraDirNormalized(const FVector2D InSource2D, const UCameraComponent* InCameraComp) const
 {
-    if (!InCameraComp)
-    {
-        return FVector2D::ZeroVector;
-    }
-
-    const FRotator CameraRot = InCameraComp->GetComponentRotation();
-    const FRotator YawOnly(0.f, CameraRot.Yaw, 0.f);
-
-    const FVector Forward = UKismetMathLibrary::GetForwardVector(YawOnly);
-    const FVector Right = UKismetMathLibrary::GetRightVector(YawOnly);
-
-    const FVector Dir = Forward * InSource2D.Y + Right * InSource2D.X;
-
-    return FVector2D(Dir.X, Dir.Y).GetSafeNormal();
+    return InCameraComp
+        ? CameraRelativeDirection(InSource2D, InCameraComp->GetComponentRotation())
+        : GetCameraRelativeMoveDirection(InSource2D);
 }
 
 #pragma endregion
-
-#pragma region Replicate
-//初始化ASCInfo用的
-void AWuwaCharacter::PossessedBy(AController* NewController)
-{
-    Super::PossessedBy(NewController);
-    InitGasInfoandHUD();
-    InitInitialAbilities();
-}
-
-void AWuwaCharacter::OnRep_PlayerState()
-{
-    Super::OnRep_PlayerState();
-    InitGasInfoandHUD();
-}
-
-void AWuwaCharacter::InitGasInfoandHUD()
-{
-    AWuwaPlayerState* WuwaPlayerState = GetPlayerState<AWuwaPlayerState>();
-    check(WuwaPlayerState);
-    WuwaPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(WuwaPlayerState, this);
-    AbilitySystemComponent = Cast<UWuwaAbilitySystemComponent>(WuwaPlayerState->GetAbilitySystemComponent());
-    AttributeSet = WuwaPlayerState->GetAttributeSet();
-    AbilitySystemComponent->InitAbilitySystemCompoent();
-    // 只有本地玩家才有 HUD，服务端上的远程玩家和客户端上的别人的角色都没有
-    if (AWuwaPlayerController* PC = Cast<AWuwaPlayerController>(GetController()))
-    {
-        if (AWuwaHUD* HUD = Cast<AWuwaHUD>(PC->GetHUD()))
-        {
-            HUD->InitCtrAndWidget(AbilitySystemComponent, AttributeSet, PC, WuwaPlayerState);
-            HUD->WuwaWidgetController->BroadInitialValues();
-            HUD->WuwaWidgetController->BindCallBackDependencies();
-        }
-    }
-}
-
-
-#pragma endregion
-
-#pragma region ASC
-
-//在服务端初始化
-void AWuwaCharacter::InitInitialAbilities()
-{
-    if (!HasAuthority()) return;
-    
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-
-    if (!ASC)
-    {
-        return;
-    }
-    
-    for (const TSubclassOf<UGameplayAbility> Ability : CharacterAbilities)
-    {
-        check(Ability);
-        FGameplayAbilitySpec AbilitySpec(
-        Ability,
-        1,
-        INDEX_NONE,
-        this
-        );
-        if (UWuwaGameplayAbilityBase* WuwaAbility = Cast<UWuwaGameplayAbilityBase>(AbilitySpec.Ability))
-        {
-            AbilitySpec.GetDynamicSpecSourceTags().AddTag(WuwaAbility->OriginalTag);
-            ASC->GiveAbility(AbilitySpec);
-        }
-        
-    }
-}
-
-
-#pragma endregion
-
 
 

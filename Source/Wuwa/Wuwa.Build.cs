@@ -18,11 +18,17 @@ public class Wuwa : ModuleRules
 			// GAS三大核心模块
 			"GameplayAbilities",
             "GameplayTags",
-            "GameplayTasks"
+            "GameplayTasks",
+            "Niagara"
     });
 
 
         PrivateDependencyModuleNames.AddRange(new string[] {  });
+        if (Target.bBuildEditor)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "BlueprintGraph", "AnimGraph", "KismetCompiler", "Json",
+                "NiagaraEditor", "MeshDescription", "StaticMeshDescription", "RenderCore", "RHI", "ImageWrapper", "AssetRegistry" });
+        }
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

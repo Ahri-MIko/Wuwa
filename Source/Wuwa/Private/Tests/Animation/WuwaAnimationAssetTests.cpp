@@ -28,7 +28,7 @@ bool FWuwaAnimationAssetConnectionTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Generated animation instances use WuwaAnimInstance"),
 		Blueprint->GeneratedClass->IsChildOf(UWuwaAnimInstance::StaticClass()));
 	UClass* CharacterClass = LoadClass<AWuwaCharacter>(nullptr,
-		TEXT("/Game/Characters/Player/BP_WuwaCharacterBase.BP_WuwaCharacterBase_C"));
+		TEXT("/Game/Characters/Role/changli/BP_WuwaCharacterBase.BP_WuwaCharacterBase_C"));
 	if (!TestNotNull(TEXT("Player character blueprint loads"), CharacterClass))
 	{
 		return false;

@@ -5,130 +5,161 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Core/Utilities/DebugHelper.h"
 #include "Engine/World.h"
+#include "Game/NewWorld/Character/Role/WuwaCharacter.h"
+#include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
 
 #pragma region Common
 
+UWuwaRoleGaitBridgeComponent* UWuwaMovementComponent::ResolveGaitComponent() const
+{
+    AWuwaCharacter* Character = Cast<AWuwaCharacter>(GetOwner());
+    if (Character && (!IsValid(Character->RoleGaitComponent) || !IsValid(Character->UnifiedStateComponent))
+        && !Character->HasAnyFlags(RF_ClassDefaultObject))
+    {
+        Character->EnsureMovementStateSystem();
+    }
+    return Character && !Character->IsMovementStateEnding() && IsValid(Character->RoleGaitComponent)
+        ? Character->RoleGaitComponent.Get() : nullptr;
+}
+
 void UWuwaMovementComponent::SetDesiredGait(EWuwaGait NewGait)
 {
-	DesiredGait = NewGait;
+    if (auto* Gait = ResolveGaitComponent()) Gait->RequestDesiredGait(NewGait);
 }
 
 void UWuwaMovementComponent::ToggleWalkRun()
 {
-	// 保留已有蓝图接口，但所有走跑切换都走同一个许可检查和执行入口。
-	FWuwaInputCommand Command;
-	Command.Type = EWuwaInputCommandType::SwitchWalk;
-	ExecuteInputCommand(Command);
+    if (auto* Gait = ResolveGaitComponent()) Gait->RequestWalkRunToggle();
 }
 
 bool UWuwaMovementComponent::CanSwitchWalk() const
 {
-	return IsMovingOnGround() && !IsCrouching();
+    const auto* Gait = ResolveGaitComponent();
+    return Gait && Gait->CanRequestWalkRun();
 }
 
 bool UWuwaMovementComponent::ExecuteInputCommand(const FWuwaInputCommand& Command)
 {
-	if (Command.Type != EWuwaInputCommandType::SwitchWalk || !CanSwitchWalk())
-	{
-		return false;
-	}
-
-	// 只改变移动策略；GetMaxSpeed 使用它限速，动画在更新时读取它。
-	// 不强写 Velocity，不播放动画，也不存 Alt 是否按下。
-	DesiredGait = DesiredGait == EWuwaGait::Walk ? EWuwaGait::Run : EWuwaGait::Walk;
-	UE_LOG(LogTemp, Display, TEXT("[CommonMove] SwitchWalk -> %s (MaxSpeed=%.0f)"),
-		DesiredGait == EWuwaGait::Walk ? TEXT("Walk") : TEXT("Run"), GetMaxSpeed());
-	return true;
+    auto* Gait = ResolveGaitComponent();
+    return Command.Type == EWuwaInputCommandType::SwitchWalk && Gait && Gait->RequestWalkRunToggle();
 }
 
 void UWuwaMovementComponent::SetSprintAllowed(bool bAllowed)
 {
-	bSprintAllowed = bAllowed;
+    // 旧 bool API 只是 CMC 这个来源的一条限制，不能解除其他 GA/系统持有的限制。
+    if (auto* Gait = ResolveGaitComponent()) Gait->SetGaitBlocked(this, EWuwaGait::Sprint, !bAllowed);
+}
+
+EWuwaGait UWuwaMovementComponent::GetDesiredGait() const
+{
+    const auto* Gait = ResolveGaitComponent();
+    return Gait ? Gait->DesiredGait : DesiredGait;
 }
 
 EWuwaGait UWuwaMovementComponent::GetAllowedGait() const
 {
-	return DesiredGait == EWuwaGait::Sprint && !bSprintAllowed ? EWuwaGait::Run : DesiredGait;
+    return GetUnifiedStateData().Gait;
+}
+
+EWuwaGait UWuwaMovementComponent::GetStopGait() const
+{
+    const auto* Gait = ResolveGaitComponent();
+    return Gait ? Gait->StopGait : EWuwaGait::Run;
 }
 
 void UWuwaMovementComponent::BeginSprintDesireWindow(UObject* WindowSource)
 {
-	if (!IsValid(WindowSource) || !GetWorld())
-	{
-		return;
-	}
-
-	// 与项目输入事件 Timestamp / InputRouter 的按住时长使用同一游戏时钟。
-	FSprintDesireWindow& Window = SprintDesireWindows.FindOrAdd(WindowSource);
-	Window.BeginTimeSeconds = GetWorld()->GetTimeSeconds();
-	Window.Desire = EWuwaSprintDesire::Temporary;
+    if (auto* Gait = ResolveGaitComponent()) Gait->OpenSprintWindow(WindowSource);
 }
 
-void UWuwaMovementComponent::UpdateSprintDesireWindow(UObject* WindowSource,
-	float InputHeldSeconds, float HoldThresholdSeconds)
+void UWuwaMovementComponent::UpdateSprintDesireWindow(UObject* WindowSource, float InputHeldSeconds, float HoldThresholdSeconds)
 {
-	FSprintDesireWindow* Window = SprintDesireWindows.Find(WindowSource);
-	if (!IsValid(WindowSource) || !Window || !GetWorld())
-	{
-		// 迟到的 Tick 不能重新打开已经结束的窗口。
-		return;
-	}
-
-	const double WindowSeconds = FMath::Max(0.0, GetWorld()->GetTimeSeconds() - Window->BeginTimeSeconds);
-	const double HeldSeconds = FMath::IsFinite(InputHeldSeconds) ? FMath::Max(0.f, InputHeldSeconds) : 0.0;
-	const double Threshold = FMath::IsFinite(HoldThresholdSeconds) ? FMath::Max(0.f, HoldThresholdSeconds) : 0.2f;
-	// 窗口前已按住、窗口中途才按、松开后重新按，都由这两个时间的交集处理。
-	const double HeldInsideWindow = FMath::Min(WindowSeconds, HeldSeconds);
-	Window->Desire = HeldInsideWindow > Threshold
-		? EWuwaSprintDesire::Sustained : EWuwaSprintDesire::Temporary;
+    if (auto* Gait = ResolveGaitComponent()) Gait->SampleSprintWindow(WindowSource, InputHeldSeconds, HoldThresholdSeconds);
 }
 
 void UWuwaMovementComponent::EndSprintDesireWindow(UObject* WindowSource)
 {
-	SprintDesireWindows.Remove(WindowSource);
+    if (auto* Gait = ResolveGaitComponent()) Gait->CloseSprintWindow(WindowSource);
 }
 
 EWuwaSprintDesire UWuwaMovementComponent::GetSprintDesire() const
 {
-	EWuwaSprintDesire Result = EWuwaSprintDesire::None;
-	for (const auto& Entry : SprintDesireWindows)
-	{
-		if (!Entry.Key.IsValid())
-		{
-			continue;
-		}
-		if (Entry.Value.Desire == EWuwaSprintDesire::Sustained)
-		{
-			return EWuwaSprintDesire::Sustained;
-		}
-		Result = EWuwaSprintDesire::Temporary;
-	}
-	return Result;
+    const auto* Gait = ResolveGaitComponent();
+    return Gait ? Gait->ReadSprintDesire() : EWuwaSprintDesire::None;
 }
 
-void UWuwaMovementComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UWuwaMovementComponent::ClearSprintDesire()
 {
-	SprintDesireWindows.Empty();
-	Super::EndPlay(EndPlayReason);
+    if (auto* Gait = ResolveGaitComponent()) Gait->ResetSprintRequest();
+}
+
+void UWuwaMovementComponent::NotifyMoveInputChanged(bool bHasMoveInput)
+{
+    // 参数保留以兼容调用方；脚本始终读取角色刚更新的语义输入快照。
+    if (auto* Gait = ResolveGaitComponent()) Gait->RefreshPolicy();
+}
+
+EWuwaPositionState UWuwaMovementComponent::ReadPositionState() const
+{
+    if (IsClimbing()) return EWuwaPositionState::Climb;
+    if (IsMovingOnGround()) return EWuwaPositionState::Ground;
+    if (IsFalling() || MovementMode == MOVE_Flying) return EWuwaPositionState::Air;
+    if (IsSwimming()) return EWuwaPositionState::Water;
+    return EWuwaPositionState::None;
+}
+
+FWuwaUnifiedStateData UWuwaMovementComponent::GetUnifiedStateData() const
+{
+    const AWuwaCharacter* Character = Cast<AWuwaCharacter>(GetOwner());
+    return Character && IsValid(Character->UnifiedStateComponent)
+        ? Character->UnifiedStateComponent->GetStateData() : FWuwaUnifiedStateData{};
+}
+
+void UWuwaMovementComponent::HandleUnifiedStateChanged(const FWuwaUnifiedStateData&, const FWuwaUnifiedStateData&)
+{
+    RefreshMovementSettings();
+}
+
+void UWuwaMovementComponent::RefreshMovementSettings()
+{
+    // 只按已接受状态选配置。这里没有输入判断、冲刺计时，也不修改 Velocity。
+    if (!bCapturedDefaultMovementSettings)
+    {
+        DefaultMovementSettings.MaxSpeed = MaxWalkSpeed;
+        DefaultMovementSettings.MaxAcceleration = MaxAcceleration;
+        DefaultMovementSettings.GroundFriction = GroundFriction;
+        DefaultMovementSettings.BrakingDeceleration = BrakingDecelerationWalking;
+        bCapturedDefaultMovementSettings = true;
+    }
+    const EWuwaGait Gait = GetUnifiedStateData().Gait;
+    FWuwaGaitMovementSettings Settings = DefaultMovementSettings;
+    // 兼容原 GetMaxSpeed 的速度上限语义；MaxWalkSpeed 现在是执行输出，不能再用它作配置输入。
+    Settings.MaxSpeed = Gait == EWuwaGait::Walk ? FMath::Min(WalkSpeed, DefaultMovementSettings.MaxSpeed)
+        : FMath::Max(Gait == EWuwaGait::Sprint ? SprintSpeed : RunSpeed, DefaultMovementSettings.MaxSpeed);
+    if (MovementSettings) Settings = MovementSettings->ForGait(Gait);
+    MaxWalkSpeed = FMath::Max(0.f, Settings.MaxSpeed);
+    MaxAcceleration = FMath::Max(0.f, Settings.MaxAcceleration);
+    GroundFriction = FMath::Max(0.f, Settings.GroundFriction);
+    BrakingDecelerationWalking = FMath::Max(0.f, Settings.BrakingDeceleration);
 }
 
 void UWuwaMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (CanEnterClimbState())
-	{
-		Debug::Print(FString("Player Enter Climbing State"));
-		SetMovementMode(MOVE_Custom, (uint8)ECustomMoveMode::MOVE_Climb);
-	}
+    // UE 默认让 CMC 先于 Character Tick。固定在本帧物理前调度脚本，避免形成 Tick 依赖环。
+    if (auto* Gait = ResolveGaitComponent()) Gait->RefreshPolicy();
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+    if (CanEnterClimbState())
+    {
+        Debug::Print(FString("Player Enter Climbing State"));
+        SetMovementMode(MOVE_Custom, (uint8)ECustomMoveMode::MOVE_Climb);
+    }
 }
-
-
 
 bool UWuwaMovementComponent::PlayerisInputing()
 {
-	return !Acceleration.IsNearlyZero();
+    return !Acceleration.IsNearlyZero();
 }
-
 
 #pragma endregion
 
@@ -148,32 +179,14 @@ void UWuwaMovementComponent::OnMovementModeChanged(EMovementMode PrevMode, uint8
 		bOrientRotationToMovement = true;
 	}
 	Super::OnMovementModeChanged(PrevMode, PrevCustomMode);
+    if (auto* Gait = ResolveGaitComponent()) Gait->RefreshPolicy();
 }
 
 float UWuwaMovementComponent::GetMaxSpeed() const
 {
-	if (IsClimbing())
-	{
-		return 100.f;
-	}
-
-	// 与引擎的地面/空中水平速度限制保持同一入口；不覆盖游泳、飞行和蹲伏。
-	if ((IsMovingOnGround() || IsFalling()) && !IsCrouching())
-	{
-		switch (GetAllowedGait())
-		{
-		case EWuwaGait::Walk:
-			return FMath::Min(FMath::Max(WalkSpeed, 0.f), Super::GetMaxSpeed());
-		case EWuwaGait::Sprint:
-			return FMath::Max(SprintSpeed, Super::GetMaxSpeed());
-		case EWuwaGait::Run:
-			return FMath::Max(RunSpeed, Super::GetMaxSpeed());
-		default:
-			break;
-		}
-	}
-
-	return Super::GetMaxSpeed();
+    if (IsClimbing()) return 100.f;
+    // 状态事件已把地面配置写入 MaxWalkSpeed；物理查询不再跨语言做步态决策。
+    return Super::GetMaxSpeed();
 }
 
 float UWuwaMovementComponent::GetMaxAcceleration() const

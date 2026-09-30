@@ -9,7 +9,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "Game/Input/DataAsset/WuwaInputDataAsset.h"
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaInputCommand.h"
-#include "Game/Input/WuwaInputComponent.h"
 #include "Game/Input/WuwaInputRouterComponent.h"
 #include "Game/Input/WuwaInputTypes.h"
 #include "InputAction.h"
@@ -122,7 +121,9 @@ bool FWuwaWalkRunExecuteTest::RunTest(const FString& Parameters)
 		return false;
 	}
 	Movement->MovementMode = MOVE_Walking;
-	Movement->MaxWalkSpeed = 650.f;
+	Movement->MovementSettings = NewObject<UWuwaMovementSettings>(Character);
+	Movement->MovementSettings->Run.MaxSpeed = 650.f;
+	Movement->RefreshMovementSettings();
 	const FVector OriginalVelocity(123.f, 45.f, 67.f);
 	Movement->Velocity = OriginalVelocity;
 
@@ -131,8 +132,9 @@ bool FWuwaWalkRunExecuteTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Ground movement permits walk/run switching"), Movement->CanSwitchWalk());
 	TestTrue(TEXT("Ground SwitchWalk command is accepted"), Movement->ExecuteInputCommand(Command));
 	TestTrue(TEXT("Run switches to Walk"), Movement->GetDesiredGait() == EWuwaGait::Walk);
-	TestTrue(TEXT("Walk has a lower speed cap"), Movement->GetMaxSpeed() < Movement->MaxWalkSpeed);
-	TestEqual(TEXT("Switching does not overwrite configured Run speed"), Movement->MaxWalkSpeed, 650.f);
+	TestTrue(TEXT("Walk has a lower speed cap"), Movement->GetMaxSpeed() < Movement->MovementSettings->Run.MaxSpeed);
+	TestEqual(TEXT("Switching preserves Run configuration"), Movement->MovementSettings->Run.MaxSpeed, 650.f);
+	TestEqual(TEXT("State event applies Walk speed to CMC"), Movement->MaxWalkSpeed, Movement->MovementSettings->Walk.MaxSpeed);
 	TestEqual(TEXT("Switching does not overwrite actual velocity"), Movement->Velocity, OriginalVelocity);
 	TestTrue(TEXT("A second SwitchWalk command is accepted"), Movement->ExecuteInputCommand(Command));
 	TestTrue(TEXT("Walk switches back to Run"), Movement->GetDesiredGait() == EWuwaGait::Run);
@@ -244,24 +246,24 @@ bool FWuwaWalkRunRouterIntegrationTest::RunTest(const FString& Parameters)
 	Event.Phase = EWuwaInputPhase::Pressed;
 	Event.Value = FInputActionValue(true);
 	// 故意不手填 Event 的 Tag/SourceAction，验证 Router 使用 Binding 补齐后调用接口。
-	TestTrue(TEXT("Router dispatch reaches the handler and movement component"), Router->DispatchInput(Binding, Event));
+	TestTrue(TEXT("Router dispatch reaches the handler and movement component"), Router->DispatchInput(Event));
 	TestTrue(TEXT("The current character switches to Walk"), FirstMovement->GetDesiredGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("The other character remains Run"), SecondMovement->GetDesiredGait() == EWuwaGait::Run);
 
 	Event.Phase = EWuwaInputPhase::Released;
 	Event.Value.Reset();
-	TestFalse(TEXT("Release produces no executable movement command"), Router->DispatchInput(Binding, Event));
+	TestFalse(TEXT("Release produces no executable movement command"), Router->DispatchInput(Event));
 	TestTrue(TEXT("Release does not toggle the current character again"), FirstMovement->GetDesiredGait() == EWuwaGait::Walk);
 
 	Controller->SetPawn(SecondCharacter);
 	Event.Phase = EWuwaInputPhase::Pressed;
 	Event.Value = FInputActionValue(true);
-	TestTrue(TEXT("After switching Pawn, dispatch uses the new character"), Router->DispatchInput(Binding, Event));
+	TestTrue(TEXT("After switching Pawn, dispatch uses the new character"), Router->DispatchInput(Event));
 	TestTrue(TEXT("The new character switches to Walk"), SecondMovement->GetDesiredGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("The previous character is not toggled back to Run"), FirstMovement->GetDesiredGait() == EWuwaGait::Walk);
 
 	Controller->SetPawn(nullptr);
-	TestFalse(TEXT("No controlled Pawn safely rejects the input"), Router->DispatchInput(Binding, Event));
+	TestFalse(TEXT("No controlled Pawn safely rejects the input"), Router->DispatchInput(Event));
 	TestTrue(TEXT("No-Pawn input leaves the first character unchanged"), FirstMovement->GetDesiredGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("No-Pawn input leaves the second character unchanged"), SecondMovement->GetDesiredGait() == EWuwaGait::Walk);
 	return true;
@@ -275,7 +277,7 @@ bool FWuwaWalkRunAssetsTest::RunTest(const FString& Parameters)
 	// 只读加载项目真实配置，覆盖“代码正确但 IA/IMC/路由未接线”的问题。
 	const UInputAction* WalkRunAction = LoadObject<UInputAction>(nullptr, TEXT("/Game/CoreInput/Actions/IA_WalkRun.IA_WalkRun"));
 	const UInputMappingContext* MappingContext = LoadObject<UInputMappingContext>(nullptr, TEXT("/Game/CoreInput/Contexts/IMC_Character.IMC_Character"));
-	const UWuwaInputDataAsset* InputTagMap = LoadObject<UWuwaInputDataAsset>(nullptr, TEXT("/Game/DataAsset/DA_InputActionTagAsset.DA_InputActionTagAsset"));
+	const UWuwaInputDataAsset* InputTagMap = LoadObject<UWuwaInputDataAsset>(nullptr, TEXT("/Game/CoreInput/DataAsset/DA_InputActionTagAsset.DA_InputActionTagAsset"));
 	const bool bHasAction = TestNotNull(TEXT("Walk/run input action exists"), WalkRunAction);
 	const bool bHasContext = TestNotNull(TEXT("Character mapping context exists"), MappingContext);
 	const bool bHasTagMap = TestNotNull(TEXT("Input tag map exists"), InputTagMap);
@@ -318,7 +320,7 @@ bool FWuwaWalkRunAssetsTest::RunTest(const FString& Parameters)
 	// 沿真实蓝图 CDO 确认这套配置被角色/控制器引用，而不仅是资产单独存在。
 	UClass* GameModeClass = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/BP_WuwaGameMode.BP_WuwaGameMode_C"));
 	UClass* ControllerClass = LoadClass<AWuwaPlayerController>(nullptr, TEXT("/Game/Core/BP_WuwaPlayerController.BP_WuwaPlayerController_C"));
-	UClass* CharacterClass = LoadClass<AWuwaCharacter>(nullptr, TEXT("/Game/Characters/Player/BP_WuwaCharacterBase.BP_WuwaCharacterBase_C"));
+	UClass* CharacterClass = LoadClass<AWuwaCharacter>(nullptr, TEXT("/Game/Characters/Role/changli/BP_WuwaCharacterBase.BP_WuwaCharacterBase_C"));
 	const bool bHasGameModeClass = TestNotNull(TEXT("The project GameMode blueprint loads"), GameModeClass);
 	const bool bHasControllerClass = TestNotNull(TEXT("The project controller blueprint loads"), ControllerClass);
 	const bool bHasCharacterClass = TestNotNull(TEXT("The project character blueprint loads"), CharacterClass);
@@ -328,22 +330,11 @@ bool FWuwaWalkRunAssetsTest::RunTest(const FString& Parameters)
 	}
 	const AGameModeBase* GameModeDefaults = GameModeClass->GetDefaultObject<AGameModeBase>();
 	const AWuwaPlayerController* ControllerDefaults = ControllerClass->GetDefaultObject<AWuwaPlayerController>();
-	const AWuwaCharacter* CharacterDefaults = CharacterClass->GetDefaultObject<AWuwaCharacter>();
 	TestTrue(TEXT("GameMode uses the expected player controller"), GameModeDefaults->PlayerControllerClass.Get() == ControllerClass);
 	TestTrue(TEXT("GameMode uses the expected character"), GameModeDefaults->DefaultPawnClass.Get() == CharacterClass);
 	TestTrue(TEXT("The player controller uses the configured input tag map"), ControllerDefaults->InputTagMap == InputTagMap);
-
-	const UWuwaInputComponent* CharacterInput = CharacterDefaults->WuwaInputComponent;
-	if (!TestNotNull(TEXT("The character has its mapping-context component"), CharacterInput))
-	{
-		return false;
-	}
-	const FObjectPropertyBase* MappingProperty = FindFProperty<FObjectPropertyBase>(CharacterInput->GetClass(), TEXT("DefaultMappingContext"));
-	if (!TestNotNull(TEXT("The mapping-context property is available for read-only inspection"), MappingProperty))
-	{
-		return false;
-	}
-	TestTrue(TEXT("The character uses IMC_Character"), MappingProperty->GetObjectPropertyValue_InContainer(CharacterInput) == MappingContext);
+	// 映射上下文属于本地玩家，由控制器注册；角色不再持有输入组件。
+	TestTrue(TEXT("The player controller registers IMC_Character"), ControllerDefaults->DefaultMappingContext == MappingContext);
 	return true;
 }
 

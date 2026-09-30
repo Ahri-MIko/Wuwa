@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementTypes.h"
+#include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateTypes.h"
 #include "WuwaLocomotionTypes.generated.h"
 
 /** 对应原资源中的分方向混合思路；归一化算法是本 Demo 的实现。 */
@@ -35,6 +36,23 @@ struct WUWA_API FWuwaLocomotionAnimData
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Validity")
 	bool bHasValidMovementData = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bHasUnifiedState = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EWuwaPositionState PositionState = EWuwaPositionState::None;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EWuwaMoveState MoveState = EWuwaMoveState::Other;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EWuwaDirectionState DirectionState = EWuwaDirectionState::FaceDirection;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bHasActionOverride = false;
+	/** 最近实际移动的步态；速度归零后停步片段仍使用同一个选择。 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gait")
+	EWuwaGait StopGait = EWuwaGait::Run;
+	/** 脚本已经接受 Walk/Run/Sprint，Dash 等动作占用期间为 false。 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Transitions")
+	bool bGroundMoveActive = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion")
 	FVector Velocity = FVector::ZeroVector;

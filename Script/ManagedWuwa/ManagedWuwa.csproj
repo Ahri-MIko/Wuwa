@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <Import Project="..\..\Plugins\UnrealSharp\UnrealSharp.Shared.props" />
+  <ItemGroup>
+    <Reference Include="KawaiiPhysics">
+      <HintPath>..\..\Binaries\Managed\net10.0\KawaiiPhysics.dll</HintPath>
+    </Reference>
+    <Reference Include="KawaiiPhysicsSequencer">
+      <HintPath>..\..\Binaries\Managed\net10.0\KawaiiPhysicsSequencer.dll</HintPath>
+    </Reference>
+    <Reference Include="Wuwa">
+      <HintPath>..\..\Binaries\Managed\net10.0\Wuwa.dll</HintPath>
+    </Reference>
+    <Reference Include="KawaiiPhysicsEd">
+      <HintPath>..\..\Binaries\Managed\net10.0\KawaiiPhysicsEd.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Game\Camera\" />
+  </ItemGroup>
+</Project>

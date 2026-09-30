@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "WuwaMovementTypes.generated.h"
 
-/** 游戏侧移动策略。Movement 拥有它，动画只能读取它。 */
+/** 脚本 RoleGait 选择步态，UnifiedState 提交结果，Movement/动画消费结果。 */
 UENUM(BlueprintType)
 enum class EWuwaGait : uint8
 {
@@ -12,7 +12,7 @@ enum class EWuwaGait : uint8
 	Sprint
 };
 
-/** 动画窗口采集的冲刺意图；不等同于当前步态或 Sprint 许可。 */
+/** 窗口采集、角色保留的冲刺意图；不等同于当前步态或 Sprint 许可。 */
 UENUM(BlueprintType)
 enum class EWuwaSprintDesire : uint8
 {

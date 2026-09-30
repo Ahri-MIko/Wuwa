@@ -65,16 +65,21 @@ bool FWuwaGaitPolicyTest::RunTest(const FString& Parameters)
 	}
 	// 不调用 BeginPlay、Possess 或物理 Tick，只指定当前运动模式。
 	Movement->MovementMode = MOVE_Walking;
-	Movement->MaxWalkSpeed = 650.f;
+	Movement->MovementSettings = NewObject<UWuwaMovementSettings>(Character);
+	Movement->MovementSettings->Run.MaxSpeed = 650.f;
+	Movement->RefreshMovementSettings();
+	Character->HandleMoveInput(FInputActionValue(FVector2D(0.f, 1.f)));
 	TestTrue(TEXT("Default gait remains Run"), Movement->GetAllowedGait() == EWuwaGait::Run);
-	TestEqual(TEXT("Run preserves existing MaxWalkSpeed"), Movement->GetMaxSpeed(), 650.f);
+	TestEqual(TEXT("Run applies its configured speed"), Movement->GetMaxSpeed(), 650.f);
 	Movement->ToggleWalkRun();
 	TestTrue(TEXT("Walk toggle changes policy"), Movement->GetAllowedGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("Walk speed is no faster than Run"), Movement->GetMaxSpeed() <= 650.f);
 	Movement->ToggleWalkRun();
 	TestTrue(TEXT("Toggle returns to Run"), Movement->GetAllowedGait() == EWuwaGait::Run);
+	Movement->SetSprintAllowed(false);
 	Movement->SetDesiredGait(EWuwaGait::Sprint);
-	TestTrue(TEXT("Sprint request is retained"), Movement->GetDesiredGait() == EWuwaGait::Sprint);
+	TestTrue(TEXT("Sprint request preserves Run preference"), Movement->GetDesiredGait() == EWuwaGait::Run);
+	TestTrue(TEXT("Sprint request is retained separately"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
 	TestTrue(TEXT("Sprint requires permission"), Movement->GetAllowedGait() == EWuwaGait::Run);
 	Movement->SetSprintAllowed(true);
 	TestTrue(TEXT("Permission enables Sprint"), Movement->GetAllowedGait() == EWuwaGait::Sprint);

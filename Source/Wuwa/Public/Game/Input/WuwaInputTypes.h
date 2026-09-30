@@ -27,6 +27,9 @@ struct FWuwaInputEvent
 
 	UPROPERTY(BlueprintReadOnly)
 	FGameplayTag InputTag;
+	
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag RouteTag;
 
 	UPROPERTY(BlueprintReadOnly)
 	EWuwaInputPhase Phase = EWuwaInputPhase::Canceled;

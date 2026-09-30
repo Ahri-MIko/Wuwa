@@ -6,9 +6,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementTypes.h"
+#include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateTypes.h"
+#include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementSettings.h"
 #include "WuwaMovementComponent.generated.h"
 
 struct FWuwaInputCommand;
+class UWuwaRoleGaitBridgeComponent;
 
 /**
  *
@@ -43,7 +46,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion")
 	bool CanSwitchWalk() const;
 
-	// 命令执行入口。这里拥有步态状态；输入和动画都不另存一份“是否走路”。
+	// 兼容现有蓝图/输入路由的转发入口；规则和运行状态属于 C# RoleGait。
 	bool ExecuteInputCommand(const FWuwaInputCommand& Command);
 
 	/** Sprint 许可由移动/动作规则提供，不能仅凭一个按键绕过规则。 */
@@ -51,12 +54,13 @@ public:
 	void SetSprintAllowed(bool bAllowed);
 
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion")
-	EWuwaGait GetDesiredGait() const { return DesiredGait; }
+	EWuwaGait GetDesiredGait() const;
+	EWuwaGait GetInitialDesiredGait() const { return DesiredGait; }
 
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion")
 	EWuwaGait GetAllowedGait() const;
 
-	/** 窗口只登记意图，不修改 DesiredGait、速度或 Sprint 许可。 */
+	/** 窗口登记冲刺意图，再由脚本规则决定是否提交 Sprint；不覆盖走跑偏好。 */
 	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
 	void BeginSprintDesireWindow(UObject* WindowSource);
 
@@ -64,12 +68,32 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
 	void UpdateSprintDesireWindow(UObject* WindowSource, float InputHeldSeconds, float HoldThresholdSeconds);
 
-	/** 只撤销这个通知持有的需求，保留其他仍然有效的窗口。 */
+	/** 提交窗口最后采样的需求，再移除窗口；Temporary 从此刻开始计时。 */
 	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
 	void EndSprintDesireWindow(UObject* WindowSource);
 
+	/** 退出地面移动、失去控制或动作规则要求重置时调用；迟到的 Tick/End 不会恢复需求。 */
+	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
+	void ClearSprintDesire();
+
+	/** 来自角色语义移动输入；结束移动时清除已经提交的长期冲刺。 */
+	void NotifyMoveInputChanged(bool bHasMoveInput);
+
+	/** 窗口结束后暂时冲刺保留的游戏秒数，不包含窗口自身的时长。 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wuwa|Locomotion|Sprint", meta = (ClampMin = "0", Units = "s"))
+	float TemporarySprintDuration = 1.f;
+
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion|Sprint")
 	EWuwaSprintDesire GetSprintDesire() const;
+
+	/** 物理模式事实，由脚本转换为角色位置状态。 */
+	UFUNCTION(BlueprintPure, Category="Wuwa|State") EWuwaPositionState ReadPositionState() const;
+	UFUNCTION(BlueprintPure, Category="Wuwa|State") FWuwaUnifiedStateData GetUnifiedStateData() const;
+	UFUNCTION(BlueprintPure, Category="Wuwa|State") EWuwaGait GetStopGait() const;
+	UFUNCTION() void HandleUnifiedStateChanged(const FWuwaUnifiedStateData& OldState, const FWuwaUnifiedStateData& NewState);
+	UFUNCTION(BlueprintCallable, Category="Wuwa|Movement") void RefreshMovementSettings();
+	/** 可选统一配置；未指定时沿用现有 Walk/Run/Sprint 速度与 CMC 原有加速度/摩擦。 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Wuwa|Movement") TObjectPtr<UWuwaMovementSettings> MovementSettings;
 
 #pragma region Override Function
 	virtual void OnMovementModeChanged(EMovementMode PrevMode, uint8 PrevCustomMode) override;
@@ -143,9 +167,7 @@ public:
 	void PhysClimbing(float deltaTime, int32 Iterations);
 
 protected:
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	/** Run 继续使用已有 MaxWalkSpeed，保留项目当前默认移动速度。 */
+	/** 仅为出生时的走跑偏好配置；运行值由脚本组件维护。 */
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wuwa|Locomotion")
 	EWuwaGait DesiredGait = EWuwaGait::Run;
@@ -161,18 +183,8 @@ protected:
 	float RunSpeed = 500.f;
 
 private:
-
-	struct FSprintDesireWindow
-	{
-		double BeginTimeSeconds = 0.0;
-		EWuwaSprintDesire Desire = EWuwaSprintDesire::Temporary;
-	};
-
-	// NotifyState 是共享资产；按角色保存窗口计时，不在通知对象上保存运行状态。
-	TMap<TWeakObjectPtr<UObject>, FSprintDesireWindow> SprintDesireWindows;
-
-	// 本阶段仅实现单机策略接口；联网预测/同步需单独接入 CMC saved move。
-	UPROPERTY(Transient)
-	bool bSprintAllowed = false;
+	UWuwaRoleGaitBridgeComponent* ResolveGaitComponent() const;
+	bool bCapturedDefaultMovementSettings = false;
+	FWuwaGaitMovementSettings DefaultMovementSettings;
 
 };

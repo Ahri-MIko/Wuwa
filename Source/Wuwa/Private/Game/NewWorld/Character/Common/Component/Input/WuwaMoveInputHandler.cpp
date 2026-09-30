@@ -35,7 +35,7 @@ bool UWuwaMoveInputHandler::HandleWuwaInput_Implementation(const FWuwaInputEvent
 		return Movement->ExecuteInputCommand(Command);
 	}
 
-	// Move/Look 是连续值，Started 不再额外消费一遍，避免首帧重复移动/转镜头。
+	// Move 是连续值，Started 不再额外消费一遍，避免首帧重复移动。
 	const bool bAxisUpdate = InputEvent.Phase == EWuwaInputPhase::Triggered
 		|| InputEvent.Phase == EWuwaInputPhase::Released
 		|| InputEvent.Phase == EWuwaInputPhase::Canceled;
@@ -49,21 +49,14 @@ bool UWuwaMoveInputHandler::HandleWuwaInput_Implementation(const FWuwaInputEvent
 		OnMove.Broadcast(InputEvent.Value);
 		return true;
 	}
-	if (InputEvent.InputTag == Tags.Player_Common_Camera_Rotate)
-	{
-		OnLook.Broadcast(InputEvent.Value);
-		return true;
-	}
 	return false;
 }
 
-FWuwaInputCommand UWuwaMoveInputHandler::ResolveCommand(
-	const FWuwaInputEvent& InputEvent, const UWuwaMovementComponent* Movement)
+//输入对应具体的状态改变
+FWuwaInputCommand UWuwaMoveInputHandler::ResolveCommand(const FWuwaInputEvent& InputEvent, const UWuwaMovementComponent* Movement)
 {
 	FWuwaInputCommand Command;
-	if (InputEvent.InputTag == FWuwaGameTags::Get().Player_Common_Movement_WalkRun
-		&& InputEvent.Phase == EWuwaInputPhase::Pressed
-		&& Movement && Movement->CanSwitchWalk())
+	if (InputEvent.InputTag == FWuwaGameTags::Get().Player_Common_Movement_WalkRun&& InputEvent.Phase == EWuwaInputPhase::Pressed&& Movement && Movement->CanSwitchWalk())
 	{
 		Command.Type = EWuwaInputCommandType::SwitchWalk;
 	}

@@ -68,6 +68,10 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeUninitializeAnimation() override;
 
+	/** 在 Event Graph/状态进入事件中调用：清除角色冲刺需求和开放窗口，并同步本实例的动画快照。 */
+	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint", meta = (NotBlueprintThreadSafe))
+	void ResetSprintDesire();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient, Category = "Wuwa|Locomotion")
 	FWuwaLocomotionAnimData LocomotionData;
 

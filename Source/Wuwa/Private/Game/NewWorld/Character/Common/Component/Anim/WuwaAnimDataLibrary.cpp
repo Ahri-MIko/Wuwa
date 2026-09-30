@@ -3,6 +3,8 @@
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaAnimLogicParams.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
 #include "GameFramework/Character.h"
+#include "Game/NewWorld/Character/Role/WuwaCharacter.h"
+#include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
 
 bool UWuwaAnimDataLibrary::UpdateAnimationData(const UWuwaMovementComponent* Movement, UWuwaAnimLogicParams* Params)
 {
@@ -47,8 +49,23 @@ void UWuwaAnimDataLibrary::UpdateAnimInfoUnifiedState(const UWuwaMovementCompone
 	Data.bStateAir = Movement.IsFalling();
 	Data.bStateClimb = Movement.IsClimbing();
 	Data.bIsCrouching = Movement.IsCrouching();
+	const AWuwaCharacter* Character = Cast<AWuwaCharacter>(Movement.GetCharacterOwner());
+	Data.bHasUnifiedState = Character && IsValid(Character->UnifiedStateComponent);
+	if (Data.bHasUnifiedState)
+	{
+		const FWuwaUnifiedStateData State = Movement.GetUnifiedStateData();
+		Data.PositionState = State.PositionState;
+		Data.MoveState = State.MoveState;
+		Data.DirectionState = State.DirectionState;
+		Data.bHasActionOverride = State.bHasActionOverride;
+		Data.StopGait = Movement.GetStopGait();
+		Data.bStateGround = State.PositionState == EWuwaPositionState::Ground;
+		Data.bStateAir = State.PositionState == EWuwaPositionState::Air;
+		Data.bStateClimb = State.PositionState == EWuwaPositionState::Climb;
+	}
 }
 
+//蓝图函数
 float UWuwaAnimDataLibrary::GetStartTimeFromSyncPosition(const UAnimSequence* Sequence,
                                                      const FMarkerSyncAnimPosition& SyncPosition)
 {

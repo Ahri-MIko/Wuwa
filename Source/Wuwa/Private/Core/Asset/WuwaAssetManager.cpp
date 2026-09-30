@@ -9,13 +9,9 @@ UWuwaAssetManager& UWuwaAssetManager::Get()
 {
 	UAssetManager& AssetManager = UAssetManager::Get();
 
-	UWuwaAssetManager* WuwaAssetManager =
-		Cast<UWuwaAssetManager>(&AssetManager);
+	UWuwaAssetManager* WuwaAssetManager =Cast<UWuwaAssetManager>(&AssetManager);
 
-	checkf(
-		WuwaAssetManager,
-		TEXT("Asset Manager 配置错误，请将 AssetManagerClassName 设置为 UWuwaAssetManager")
-	);
+	checkf(WuwaAssetManager,TEXT("Asset Manager 配置错误，请将 AssetManagerClassName 设置为 UWuwaAssetManager"));
 
 	return *WuwaAssetManager;
 }

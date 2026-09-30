@@ -25,6 +25,10 @@ Saved/
 Exports/
 Tools/
 
+# ---- Unrelated local work (not part of Wuwa) ----
+/Art/CargoClash/
+/tmp/
+
 # ---- Misc ----
 *.tmp
 *.log

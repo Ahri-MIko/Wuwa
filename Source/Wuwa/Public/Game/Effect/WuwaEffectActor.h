@@ -11,14 +11,14 @@ class UAbilitySystemComponent;
 class UAttributeEffect;
 
 
-
+//能施加GE的物品
 UCLASS()
 class WUWA_API AWuwaEffectActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:
-	//Grant Effect to Actors
+	//给Targte效果
 	UFUNCTION(BlueprintCallable)
 	void ApplyEffect(AActor* Target, TSubclassOf<UGameplayEffect> EffectClass);
 	

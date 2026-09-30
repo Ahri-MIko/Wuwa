@@ -36,6 +36,10 @@ bool FWuwaSprintDesireTest::RunTest(const FString& Parameters)
 	UObject* WindowA = NewObject<UCurveFloat>(Character);
 	UObject* WindowB = NewObject<UCurveFloat>(Character);
 	constexpr float HoldThreshold = 0.2f;
+	Movement->MovementMode = MOVE_Walking;
+	OtherMovement->MovementMode = MOVE_Walking;
+	Character->MoveInput = FVector2D(0.f, 1.f);
+	OtherCharacter->MoveInput = FVector2D(0.f, 1.f);
 	Movement->SetDesiredGait(EWuwaGait::Walk);
 	TestTrue(TEXT("No window means no sprint desire"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
 	Movement->UpdateSprintDesireWindow(WindowA, 5.f, HoldThreshold);
@@ -54,9 +58,18 @@ bool FWuwaSprintDesireTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("More than 0.2 seconds requests sustained sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
 	TestTrue(TEXT("Sustained desire preserves the walk preference"), Movement->GetDesiredGait() == EWuwaGait::Walk);
 	Movement->EndSprintDesireWindow(WindowA);
-	TestTrue(TEXT("Ending the last window clears sprint desire"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Ending the last window retains sustained sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	TestWorld->TimeSeconds = 60.0;
+	Movement->UpdateSprintDesireWindow(WindowA, 0.f, HoldThreshold);
+	TestTrue(TEXT("Elapsed time and late release sampling cannot demote committed sustained sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	// RootMotion may still move the actor after input release. Intent, not speed, ends sustained sprint.
+	Movement->Velocity = FVector(900.f, 0.f, 0.f);
+	Character->HandleMoveInput(FInputActionValue(FVector2D::ZeroVector));
+	TestTrue(TEXT("Releasing movement clears sustained sprint despite remaining velocity"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	Character->HandleMoveInput(FInputActionValue(FVector2D(0.f, 1.f)));
 	Movement->UpdateSprintDesireWindow(WindowA, 1.f, HoldThreshold);
-	TestTrue(TEXT("A late tick after end cannot reopen the window"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	Movement->EndSprintDesireWindow(WindowA);
+	TestTrue(TEXT("Moving again and late callbacks cannot revive a completed request"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
 
 	TestWorld->TimeSeconds = 2.0;
 	Movement->BeginSprintDesireWindow(WindowA);
@@ -75,6 +88,7 @@ bool FWuwaSprintDesireTest::RunTest(const FString& Parameters)
 	Movement->UpdateSprintDesireWindow(WindowA, 0.25f, HoldThreshold);
 	TestTrue(TEXT("The new continuous press can reach the threshold again"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
 	Movement->EndSprintDesireWindow(WindowA);
+	Movement->ClearSprintDesire();
 
 	TestWorld->TimeSeconds = 3.0;
 	Movement->BeginSprintDesireWindow(WindowA);
@@ -86,11 +100,12 @@ bool FWuwaSprintDesireTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Ending another source cannot clear a sustained window"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
 	Movement->BeginSprintDesireWindow(WindowB);
 	Movement->EndSprintDesireWindow(WindowA);
-	TestTrue(TEXT("Ending the stronger source reveals the remaining temporary request"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	TestTrue(TEXT("Ending the stronger source commits its sustained request"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
 	Movement->EndSprintDesireWindow(WindowA);
-	TestTrue(TEXT("A duplicate end cannot clear a different source"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	TestTrue(TEXT("A duplicate end cannot clear the retained request"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
 	Movement->EndSprintDesireWindow(WindowB);
-	TestTrue(TEXT("Ending all overlapping windows clears desire"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("A weaker window cannot demote retained sustained sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	Movement->ClearSprintDesire();
 
 	// AnimNotifyState objects can be shared: the source must not own character-specific state.
 	TestWorld->TimeSeconds = 4.0;
@@ -106,9 +121,64 @@ bool FWuwaSprintDesireTest::RunTest(const FString& Parameters)
 	TestWorld->TimeSeconds = 4.6;
 	OtherMovement->UpdateSprintDesireWindow(WindowA, 0.3f, HoldThreshold);
 	TestTrue(TEXT("The second character can promote its own request"), OtherMovement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
-	TestTrue(TEXT("The first character remains outside a window"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("The first character retains its own committed request"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
 	OtherMovement->EndSprintDesireWindow(WindowA);
-	TestTrue(TEXT("Second character cleanup clears its request"), OtherMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	OtherMovement->ClearSprintDesire();
+	TestTrue(TEXT("Explicit reset clears only the second character"), OtherMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("The first character's retained request is independent"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	Movement->ClearSprintDesire();
+
+	// Temporary duration starts at End, not Begin, and is not refreshed by duplicate callbacks.
+	TestEqual(TEXT("The requested default duration is one second"), Movement->TemporarySprintDuration, 1.f);
+	TestWorld->TimeSeconds = 10.0;
+	Movement->BeginSprintDesireWindow(WindowA);
+	TestWorld->TimeSeconds = 15.0;
+	TestTrue(TEXT("An open window does not consume the post-window temporary duration"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	Movement->EndSprintDesireWindow(WindowA);
+	TestWorld->TimeSeconds = 15.99;
+	Movement->EndSprintDesireWindow(WindowA);
+	Movement->UpdateSprintDesireWindow(WindowA, 5.f, HoldThreshold);
+	TestTrue(TEXT("Temporary sprint survives until one second after the window ended"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	TestWorld->TimeSeconds = 16.0;
+	TestTrue(TEXT("Temporary sprint expires exactly at its deadline without a notify tick"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+
+	Movement->TemporarySprintDuration = 0.25f;
+	Movement->BeginSprintDesireWindow(WindowA);
+	Movement->EndSprintDesireWindow(WindowA);
+	TestWorld->TimeSeconds = 16.24;
+	TestTrue(TEXT("A subsequent dash creates a fresh configurable temporary duration"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	TestWorld->TimeSeconds = 16.25;
+	TestTrue(TEXT("The configured temporary duration is honored"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	Movement->TemporarySprintDuration = 0.f;
+	Movement->BeginSprintDesireWindow(WindowA);
+	Movement->EndSprintDesireWindow(WindowA);
+	TestTrue(TEXT("Zero duration adds no post-window temporary sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	Movement->TemporarySprintDuration = 1.f;
+
+	// A release during Dash must not leave sustained intent when the window later ends.
+	TestWorld->TimeSeconds = 20.0;
+	Movement->BeginSprintDesireWindow(WindowA);
+	TestWorld->TimeSeconds = 20.3;
+	Movement->UpdateSprintDesireWindow(WindowA, 0.3f, HoldThreshold);
+	Character->HandleMoveInput(FInputActionValue(FVector2D::ZeroVector));
+	Movement->EndSprintDesireWindow(WindowA);
+	TestTrue(TEXT("Ending a sustained window without movement input cannot latch sustained sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	Character->HandleMoveInput(FInputActionValue(FVector2D(0.f, 1.f)));
+	TestTrue(TEXT("Movement resuming after that window does not restore sustained sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+
+	// Leaving ground movement cancels both committed intent and unfinished sampling.
+	Movement->BeginSprintDesireWindow(WindowA);
+	Movement->EndSprintDesireWindow(WindowA);
+	Movement->BeginSprintDesireWindow(WindowB);
+	Movement->SetMovementMode(MOVE_Falling);
+	TestTrue(TEXT("Leaving ground movement clears retained and active requests"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	Movement->UpdateSprintDesireWindow(WindowB, 1.f, HoldThreshold);
+	Movement->EndSprintDesireWindow(WindowB);
+	Movement->BeginSprintDesireWindow(WindowA);
+	TestTrue(TEXT("Late callbacks and new ground windows cannot resurrect sprint while falling"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	Movement->SetMovementMode(MOVE_Walking);
+	Movement->EndSprintDesireWindow(WindowB);
+	TestTrue(TEXT("Landing does not revive the previous ground sprint"), Movement->GetSprintDesire() == EWuwaSprintDesire::None);
 	TestTrue(TEXT("All window changes preserve the saved walk preference"), Movement->GetDesiredGait() == EWuwaGait::Walk);
 	return true;
 }

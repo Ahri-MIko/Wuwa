@@ -39,6 +39,13 @@ namespace WuwaLocomotion
 		// 同理，强制动一帧内停稳也需要提供一次停步候选信号。
 		Data.bWantsToStop = Data.bStateGround && !Data.bHasMoveInput
 			&& (bWasMoving || Data.bHasMovingSpeed);
+		if (Data.bHasUnifiedState)
+		{
+			Data.bIsGoingToMove = Data.bGroundMoveActive && (!bWasMoving || !Data.bHasMovingSpeed);
+			Data.bWantsToStop = Data.bStateGround && !Data.bHasActionOverride
+				&& (Data.MoveState == EWuwaMoveState::WalkStop || Data.MoveState == EWuwaMoveState::RunStop
+					|| Data.MoveState == EWuwaMoveState::SprintStop);
+		}
 	}
 
 	/** 原始采样 -> 动画快照。仅处理值，不访问角色或 Movement，也不回写移动规则。 */
@@ -65,9 +72,24 @@ namespace WuwaLocomotion
 		Data.bStateAir = State.bStateAir;
 		Data.bStateClimb = State.bStateClimb;
 		Data.bIsCrouching = State.bIsCrouching;
+		Data.bHasUnifiedState = State.bHasUnifiedState;
+		Data.PositionState = State.PositionState;
+		Data.MoveState = State.MoveState;
+		Data.DirectionState = State.DirectionState;
+		Data.bHasActionOverride = State.bHasActionOverride;
+		Data.StopGait = State.StopGait;
 		Data.bStateGroundWalk = State.bStateGround && State.AllowedGait == EWuwaGait::Walk;
 		Data.bStateGroundRun = State.bStateGround && State.AllowedGait == EWuwaGait::Run;
 		Data.bStateGroundSprint = State.bStateGround && State.AllowedGait == EWuwaGait::Sprint;
+		Data.bGroundMoveActive = State.bStateGround && Data.bHasMoveInput;
+		if (State.bHasUnifiedState)
+		{
+			Data.bStateGroundWalk = State.bStateGround && State.MoveState == EWuwaMoveState::Walk;
+			Data.bStateGroundRun = State.bStateGround && State.MoveState == EWuwaMoveState::Run;
+			Data.bStateGroundSprint = State.bStateGround && State.MoveState == EWuwaMoveState::Sprint;
+			Data.bGroundMoveActive = !State.bHasActionOverride
+				&& (Data.bStateGroundWalk || Data.bStateGroundRun || Data.bStateGroundSprint);
+		}
 		UpdateMovementTransitions(Data, bWasMoving, EnterThreshold, ExitThreshold);
 		Data.VelocityBlend = CalculateVelocityBlend(Data.LocalVelocity);
 		return Data;

@@ -24,8 +24,10 @@ class WUWA_API UWuwaAttributeSet : public UAttributeSet
 public:
 	UWuwaAttributeSet();
 	
+	//注册可被网路同步事件
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
+	//属性
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Vital Attributes")
 	FGameplayAttributeData Health;
 	ATTRIBUTE_ACCESSORS(UWuwaAttributeSet, Health);

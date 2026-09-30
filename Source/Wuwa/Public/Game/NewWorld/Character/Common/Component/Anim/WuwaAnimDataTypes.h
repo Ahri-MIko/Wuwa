@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementTypes.h"
+#include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateTypes.h"
 #include "WuwaAnimDataTypes.generated.h"
 
 /** 游戏线程采集的运动事实；不包含键名，也不决定动画状态。向量均为世界空间。 */
@@ -34,6 +35,19 @@ USTRUCT(BlueprintType)
 struct WUWA_API FWuwaAnimStateData
 {
 	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bHasUnifiedState = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EWuwaPositionState PositionState = EWuwaPositionState::None;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EWuwaMoveState MoveState = EWuwaMoveState::Other;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EWuwaDirectionState DirectionState = EWuwaDirectionState::FaceDirection;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bHasActionOverride = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	EWuwaGait StopGait = EWuwaGait::Run;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	TEnumAsByte<EMovementMode> MovementMode = MOVE_None;

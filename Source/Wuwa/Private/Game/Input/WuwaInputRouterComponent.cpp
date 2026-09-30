@@ -4,7 +4,7 @@
 #include "Game/Input/WuwaInputRouterComponent.h"
 
 #include "GameplayTagContainer.h"
-#include "Game/Input/WuwaInputRouteHandler.h"
+#include "Game/Input/IWuwaInputRouteHandler.h"
 #include "Game/Input/WuwaInputTypes.h"
 #include "Game/Input/DataAsset/WuwaInputDataAsset.h"
 #include "Engine/World.h"
@@ -17,9 +17,7 @@ namespace
 {
 	bool IsValidRouteHandler(const UObject* Handler)
 	{
-		return IsValid(Handler)
-			&& Handler->GetClass()->ImplementsInterface(
-				UWuwaInputRouteHandler::StaticClass());
+		return IsValid(Handler)&& Handler->GetClass()->ImplementsInterface(UIWuwaInputRouteHandler::StaticClass());
 	}
 }
 // Sets default values for this component's properties
@@ -124,39 +122,34 @@ bool UWuwaInputRouterComponent::UnregisterHandler(const FGameplayTag& RouteTag,U
 }
 
 
-bool UWuwaInputRouterComponent::DispatchInput(const FInputDataAsset& Binding,const FWuwaInputEvent& InputEvent)
+bool UWuwaInputRouterComponent::DispatchInput(const FWuwaInputEvent& InputEvent)
 {
 	check(IsInGameThread());
-
-	if (!Binding.IsConfigured())
-	{
-		UE_LOG(LogWuwaInputRouter,Warning,TEXT("Dispatch rejected: invalid input binding."));
-		return false;
-	}
-
+	
 	// 先记录语义输入，再交给系统处理。GA 拒绝激活或没有 Handler 不能吞掉松开事件。
 	FWuwaInputEvent RoutedEvent = InputEvent;
-	RoutedEvent.InputTag = Binding.InputTag;
-	RoutedEvent.SourceAction = Binding.InputAction;
+	RoutedEvent.InputTag = InputEvent.InputTag;
+	RoutedEvent.SourceAction = InputEvent.SourceAction;
 	if ((!FMath::IsFinite(RoutedEvent.Timestamp) || RoutedEvent.Timestamp <= 0.0) && GetWorld())
 	{
 		RoutedEvent.Timestamp = GetWorld()->GetTimeSeconds();
 	}
+	
+	
 	UpdateInputState(RoutedEvent);
 
-	const TWeakObjectPtr<UObject>* FoundHandler =
-		RouteHandlers.Find(Binding.RouteTag);
+	//查找注册表里的RouterHandler
+	const TWeakObjectPtr<UObject>* FoundHandler =RouteHandlers.Find(InputEvent.RouteTag);
 
 	if (!FoundHandler)
 	{
-		UE_LOG(LogWuwaInputRouter,Verbose,TEXT("No handler registered for Route [%s]."),*Binding.RouteTag.ToString());
+		UE_LOG(LogWuwaInputRouter,Verbose,TEXT("No handler registered for Route [%s]."),*InputEvent.RouteTag.ToString());
 		return false;
 	}
 
 	// 调用接口前复制弱指针。
 	// Handler 可以在回调中注销自己，不会让 Map 指针失效。
-	const TWeakObjectPtr<UObject> HandlerWeak =
-		*FoundHandler;
+	const TWeakObjectPtr<UObject> HandlerWeak =*FoundHandler;
 
 	UObject* Handler = HandlerWeak.Get();
 
@@ -164,19 +157,19 @@ bool UWuwaInputRouterComponent::DispatchInput(const FInputDataAsset& Binding,con
 	{
 		// 仅当 Map 中还是刚才那个失效对象时才删除
 		if (const TWeakObjectPtr<UObject>* Current =
-			RouteHandlers.Find(Binding.RouteTag))
+			RouteHandlers.Find(InputEvent.RouteTag))
 		{
-			if (Current->HasSameIndexAndSerialNumber(
-				HandlerWeak))
+			if (Current->HasSameIndexAndSerialNumber(HandlerWeak))
 			{
-				RouteHandlers.Remove(Binding.RouteTag);
+				RouteHandlers.Remove(InputEvent.RouteTag);
 			}
 		}
 
 		return false;
 	}
-
-	return IWuwaInputRouteHandler::
+	
+	//Execute_这个前缀是用来调用不论是蓝图还是C++接口都能正确调用到
+	return IIWuwaInputRouteHandler::
 		Execute_HandleWuwaInput(
 			Handler,
 			RoutedEvent);
@@ -184,11 +177,13 @@ bool UWuwaInputRouterComponent::DispatchInput(const FInputDataAsset& Binding,con
 
 void UWuwaInputRouterComponent::UpdateInputState(const FWuwaInputEvent& InputEvent)
 {
+	//check validation
 	if (!InputEvent.InputTag.IsValid() || !IsValid(InputEvent.SourceAction) || !GetWorld())
 	{
 		return;
 	}
-
+	//其实有些冗余了,因为所有的Action都可以对应多个映射
+	//HeldInputs有<Inputag,FHeldInput<Vector<SourceAction>,PressedAt>>下面就是更新按键状态,因为一个Tag可以由多个Action触发比如手柄之类的所以收集所有的源头
 	const TWeakObjectPtr<const UInputAction> Source(InputEvent.SourceAction.Get());
 	if (InputEvent.Phase == EWuwaInputPhase::Pressed)
 	{
@@ -220,6 +215,7 @@ void UWuwaInputRouterComponent::UpdateInputState(const FWuwaInputEvent& InputEve
 	// Triggered 只表达持续采样，不重新计时，也不让 Flush/Cancel 后的输入复活。
 }
 
+//得到当前输入的状态
 FWuwaInputActionState UWuwaInputRouterComponent::GetInputActionState(FGameplayTag InputTag) const
 {
 	FWuwaInputActionState Result;

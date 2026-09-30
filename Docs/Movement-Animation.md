@@ -1,6 +1,6 @@
 # Movement → 动画：这次实现怎么读
 
-这次只搭建 Common 移动的数据读取层，不重新设计长离的动画状态机，也不生成猜测的步幅、播放速率或取消窗口。Alt 的输入链路见 [Alt-WalkRun.md](Alt-WalkRun.md)。
+本文说明 Common 移动的动画数据读取层。当前已接入 C# 统一状态框架，状态决策、地面转场和配置的最新说明见 [Movement-State-System.md](Movement-State-System.md)。Alt 的输入链路见 [Alt-WalkRun.md](Alt-WalkRun.md)。
 
 ## 与鸣潮导出资源的对应关系
 
@@ -23,7 +23,7 @@
 4. `Source/Wuwa/Public/Game/NewWorld/Character/Common/Component/Anim/WuwaLocomotionMath.h`：原始采样如何变为动画需要的局部方向、起停信号。
 5. `Source/Wuwa/Public/Game/NewWorld/Character/Common/Component/Anim/WuwaLocomotionTypes.h`：最终暴露给 AnimBP 的只读字段。
 
-数据依次经过 `Movement → AnimDataLibrary → AnimLogicParams → BuildAnimationData → AnimInstance.LocomotionData`。动画不会反向写入 Movement，也不读取 Alt 按键。
+物理数据从 Movement 采样，游戏状态从 UnifiedState/RoleGait 采样，随后经过 `AnimDataLibrary → AnimLogicParams → BuildAnimationData → AnimInstance.LocomotionData`。动画读取快照，不在转场中决策步态，也不读取 Alt 按键；显式的 `ResetSprintDesire` 是游戏线程事件接口。
 
 ## 为什么同时有参数对象和结构体
 
@@ -38,18 +38,19 @@
 | --- | --- |
 | `LocalMoveIntent` / `bHasMoveInput` | 最近一次 CMC 消费的移动输入，转换到 Actor 局部坐标；不是原始按键，也不是加速度 |
 | `GroundSpeed` / `LocalVelocity` | 实际运动速度；松手后仍可能有惯性 |
-| `DesiredGait` / `AllowedGait` | 期望步态 / 当前规则允许的步态；站着不动时也能选择 Run |
+| `DesiredGait` / `AllowedGait` | Walk/Run 偏好 / 统一状态当前接受的步态；站着不动时也能选择 Run |
 | `MaxSpeed` | `Movement->GetMaxSpeed()` 返回的有效上限；不是此刻实际速度 |
 
-Alt 改变 Movement 持有的步态。CMC 的 `GetMaxSpeed()` 在 Walk 时返回 `min(max(WalkSpeed, 0), 原上限)`。默认 WalkSpeed 是 200 cm/s。这里**没有反复覆盖 MaxWalkSpeed 配置，也没有直接修改 Velocity**。减速由 CMC 处理；因此切换时 `MaxSpeed` 可以先变，`GroundSpeed` 随后才下降。
+Alt 经输入指令改变 C# RoleGait 的 Walk/Run 偏好，统一状态接受结果后发出事件。
+CMC 的 `RefreshMovementSettings()` 将对应配置写入 MaxWalkSpeed、MaxAcceleration、GroundFriction、BrakingDecelerationWalking；地面 `GetMaxSpeed()` 再返回引擎的有效上限。没有直接修改 Velocity，因此 `MaxSpeed` 可以先变，`GroundSpeed` 随后才下降。
 
-本轮工作期间代码中另新增了 `RunSpeed = 500`，现有 Run 分支是 `max(RunSpeed, Super::GetMaxSpeed())`；本次动画工作保留了这项改动。因此地面站立跑步时，如果 MaxWalkSpeed 是 600，RunSpeed 配成 500 也仍然返回 600，不是强制使用 500。动画采样调用虚函数，不硬编码任一种速度规则。
+当前角色使用 `DA_ChangliMovement` 的 Walk/Run/Sprint 配置。未指定数据资产时才兼容旧规则：Walk 取 WalkSpeed 与初始 MaxWalkSpeed 的较小值，Run/Sprint 取各自速度与初始 MaxWalkSpeed 的较大值。初始配置只捕获一次，不能将执行时变化的 MaxWalkSpeed 当成下一次的配置输入。
 
-当前 `bStateGroundWalk/Run/Sprint` 表达“地面 + 允许步态”，不表示相应动画已经播放。起停信号也只是候选条件，还需要动画状态机和动作许可；不能用它们绕过攻击、闪避等锁定。
+当前 `bStateGroundWalk/Run/Sprint` 表达统一状态实际接受的对应 MoveState，不表示动画片段已播放。站立时保留 Run 偏好不会把 bStateGroundRun 设为 true；Dodge 占用时普通步态也不会覆盖它。`bGroundMoveActive` 供 Idle/Stop → Move，`bWantsToStop` 供 Move → Stop。
 
 ## AnimBP 怎么用
 
-现有 `ABP_Changli` 的父类接为 `WuwaAnimInstance`，角色 Mesh 继续使用原 AnimBP。原事件图、状态机、动画资产与转场节点不重写；本次只让它获得自动更新的数据入口。**旧节点不会因为更换父类就自动改成使用新字段。**
+现有 `ABP_Changli` 的父类为 `WuwaAnimInstance`，角色 Mesh 继续使用原 AnimBP。当前地面 Idle/Move/Stop 转场、Sprint 选择和 Stop 步态选择已接到统一快照；其余未迁移节点不会因为更换父类就自动改成使用新字段。
 
 1. 在动画蓝图中启用“显示继承的变量”，拖出 `LocomotionData`，拆分结构体或使用 `Break Wuwa Locomotion Anim Data`。
 2. 先看 `Has Valid Movement Data`；编辑器预览无角色时为 false 是正常的。
@@ -67,7 +68,7 @@ Alt 改变 Movement 持有的步态。CMC 的 `GetMaxSpeed()` 在 Walk 时返回
 - 初始化、反初始化、换 Pawn/Movement 或数据源失效会清空旧快照；不会把上一角色的速度/起停状态带给新角色。
 - CMC 通常先更新移动、Mesh 再更新动画，但根运动可在移动过程中触发动画更新。因此快照表示“采样时可用的数据”，不承诺永远是当前帧最终速度。
 - `GetLastInputVector()` 是最近消费输入。停止 Tick、禁用移动、远端代理等情况还需要专门策略，不能把它当作永远实时的原始轴或网络同步输入。
-- 当前验证单机；未实现联网 gait 复制、CMC SavedMove/预测、Root Motion 动作、完整起停状态机或步幅标定。
+- 当前验证本地玩家；未实现联网 gait 复制、CMC SavedMove/预测或步幅标定。现有 Dash 根运动交接和地面 Idle/Move/Stop 已接入框架，右脚 Stop 草稿与其他移动系统的完整动画仍待实现。
 - `WalkRunMix`、`StepSizeMix`、播放速率需要结合真实动画素材另行实现，本次不填假公式。
 
 ## 验证
@@ -76,4 +77,4 @@ Alt 改变 Movement 持有的步态。CMC 的 `GetMaxSpeed()` 在 Walk 时返回
 
 这些测试不等于手动 PIE 视觉验收；动画过渡是否自然仍需在接好状态机后观察。
 
-本轮结果：完整编译成功，15 项自动化测试通过、0 失败、0 测试警告。报告在 `Saved/Automation/MovementAnimation/index.json`；实际 AnimBP 重设父类后的编译也为 0 错误、0 警告。
+数据读取层初次接入时的历史报告位于 `Saved/Automation/MovementAnimation/index.json`（15 项）。当前状态框架的验证范围与结果见 [Movement-State-System.md](Movement-State-System.md)。

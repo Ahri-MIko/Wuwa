@@ -47,6 +47,7 @@ void UWuwaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	ACharacter* Character = Cast<ACharacter>(TryGetPawnOwner());
 	UWuwaMovementComponent* Movement = IsValid(Character)
 		? Cast<UWuwaMovementComponent>(Character->GetCharacterMovement()) : nullptr;
+	//切换角色就更新,但是其实一般是不会切换的,因为一个角色对应一个BP
 	if (CachedCharacter.Get() != Character || CachedMovement.Get() != Movement)
 	{
 		CachedCharacter = Character;
@@ -69,6 +70,34 @@ void UWuwaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	LocomotionData = WuwaLocomotion::BuildAnimationData(AnimLogicParams->GetMoveData(),
 		AnimLogicParams->GetStateData(), LocomotionData.bHasMovingSpeed,
 		MovingEnterThreshold, MovingExitThreshold, MoveIntentThreshold);
+}
+
+void UWuwaAnimInstance::ResetSprintDesire()
+{
+	check(IsInGameThread());
+	// 每次解析当前 Owner，避免切换角色后清到缓存里的旧 CMC；预览无角色时也可安全调用。
+	ACharacter* Character = Cast<ACharacter>(TryGetPawnOwner());
+	UWuwaMovementComponent* Movement = IsValid(Character)
+		? Cast<UWuwaMovementComponent>(Character->GetCharacterMovement()) : nullptr;
+	if (IsValid(Movement))
+	{
+		Movement->ClearSprintDesire();
+	}
+	LocomotionData.SprintDesire = EWuwaSprintDesire::None;
+	if (AnimLogicParams)
+	{
+		if (UWuwaAnimDataLibrary::UpdateAnimationData(Movement, AnimLogicParams))
+		{
+			// 清除需求可能已同步把 Sprint 改回 Walk/Run；本次快照必须一起刷新。
+			LocomotionData = WuwaLocomotion::BuildAnimationData(AnimLogicParams->GetMoveData(),
+				AnimLogicParams->GetStateData(), LocomotionData.bHasMovingSpeed,
+				MovingEnterThreshold, MovingExitThreshold, MoveIntentThreshold);
+		}
+		else
+		{
+			ResetAnimationData();
+		}
+	}
 }
 
 #pragma region Debug

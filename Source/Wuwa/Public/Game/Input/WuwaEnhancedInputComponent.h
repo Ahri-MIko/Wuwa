@@ -11,6 +11,7 @@
  * 
  */
 
+//之前的增强输入系统的拓展,本来的增强输入是BindAction,现在对map里面的不同输入绑定同一个,但是现在已经基本放弃使用
 class UWuwaInputDataAsset;
 UCLASS()
 class WUWA_API UWuwaEnhancedInputComponent : public UEnhancedInputComponent

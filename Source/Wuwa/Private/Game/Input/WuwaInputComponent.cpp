@@ -9,6 +9,8 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 
+//基本弃用!!!!!
+
 UWuwaInputComponent::UWuwaInputComponent()
 {
 	// 需要 Tick 来扫描长按

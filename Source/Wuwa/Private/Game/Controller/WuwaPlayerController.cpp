@@ -4,16 +4,22 @@
 #include "Game/Controller/WuwaPlayerController.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "EnhancedInputSubsystems.h"
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputHandler.h"
 #include "Game/Input/WuwaEnhancedInputComponent.h"
 #include "Game/Input/WuwaInputRouterComponent.h"
 #include "Core/Utilities/DebugHelper.h"
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaAbilityInputHandlerComponent.h"
+#include "Game/NewWorld/Character/Role/WuwaCharacter.h"
+#include "Game/Camera/WuwaPlayerCameraManager.h"
+
+
+class UEnhancedInputLocalPlayerSubsystem;
 
 AWuwaPlayerController::AWuwaPlayerController()
 {
+	PlayerCameraManagerClass = AWuwaPlayerCameraManager::StaticClass();
 	InputRouter = CreateDefaultSubobject<UWuwaInputRouterComponent>(TEXT("InputRouter"));
-	
 	//ASC_Input_Handler
 	AbilityInputHandler =CreateDefaultSubobject<UWuwaAbilityInputHandlerComponent>(TEXT("AbilityInputHandler"));
 	MoveInputHandler =CreateDefaultSubobject<UWuwaMoveInputHandler>(TEXT("MoveInputHandler"));
@@ -28,7 +34,6 @@ void AWuwaPlayerController::BeginPlay()
 	{
 		return;
 	}
-	
 	RegisterInputRouteHandlers();
 }
 
@@ -48,6 +53,10 @@ void AWuwaPlayerController::RegisterInputRouteHandlers()
 	InputRouter->RegisterHandler(
 		GameTags.Input_Route_Movement,
 		MoveInputHandler);
+	if (IsValid(PlayerCameraManager))
+	{
+		InputRouter->RegisterHandler(GameTags.Input_Route_Camera, PlayerCameraManager);
+	}
 	
 }
 
@@ -60,58 +69,61 @@ void AWuwaPlayerController::PlayerTick(float DeltaTime)
 
 void AWuwaPlayerController::SetPawn(APawn* InPawn)
 {
-	if (GetPawn() != InPawn)
+	const bool bPawnChanged = GetPawn() != InPawn;
+	if (bPawnChanged)
 	{
+		if (AWuwaCharacter* PreviousCharacter = Cast<AWuwaCharacter>(GetPawn()))
+		{
+			PreviousCharacter->ResetPlayerInputState();
+		}
 		if (IsValid(InputRouter))
 		{
 			InputRouter->ResetInputStates();
 		}
 		// ASC 缓存也属于旧 Pawn，不能让下一次输入发给上一个角色。
 		AscComponent = nullptr;
+		
+		if (IsValid(AbilityInputHandler))
+		{
+			AbilityInputHandler->ResetRuntime();
+		}
 	}
 	Super::SetPawn(InPawn);
+	if (bPawnChanged)
+	{
+		if (AWuwaPlayerCameraManager* CameraManager = Cast<AWuwaPlayerCameraManager>(PlayerCameraManager))
+		{
+			CameraManager->NotifyPawnChanged();
+		}
+	}
 }
 
 void AWuwaPlayerController::FlushPressedKeys()
 {
 	Super::FlushPressedKeys();
+	if (AWuwaCharacter* ControlledCharacter = Cast<AWuwaCharacter>(GetPawn()))
+	{
+		ControlledCharacter->ResetPlayerInputState();
+	}
 	if (IsValid(InputRouter))
 	{
 		InputRouter->ResetInputStates();
 	}
-}
-
-FWuwaInputActionState AWuwaPlayerController::GetSprintInputState() const
-{
-	if (!GetPawn() || !IsValid(InputRouter))
+	if (AWuwaPlayerCameraManager* CameraManager = Cast<AWuwaPlayerCameraManager>(PlayerCameraManager))
 	{
-		return {};
+		CameraManager->ResetCameraInput();
 	}
-	// 这里映射语义指令，不映射设备键名。现有 IA_Dodge 的配置继续有效。
-	const FGameplayTag InputTag = SprintInputTag.IsValid()
-		? SprintInputTag : FWuwaGameTags::Get().Abilities_Movement_Dash;
-	return InputRouter->GetInputActionState(InputTag);
+	
+	if (IsValid(AbilityInputHandler))
+	{
+		AbilityInputHandler->ResetRuntime();
+	}
+	
 }
 
-void AWuwaPlayerController::ActionPressed(FGameplayTag PressedTag)
-{
-	GetASC()->InputWithTagPressed(PressedTag);
-}
 
-void AWuwaPlayerController::ActionReleased(FGameplayTag PressedTag)
-{
-	GetASC()->InputWithTagReleased(PressedTag);
-}
-
-void AWuwaPlayerController::ActionHold(FGameplayTag PressedTag)
-{
-}
-
-void AWuwaPlayerController::HandleRoutedInput(
-	const FInputActionInstance& Instance,
-	FGameplayTag InputTag,
-	FGameplayTag RouteTag,
-	EWuwaInputPhase Phase)
+//将指令交给InputRouter,让Router内部消化,并且在内部会记录每个按键的按下时间
+void AWuwaPlayerController::HandleRoutedInput(const FInputActionInstance& Instance,FGameplayTag InputTag,FGameplayTag RouteTag,EWuwaInputPhase Phase)
 {
 	if (!IsValid(InputRouter))
 	{
@@ -125,38 +137,38 @@ void AWuwaPlayerController::HandleRoutedInput(
 	{
 		return;
 	}
-
-	// Router 当前接口仍然要求完整 Binding，
-	// 所以这里根据绑定时保存的 Tag 重建运行时 Binding。
-	FInputDataAsset RuntimeBinding;
-	RuntimeBinding.InputAction = SourceAction;
-	RuntimeBinding.InputTag = InputTag;
-	RuntimeBinding.RouteTag = RouteTag;
-
+	
 	FWuwaInputEvent InputEvent;
 	InputEvent.InputTag = InputTag;
+	InputEvent.RouteTag = RouteTag;
 	InputEvent.Phase = Phase;
 	InputEvent.Value = Instance.GetValue();
 	InputEvent.SourceAction = SourceAction;
-	InputEvent.Timestamp =
-		GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	InputEvent.Timestamp =GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
 
 	// Released/Canceled 时确保轴值归零
-	if (Phase == EWuwaInputPhase::Released ||
-		Phase == EWuwaInputPhase::Canceled)
+	if (Phase == EWuwaInputPhase::Released ||Phase == EWuwaInputPhase::Canceled)
 	{
 		InputEvent.Value.Reset();
 	}
 
-	InputRouter->DispatchInput(
-		RuntimeBinding,
-		InputEvent);
+	InputRouter->DispatchInput(InputEvent);
 }
 
-
+//确保Router和所有的Handler都有效,有效的话就注册对应事件
 void AWuwaPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+	//注册输入
+	RegisterMappingContext();
+	
+	//初始化内部字段
+	if (IsValid(AbilityInputHandler))
+	{
+		AbilityInputHandler->ResetRuntime();
+	}
+	
+	//初始化按下事件记录
 	if (IsValid(InputRouter))
 	{
 		InputRouter->ResetInputStates();
@@ -237,6 +249,19 @@ UWuwaAbilitySystemComponent* AWuwaPlayerController::GetASC()
 		AscComponent = Cast<UWuwaAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn<APawn>()));
 	}
 	return AscComponent;
+}
+
+void AWuwaPlayerController::RegisterMappingContext() const
+{
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+	ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(this
+		->GetLocalPlayer())) //considering network coding for multiple players, only local player has subsystem
+	{
+		if (DefaultMappingContext)
+		{
+			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
 }
 
 

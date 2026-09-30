@@ -1,0 +1,171 @@
+{
+  "auditUtc": "2026-09-29T05:27:50.522322+00:00",
+  "exportRoot": "C:/GamePakExtractor/Output/Exports",
+  "groups": [
+    {
+      "sourceJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg.json",
+      "name": "DA_Fx_Group_R1a01_01_N_Dg",
+      "properties": {
+        "EffectData": [
+          {
+            "Key": "EffectModelNiagara_C'Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N_Dg.DA_Fx_R1a01_01_N_Dg'",
+            "Value": 0.0
+          }
+        ],
+        "StartTime": 2.0,
+        "NativeClass": {
+          "ObjectName": "TypeScriptGeneratedClass'EffectModelGroup_C'",
+          "ObjectPath": "Client/Content/Aki/TypeScript/Game/Render/Effect/Data/EffectModelGroup.0"
+        }
+      },
+      "children": [
+        {
+          "package": "Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N_Dg",
+          "groupDelaySeconds": 0.0,
+          "jsonExists": true,
+          "expectedJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N_Dg.json",
+          "confirmedNiagaraSystem": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg",
+          "properties": {
+            "NiagaraRef": {
+              "ObjectName": "NiagaraSystem'NS_Fx_Changli_R1a01_N_Dg'",
+              "ObjectPath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg.43"
+            },
+            "StartTime": 2.0,
+            "NativeClass": {
+              "ObjectName": "TypeScriptGeneratedClass'EffectModelNiagara_C'",
+              "ObjectPath": "Client/Content/Aki/TypeScript/Game/Render/Effect/Data/EffectModelNiagara.0"
+            }
+          },
+          "niagaraJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg.json",
+          "niagaraJsonExists": true
+        }
+      ]
+    },
+    {
+      "sourceJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg1.json",
+      "name": "DA_Fx_Group_R1a01_01_N_Dg1",
+      "properties": {
+        "EffectData": [
+          {
+            "Key": "EffectModelNiagara_C'Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N_Dg1.DA_Fx_R1a01_01_N_Dg1'",
+            "Value": 0.0
+          }
+        ],
+        "StartTime": 2.0,
+        "NativeClass": {
+          "ObjectName": "TypeScriptGeneratedClass'EffectModelGroup_C'",
+          "ObjectPath": "Client/Content/Aki/TypeScript/Game/Render/Effect/Data/EffectModelGroup.0"
+        }
+      },
+      "children": [
+        {
+          "package": "Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N_Dg1",
+          "groupDelaySeconds": 0.0,
+          "jsonExists": true,
+          "expectedJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N_Dg1.json",
+          "confirmedNiagaraSystem": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg1",
+          "properties": {
+            "Rotation": {
+              "bUseCurve": true,
+              "Curve[2]": {
+                "EditorCurveData": {
+                  "Keys": [
+                    {
+                      "InterpMode": "RCIM_Cubic",
+                      "TangentMode": "RCTM_User",
+                      "TangentWeightMode": "RCTWM_WeightedNone",
+                      "Time": -0.0027577877,
+                      "Value": 16.835491,
+                      "ArriveTangent": 315.82843,
+                      "ArriveTangentWeight": 0.0,
+                      "LeaveTangent": 176.01541,
+                      "LeaveTangentWeight": 0.0
+                    },
+                    {
+                      "InterpMode": "RCIM_Cubic",
+                      "TangentMode": "RCTM_User",
+                      "TangentWeightMode": "RCTWM_WeightedNone",
+                      "Time": 0.18540506,
+                      "Value": 39.27856,
+                      "ArriveTangent": 33.929802,
+                      "ArriveTangentWeight": 0.0,
+                      "LeaveTangent": 33.92976,
+                      "LeaveTangentWeight": 0.0
+                    },
+                    {
+                      "InterpMode": "RCIM_Cubic",
+                      "TangentMode": "RCTM_Auto",
+                      "TangentWeightMode": "RCTWM_WeightedNone",
+                      "Time": 0.9972422,
+                      "Value": 46.85684,
+                      "ArriveTangent": 0.0,
+                      "ArriveTangentWeight": 0.0,
+                      "LeaveTangent": 0.0,
+                      "LeaveTangentWeight": 0.0
+                    }
+                  ]
+                }
+              }
+            },
+            "NiagaraRef": {
+              "ObjectName": "NiagaraSystem'NS_Fx_Changli_R1a01_N_Dg1'",
+              "ObjectPath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg1.39"
+            },
+            "StartTime": 2.0,
+            "NativeClass": {
+              "ObjectName": "TypeScriptGeneratedClass'EffectModelNiagara_C'",
+              "ObjectPath": "Client/Content/Aki/TypeScript/Game/Render/Effect/Data/EffectModelNiagara.0"
+            }
+          },
+          "niagaraJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg1.json",
+          "niagaraJsonExists": true
+        }
+      ]
+    },
+    {
+      "sourceJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N1_Dg.json",
+      "name": "DA_Fx_Group_R1a01_01_N1_Dg",
+      "properties": {
+        "EffectData": [
+          {
+            "Key": "EffectModelNiagara_C'Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N1_Dg.DA_Fx_R1a01_01_N1_Dg'",
+            "Value": 0.0
+          }
+        ],
+        "StartTime": 2.0,
+        "NativeClass": {
+          "ObjectName": "TypeScriptGeneratedClass'EffectModelGroup_C'",
+          "ObjectPath": "Client/Content/Aki/TypeScript/Game/Render/Effect/Data/EffectModelGroup.0"
+        }
+      },
+      "children": [
+        {
+          "package": "Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N1_Dg",
+          "groupDelaySeconds": 0.0,
+          "jsonExists": true,
+          "expectedJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/DataAsset/Niagara/R2T1ChangliMd10011/DA_Fx_R1a01_01_N1_Dg.json",
+          "confirmedNiagaraSystem": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N1_Dg",
+          "properties": {
+            "NiagaraRef": {
+              "ObjectName": "NiagaraSystem'NS_Fx_Changli_R1a01_N1_Dg'",
+              "ObjectPath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N1_Dg.41"
+            },
+            "StartTime": 2.0,
+            "NativeClass": {
+              "ObjectName": "TypeScriptGeneratedClass'EffectModelNiagara_C'",
+              "ObjectPath": "Client/Content/Aki/TypeScript/Game/Render/Effect/Data/EffectModelNiagara.0"
+            }
+          },
+          "niagaraJson": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N1_Dg.json",
+          "niagaraJsonExists": true
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "All three original montage groups now resolve through their child EffectModelNiagara DA to an existing NiagaraSystem export.",
+    "EffectData value zero means no group child delay per exported EffectModelGroupSpec.OnInit/OnPlay.",
+    "Serialized StartTime=2 is a lifecycle duration, not a group spawn delay.",
+    "DA_Fx_R1a01_01_N_Dg1 explicitly enables a Rotation.Curve[2] with three embedded cubic keys; channel-to-axis convention is not assumed here. Omitted transform/attachment values remain unconfirmed inherited defaults."
+  ]
+}

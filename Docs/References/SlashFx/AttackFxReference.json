@@ -1,0 +1,1412 @@
+{
+  "generatedUtc": "2026-09-29T03:02:25.5072565Z",
+  "scope": "Read-only original montage references plus existing project asset audit; only this diagnostic directory is written. No original EffectGroup contents or renderer types are available.",
+  "projectAssetAuditFile": "C:/UEProjects/Wuwa/Saved/Diagnostics/AttackBuffer/GraphAudit.json",
+  "projectAssetAuditUtc": "2026-09-28T07:14:43.988Z",
+  "projectAssetAuditSha256": "E0C2CBC7F1C9675CB6CFC28BA6615179836A165F917950D0475AAB2437C94121",
+  "referencePolicy": [
+    "Dg is a filename candidate filter only; no renderer/shape claim is inferred from the name.",
+    "included means bEnabled is not false AND NotifyTriggerChance > 0.",
+    "null transform/Attached fields mean not serialized in this JSON; they are inherited and not verified here. Do not convert null scale to zero.",
+    "Source LinkValue is montage position; use LinkValue, not EndLink.LinkValue, for point notify timing.",
+    "Mapped montage position = original montage position * project montage length / original montage length. This assumes the same untrimmed source motion, supported by current full-length single-segment references.",
+    "All current project montage RateScale, segment play rates and unlinked task Rate pins are 1 in the saved audit. Mapping is authored montage time, not a gameplay stopwatch. Playback-rate changes alter real time but must not multiply the notify position twice.",
+    "Approximately 30 source samples/s is observed from (NumFrames-1)/SequenceLength. The project length ratio is approximately 1.25; a 24 fps import is a plausible explanation, not verified import metadata.",
+    "Project Attack05 maps to original Attack04_1 by the actual referenced sequence; do not substitute an invented original AM_Attack05.",
+    "First version is an original red/gold arc preset plus filaments and sparks. Original transforms are artistic reference only; a newly modeled mesh has its own axis/origin/scale and requires preview alignment.",
+    "sourceEvents contains montage point/state events only; sourceSequenceEffects separately preserves underlying animation Effect windows. These extra state windows are not included in the proposed Dg-name burst count.",
+    "PlayOnEnd=true is recorded without assuming that its window start is its spawn time."
+  ],
+  "attacks": [
+    {
+      "projectAttack": "Attack01",
+      "sourceMontage": "AM_Attack01",
+      "sourceMontageFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\AM_Attack01.json",
+      "sourceMontageSha256": "F3591A98CDE016A3A74F531D3059C7B5A9A3B892A9DFCE4B1BC6CFA1481008E0",
+      "sourceMontageLengthSeconds": 3.033333,
+      "sourceMontageRateScaleExplicit": null,
+      "sourceSequence": "Attack01",
+      "sourceSequenceFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\Attack01.json",
+      "sourceSequenceLengthSeconds": 3.0333333,
+      "sourceNumFrames": 92,
+      "sourceImpliedSamplesPerSecond": 30.000000329670335,
+      "sourceSegments": [
+        {
+          "AnimReference": {
+            "ObjectName": "AnimSequence'Attack01'",
+            "ObjectPath": "Client/Content/Aki/Character/Role/FemaleXL/ChangLi/CommonAnim/Attack01.0"
+          },
+          "StartPos": 0.0,
+          "AnimStartTime": 0.0,
+          "AnimEndTime": 3.033333,
+          "AnimPlayRate": 1.0,
+          "LoopingCount": 1
+        }
+      ],
+      "sourceSequenceEffectNotifyCount": 0,
+      "projectMontage": "/Game/Characters/Role/changli/AnimMontage/AM_Attack01.AM_Attack01",
+      "projectMontageAssetLastWriteUtc": "2026-09-28T07:06:00.6243284Z",
+      "projectLengthSeconds": 3.7916667461395264,
+      "projectRateScale": 1,
+      "projectSegments": [
+        {
+          "slotName": "DefaultSlot",
+          "animation": "/Game/Characters/Role/changli/CommonAnim/ChangliR2T1ChangLiMd10011_Attack01.ChangliR2T1ChangLiMd10011_Attack01",
+          "montageStartSeconds": 0,
+          "animationStartSeconds": 0,
+          "animationEndSeconds": 3.7916667461395264,
+          "animationPlayRate": 1,
+          "loopCount": 1
+        }
+      ],
+      "projectTaskRatePin": "1.000000",
+      "projectTaskRatePinLinked": false,
+      "timelineScale": 1.2500001635624993,
+      "enabledEffectNotifyCount": 4,
+      "enabledDgNameCandidateCount": 4,
+      "enabledOtherEffectNotifyCount": 0,
+      "excludedEffectNotifyCount": 1,
+      "sourceEvents": [
+        {
+          "notifyObject": "AnimNotifyEffect_C_1",
+          "sourceDefinitionLine": 887,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.19529274,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.19529274,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg.DA_Fx_Group_R1a01_01_N_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": {
+            "Pitch": -25.0,
+            "Yaw": -180.0,
+            "Roll": 0.0
+          },
+          "scale": {
+            "X": 1.4,
+            "Y": 1.4,
+            "Z": 1.4
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.244116
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_4",
+          "sourceDefinitionLine": 958,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.19557874,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.19557874,
+          "enabled": true,
+          "triggerChance": 0.0,
+          "included": false,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_Trail_ZL01.DA_Fx_Group_Trail_ZL01",
+          "socketName": "WeaponProp05",
+          "location": null,
+          "rotation": {
+            "Pitch": 90.0,
+            "Yaw": 180.0,
+            "Roll": 90.0
+          },
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.244473
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_0",
+          "sourceDefinitionLine": 849,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.19643244,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.19643244,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg1.DA_Fx_Group_R1a01_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": {
+            "Pitch": -21.469173,
+            "Yaw": 30.0,
+            "Roll": -13.124235
+          },
+          "scale": {
+            "X": 0.7,
+            "Y": 0.7,
+            "Z": 0.7
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.245541
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_6",
+          "sourceDefinitionLine": 986,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.19643244,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.19643244,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N1_Dg.DA_Fx_Group_R1a01_01_N1_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": {
+            "Pitch": -25.0,
+            "Yaw": 0.0,
+            "Roll": 0.0
+          },
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.245541
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_2",
+          "sourceDefinitionLine": 925,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.197886,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.197886,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg1.DA_Fx_Group_R1a01_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": {
+            "Pitch": -21.469173,
+            "Yaw": -147.50072,
+            "Roll": -13.124235
+          },
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.247358
+        }
+      ],
+      "proposedProjectBurstCount": 1,
+      "proposedProjectBursts": [
+        {
+          "sourceStartSeconds": 0.19529274,
+          "sourceEndSeconds": 0.197886,
+          "projectNotifySeconds": 0.244116,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_1",
+            "AnimNotifyEffect_C_0",
+            "AnimNotifyEffect_C_6",
+            "AnimNotifyEffect_C_2"
+          ],
+          "sourceCandidateLayers": 4
+        }
+      ],
+      "burstPolicy": "Original reconstruction proposal: combine enabled _Dg-name candidates within 0.010 source seconds into one authored preset burst. Preserve each original subevent in sourceEvents. This is not evidence that Kuro uses one renderer or one slash per group.",
+      "sourceSequenceEffects": []
+    },
+    {
+      "projectAttack": "Attack02",
+      "sourceMontage": "AM_Attack02",
+      "sourceMontageFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\AM_Attack02.json",
+      "sourceMontageSha256": "092AD7975FD0705E534551A38838F40DEA3479918F526A5A027B71941BB4C582",
+      "sourceMontageLengthSeconds": 4.1666665,
+      "sourceMontageRateScaleExplicit": null,
+      "sourceSequence": "Attack02",
+      "sourceSequenceFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\Attack02.json",
+      "sourceSequenceLengthSeconds": 4.1666665,
+      "sourceNumFrames": 126,
+      "sourceImpliedSamplesPerSecond": 30.00000120000005,
+      "sourceSegments": [
+        {
+          "AnimReference": {
+            "ObjectName": "AnimSequence'Attack02'",
+            "ObjectPath": "Client/Content/Aki/Character/Role/FemaleXL/ChangLi/CommonAnim/Attack02.0"
+          },
+          "StartPos": 0.0,
+          "AnimStartTime": 0.0,
+          "AnimEndTime": 4.1666665,
+          "AnimPlayRate": 1.0,
+          "LoopingCount": 1
+        }
+      ],
+      "sourceSequenceEffectNotifyCount": 0,
+      "projectMontage": "/Game/Characters/Role/changli/AnimMontage/AM_Attack02.AM_Attack02",
+      "projectMontageAssetLastWriteUtc": "2026-09-28T07:00:48.6800061Z",
+      "projectLengthSeconds": 5.208333492279053,
+      "projectRateScale": 1,
+      "projectSegments": [
+        {
+          "slotName": "DefaultSlot",
+          "animation": "/Game/Characters/Role/changli/CommonAnim/ChangliR2T1ChangLiMd10011_Attack02.ChangliR2T1ChangLiMd10011_Attack02",
+          "montageStartSeconds": 0,
+          "animationStartSeconds": 0,
+          "animationEndSeconds": 5.208333492279053,
+          "animationPlayRate": 1,
+          "loopCount": 1
+        }
+      ],
+      "projectTaskRatePin": "1.000000",
+      "projectTaskRatePinLinked": false,
+      "timelineScale": 1.2500000881469762,
+      "enabledEffectNotifyCount": 4,
+      "enabledDgNameCandidateCount": 4,
+      "enabledOtherEffectNotifyCount": 0,
+      "excludedEffectNotifyCount": 1,
+      "sourceEvents": [
+        {
+          "notifyObject": "AnimNotifyEffect_C_2",
+          "sourceDefinitionLine": 702,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.176485,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.176485,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a02_02_N_Dg.DA_Fx_Group_R1a02_02_N_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": -8.638936,
+            "Y": -38.569996,
+            "Z": 131.37186
+          },
+          "rotation": {
+            "Pitch": 28.764023,
+            "Yaw": -155.0,
+            "Roll": 9.614567
+          },
+          "scale": {
+            "X": 1.1,
+            "Y": 1.5,
+            "Z": 1.1
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.220606
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_3",
+          "sourceDefinitionLine": 740,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.176485,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.176485,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a02_01_N_Dg1.DA_Fx_Group_R1a02_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": -8.638936,
+            "Y": -38.569996,
+            "Z": 131.37186
+          },
+          "rotation": {
+            "Pitch": 28.764023,
+            "Yaw": -155.0,
+            "Roll": 9.614567
+          },
+          "scale": {
+            "X": 0.66,
+            "Y": 0.9,
+            "Z": 0.66
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.220606
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_7",
+          "sourceDefinitionLine": 806,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.17762507,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.17762507,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a02_01_N_Dg1.DA_Fx_Group_R1a02_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": -30.0,
+            "Y": -38.569996,
+            "Z": 85.0
+          },
+          "rotation": {
+            "Pitch": 28.764023,
+            "Yaw": 60.0,
+            "Roll": 9.614567
+          },
+          "scale": {
+            "X": 0.484,
+            "Y": 0.66,
+            "Z": 0.484
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.222031
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_8",
+          "sourceDefinitionLine": 844,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.17820472,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.17820472,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a02_02_N_Dg.DA_Fx_Group_R1a02_02_N_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": -8.638936,
+            "Y": -38.569996,
+            "Z": 100.0
+          },
+          "rotation": {
+            "Pitch": 28.764023,
+            "Yaw": 60.0,
+            "Roll": 9.614567
+          },
+          "scale": {
+            "X": 0.77,
+            "Y": 1.05,
+            "Z": 0.77
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.222756
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_4",
+          "sourceDefinitionLine": 778,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.22201179,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.22201179,
+          "enabled": true,
+          "triggerChance": 0.0,
+          "included": false,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_Trail_ZL01.DA_Fx_Group_Trail_ZL01",
+          "socketName": "WeaponProp05",
+          "location": null,
+          "rotation": {
+            "Pitch": 90.0,
+            "Yaw": 180.0,
+            "Roll": 90.0
+          },
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.277515
+        }
+      ],
+      "proposedProjectBurstCount": 1,
+      "proposedProjectBursts": [
+        {
+          "sourceStartSeconds": 0.176485,
+          "sourceEndSeconds": 0.17820472,
+          "projectNotifySeconds": 0.220606,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_2",
+            "AnimNotifyEffect_C_3",
+            "AnimNotifyEffect_C_7",
+            "AnimNotifyEffect_C_8"
+          ],
+          "sourceCandidateLayers": 4
+        }
+      ],
+      "burstPolicy": "Original reconstruction proposal: combine enabled _Dg-name candidates within 0.010 source seconds into one authored preset burst. Preserve each original subevent in sourceEvents. This is not evidence that Kuro uses one renderer or one slash per group.",
+      "sourceSequenceEffects": []
+    },
+    {
+      "projectAttack": "Attack03",
+      "sourceMontage": "AM_Attack03",
+      "sourceMontageFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\AM_Attack03.json",
+      "sourceMontageSha256": "C5B6A17EED61CE6A0B98BCD1FF8A722D11AA6B61526A43A6DD6660FC4A71C3ED",
+      "sourceMontageLengthSeconds": 4.5,
+      "sourceMontageRateScaleExplicit": null,
+      "sourceSequence": "Attack03",
+      "sourceSequenceFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\Attack03.json",
+      "sourceSequenceLengthSeconds": 4.5,
+      "sourceNumFrames": 136,
+      "sourceImpliedSamplesPerSecond": 30.0,
+      "sourceSegments": [
+        {
+          "AnimReference": {
+            "ObjectName": "AnimSequence'Attack03'",
+            "ObjectPath": "Client/Content/Aki/Character/Role/FemaleXL/ChangLi/CommonAnim/Attack03.0"
+          },
+          "StartPos": 0.0,
+          "AnimStartTime": 0.0,
+          "AnimEndTime": 4.5,
+          "AnimPlayRate": 1.0,
+          "LoopingCount": 1
+        }
+      ],
+      "sourceSequenceEffectNotifyCount": 0,
+      "projectMontage": "/Game/Characters/Role/changli/AnimMontage/AM_Attack03.AM_Attack03",
+      "projectMontageAssetLastWriteUtc": "2026-09-28T07:00:48.6939255Z",
+      "projectLengthSeconds": 5.625,
+      "projectRateScale": 1,
+      "projectSegments": [
+        {
+          "slotName": "DefaultSlot",
+          "animation": "/Game/Characters/Role/changli/CommonAnim/ChangliR2T1ChangLiMd10011_Attack03.ChangliR2T1ChangLiMd10011_Attack03",
+          "montageStartSeconds": 0,
+          "animationStartSeconds": 0,
+          "animationEndSeconds": 5.625,
+          "animationPlayRate": 1,
+          "loopCount": 1
+        }
+      ],
+      "projectTaskRatePin": "1.000000",
+      "projectTaskRatePinLinked": false,
+      "timelineScale": 1.25,
+      "enabledEffectNotifyCount": 8,
+      "enabledDgNameCandidateCount": 4,
+      "enabledOtherEffectNotifyCount": 4,
+      "excludedEffectNotifyCount": 0,
+      "sourceEvents": [
+        {
+          "notifyObject": "AnimNotifyEffect_C_19",
+          "sourceDefinitionLine": 1085,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.162427,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.162427,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a03_01.DA_Fx_Group_R1a03_01",
+          "socketName": "Root",
+          "location": {
+            "X": -36.595848,
+            "Y": -1.1956997,
+            "Z": 61.456505
+          },
+          "rotation": {
+            "Pitch": -15.5477705,
+            "Yaw": -1.1616964,
+            "Roll": -170.34575
+          },
+          "scale": {
+            "X": 1.1,
+            "Y": 1.0,
+            "Z": -1.1
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.203034
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_21",
+          "sourceDefinitionLine": 1161,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.162427,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.162427,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a03_01_N_Dg1.DA_Fx_Group_R1a03_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": -36.595848,
+            "Y": -1.1957,
+            "Z": 61.456505
+          },
+          "rotation": {
+            "Pitch": 5.450395,
+            "Yaw": -75.58973,
+            "Roll": -162.56732
+          },
+          "scale": {
+            "X": 0.6,
+            "Y": 0.6,
+            "Z": 0.6
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.203034
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_22",
+          "sourceDefinitionLine": 1199,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.279337,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.279337,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a03_01.DA_Fx_Group_R1a03_01",
+          "socketName": "Root",
+          "location": {
+            "X": -27.602205,
+            "Y": -15.8955145,
+            "Z": 73.59782
+          },
+          "rotation": {
+            "Pitch": 10.868026,
+            "Yaw": -35.45274,
+            "Roll": 170.90659
+          },
+          "scale": {
+            "X": 1.1,
+            "Y": 0.9,
+            "Z": -1.1
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.349171
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_18",
+          "sourceDefinitionLine": 1047,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.372482,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.372482,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a03_01_N_Dg1.DA_Fx_Group_R1a03_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 80.0
+          },
+          "rotation": {
+            "Pitch": -11.609039,
+            "Yaw": 1.5039754,
+            "Roll": -170.4095
+          },
+          "scale": {
+            "X": 0.6,
+            "Y": 0.6,
+            "Z": 0.6
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.465602
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_20",
+          "sourceDefinitionLine": 1123,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.372482,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.372482,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a03_01.DA_Fx_Group_R1a03_01",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 80.0
+          },
+          "rotation": {
+            "Pitch": -3.6920722,
+            "Yaw": 2.839752,
+            "Roll": -170.5883
+          },
+          "scale": {
+            "X": 1.3,
+            "Y": 1.2,
+            "Z": 1.2
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.465602
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_23",
+          "sourceDefinitionLine": 1237,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.403334,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.403334,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a03_02.DA_Fx_Group_R1a03_02",
+          "socketName": "Root",
+          "location": {
+            "X": 3.7692413,
+            "Y": 0.0,
+            "Z": 80.0
+          },
+          "rotation": {
+            "Pitch": 9.987915,
+            "Yaw": 0.49476185,
+            "Roll": 167.85004
+          },
+          "scale": {
+            "X": 1.1,
+            "Y": 0.9,
+            "Z": 1.1
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.504168
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_26",
+          "sourceDefinitionLine": 1275,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.42994684,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.42994684,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a02_01_N_Dg.DA_Fx_Group_R1a02_01_N_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 100.0
+          },
+          "rotation": {
+            "Pitch": 360.0,
+            "Yaw": 108.24512,
+            "Roll": 178.99998
+          },
+          "scale": {
+            "X": 1.5,
+            "Y": 1.5,
+            "Z": -0.5
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.537434
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_27",
+          "sourceDefinitionLine": 1313,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.5063804,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.5063804,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a03_01_N_Dg1.DA_Fx_Group_R1a03_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 100.0
+          },
+          "rotation": {
+            "Pitch": 0.0,
+            "Yaw": -152.07887,
+            "Roll": 178.99998
+          },
+          "scale": {
+            "X": 0.8,
+            "Y": 0.8,
+            "Z": 0.8
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.632975
+        }
+      ],
+      "proposedProjectBurstCount": 4,
+      "proposedProjectBursts": [
+        {
+          "sourceStartSeconds": 0.162427,
+          "sourceEndSeconds": 0.162427,
+          "projectNotifySeconds": 0.203034,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_21"
+          ],
+          "sourceCandidateLayers": 1
+        },
+        {
+          "sourceStartSeconds": 0.372482,
+          "sourceEndSeconds": 0.372482,
+          "projectNotifySeconds": 0.465602,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_18"
+          ],
+          "sourceCandidateLayers": 1
+        },
+        {
+          "sourceStartSeconds": 0.42994684,
+          "sourceEndSeconds": 0.42994684,
+          "projectNotifySeconds": 0.537434,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_26"
+          ],
+          "sourceCandidateLayers": 1
+        },
+        {
+          "sourceStartSeconds": 0.5063804,
+          "sourceEndSeconds": 0.5063804,
+          "projectNotifySeconds": 0.632975,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_27"
+          ],
+          "sourceCandidateLayers": 1
+        }
+      ],
+      "burstPolicy": "Original reconstruction proposal: combine enabled _Dg-name candidates within 0.010 source seconds into one authored preset burst. Preserve each original subevent in sourceEvents. This is not evidence that Kuro uses one renderer or one slash per group.",
+      "sourceSequenceEffects": []
+    },
+    {
+      "projectAttack": "Attack04",
+      "sourceMontage": "AM_Attack04",
+      "sourceMontageFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\AM_Attack04.json",
+      "sourceMontageSha256": "9325FE95483C8060F7ACF28CFEBB8EF4B795F107C4B96EED5DA277748E6F3043",
+      "sourceMontageLengthSeconds": 6.033333,
+      "sourceMontageRateScaleExplicit": null,
+      "sourceSequence": "Attack04",
+      "sourceSequenceFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\Attack04.json",
+      "sourceSequenceLengthSeconds": 6.0333333,
+      "sourceNumFrames": 182,
+      "sourceImpliedSamplesPerSecond": 30.00000016574586,
+      "sourceSegments": [
+        {
+          "AnimReference": {
+            "ObjectName": "AnimSequence'Attack04'",
+            "ObjectPath": "Client/Content/Aki/Character/Role/FemaleXL/ChangLi/CommonAnim/Attack04.2"
+          },
+          "StartPos": 0.0,
+          "AnimStartTime": 0.0,
+          "AnimEndTime": 6.033333,
+          "AnimPlayRate": 1.0,
+          "LoopingCount": 1
+        }
+      ],
+      "sourceSequenceEffectNotifyCount": 2,
+      "projectMontage": "/Game/Characters/Role/changli/AnimMontage/AM_Attack04.AM_Attack04",
+      "projectMontageAssetLastWriteUtc": "2026-09-28T07:00:48.7109495Z",
+      "projectLengthSeconds": 7.541666507720947,
+      "projectRateScale": 1,
+      "projectSegments": [
+        {
+          "slotName": "DefaultSlot",
+          "animation": "/Game/Characters/Role/changli/CommonAnim/ChangliR2T1ChangLiMd10011_Attack04.ChangliR2T1ChangLiMd10011_Attack04",
+          "montageStartSeconds": 0,
+          "animationStartSeconds": 0,
+          "animationEndSeconds": 7.541666507720947,
+          "animationPlayRate": 1,
+          "loopCount": 1
+        }
+      ],
+      "projectTaskRatePin": "1.000000",
+      "projectTaskRatePinLinked": false,
+      "timelineScale": 1.2500000427161815,
+      "enabledEffectNotifyCount": 4,
+      "enabledDgNameCandidateCount": 2,
+      "enabledOtherEffectNotifyCount": 2,
+      "excludedEffectNotifyCount": 0,
+      "sourceEvents": [
+        {
+          "notifyObject": "AnimNotifyEffect_C_5",
+          "sourceDefinitionLine": 1403,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.23698969,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.23698969,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg.DA_Fx_Group_R1a01_01_N_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 130.0
+          },
+          "rotation": {
+            "Pitch": 155.0,
+            "Yaw": 160.0,
+            "Roll": 0.0
+          },
+          "scale": {
+            "X": 1.4,
+            "Y": 1.4,
+            "Z": -1.4
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.296237
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_4",
+          "sourceDefinitionLine": 1369,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.23941047,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.23941047,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg1.DA_Fx_Group_R1a01_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 130.0
+          },
+          "rotation": {
+            "Pitch": 155.0,
+            "Yaw": 160.0,
+            "Roll": 0.0
+          },
+          "scale": null,
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.299263
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_0",
+          "sourceDefinitionLine": 1320,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.5172674,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.5172674,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_Xuli.DA_Fx_Group_R1a04_Xuli",
+          "socketName": "Root",
+          "location": null,
+          "rotation": null,
+          "scale": {
+            "X": 1.5,
+            "Y": 1.5,
+            "Z": 1.5
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.646584
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_1",
+          "sourceDefinitionLine": 1347,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.5226667,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.5226667,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_Flying_Local.DA_Fx_Group_R1a04_Flying_Local",
+          "socketName": "WeaponProp03",
+          "location": null,
+          "rotation": null,
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.653333
+        }
+      ],
+      "proposedProjectBurstCount": 1,
+      "proposedProjectBursts": [
+        {
+          "sourceStartSeconds": 0.23698969,
+          "sourceEndSeconds": 0.23941047,
+          "projectNotifySeconds": 0.296237,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_5",
+            "AnimNotifyEffect_C_4"
+          ],
+          "sourceCandidateLayers": 2
+        }
+      ],
+      "burstPolicy": "Original reconstruction proposal: combine enabled _Dg-name candidates within 0.010 source seconds into one authored preset burst. Preserve each original subevent in sourceEvents. This is not evidence that Kuro uses one renderer or one slash per group.",
+      "sourceSequenceEffects": [
+        {
+          "notifyObject": "AnimNotifyStateEffect_C_3",
+          "notifyClass": "AnimNotifyStateEffect_C",
+          "sourceDefinitionLine": 29,
+          "authoredBeginSeconds": 1.366091,
+          "durationSeconds": 1.9007871,
+          "authoredEndSeconds": 3.2668781,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_San_end.DA_Fx_Group_San_end",
+          "dgNameCandidate": false,
+          "socketName": "WeaponProp02",
+          "location": null,
+          "rotation": {
+            "Pitch": -90.0,
+            "Yaw": 0.0,
+            "Roll": 0.0
+          },
+          "scale": null,
+          "attachedExplicit": false,
+          "playOnEndExplicit": true,
+          "detachWhenSkillEndExplicit": true,
+          "whenSkillEndExplicit": "ESkillEffectType::NewEnumerator1",
+          "proposedProjectBeginSeconds": 1.707614,
+          "proposedProjectEndSeconds": 4.083598
+        },
+        {
+          "notifyObject": "AnimNotifyStateEffect_C_0",
+          "notifyClass": "AnimNotifyStateEffect_C",
+          "sourceDefinitionLine": 4,
+          "authoredBeginSeconds": 1.3674467,
+          "durationSeconds": 1.8978014,
+          "authoredEndSeconds": 3.265248,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_San.DA_Fx_Group_R1a04_San",
+          "dgNameCandidate": false,
+          "socketName": "WeaponProp02",
+          "location": null,
+          "rotation": null,
+          "scale": null,
+          "attachedExplicit": null,
+          "playOnEndExplicit": null,
+          "detachWhenSkillEndExplicit": null,
+          "whenSkillEndExplicit": "ESkillEffectType::NewEnumerator1",
+          "proposedProjectBeginSeconds": 1.709308,
+          "proposedProjectEndSeconds": 4.08156
+        }
+      ]
+    },
+    {
+      "projectAttack": "Attack05",
+      "sourceMontage": "AM_Attack04_1",
+      "sourceMontageFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\AM_Attack04_1.json",
+      "sourceMontageSha256": "F76E392390C42C94C5A81F68E8CB8CA02B87A35518484590C04CF4A21F3D398D",
+      "sourceMontageLengthSeconds": 5.5666666,
+      "sourceMontageRateScaleExplicit": null,
+      "sourceSequence": "Attack04_1",
+      "sourceSequenceFile": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Character\\Role\\FemaleXL\\ChangLi\\CommonAnim\\Attack04_1.json",
+      "sourceSequenceLengthSeconds": 5.5666666,
+      "sourceNumFrames": 168,
+      "sourceImpliedSamplesPerSecond": 30.000000359281444,
+      "sourceSegments": [
+        {
+          "AnimReference": {
+            "ObjectName": "AnimSequence'Attack04_1'",
+            "ObjectPath": "Client/Content/Aki/Character/Role/FemaleXL/ChangLi/CommonAnim/Attack04_1.1"
+          },
+          "StartPos": 0.0,
+          "AnimStartTime": 0.0,
+          "AnimEndTime": 5.5666666,
+          "AnimPlayRate": 1.0,
+          "LoopingCount": 1
+        }
+      ],
+      "sourceSequenceEffectNotifyCount": 1,
+      "projectMontage": "/Game/Characters/Role/changli/AnimMontage/AM_Attack05.AM_Attack05",
+      "projectMontageAssetLastWriteUtc": "2026-09-28T07:00:48.7274419Z",
+      "projectLengthSeconds": 6.958333492279053,
+      "projectRateScale": 1,
+      "projectSegments": [
+        {
+          "slotName": "DefaultSlot",
+          "animation": "/Game/Characters/Role/changli/CommonAnim/ChangliR2T1ChangLiMd10011_Attack04_1.ChangliR2T1ChangLiMd10011_Attack04_1",
+          "montageStartSeconds": 0,
+          "animationStartSeconds": 0,
+          "animationEndSeconds": 6.958333492279053,
+          "animationPlayRate": 1,
+          "loopCount": 1
+        }
+      ],
+      "projectTaskRatePin": "1.000000",
+      "projectTaskRatePinLinked": false,
+      "timelineScale": 1.2500000435231837,
+      "enabledEffectNotifyCount": 7,
+      "enabledDgNameCandidateCount": 5,
+      "enabledOtherEffectNotifyCount": 2,
+      "excludedEffectNotifyCount": 3,
+      "sourceEvents": [
+        {
+          "notifyObject": "AnimNotifyEffect_C_7",
+          "sourceDefinitionLine": 2495,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.13486533,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.13486533,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_Blink.DA_Fx_Group_R1a04_Blink",
+          "socketName": "Root",
+          "location": null,
+          "rotation": null,
+          "scale": null,
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.168582
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_1",
+          "sourceDefinitionLine": 2268,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.3836447,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.3836447,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_Blink2.DA_Fx_Group_R1a04_Blink2",
+          "socketName": "Root",
+          "location": null,
+          "rotation": null,
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.479556
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_10",
+          "sourceDefinitionLine": 2292,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.39084205,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.39084205,
+          "enabled": true,
+          "triggerChance": 0.0,
+          "included": false,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg1.DA_Fx_Group_R1a01_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": {
+            "Pitch": 0.0,
+            "Yaw": -147.50072,
+            "Roll": 0.0
+          },
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.488553
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_12",
+          "sourceDefinitionLine": 2363,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.39084205,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.39084205,
+          "enabled": true,
+          "triggerChance": 0.0,
+          "included": false,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg1.DA_Fx_Group_R1a01_01_N_Dg1",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": {
+            "Pitch": 0.0,
+            "Yaw": 30.0,
+            "Roll": 0.0
+          },
+          "scale": {
+            "X": 0.7,
+            "Y": 0.7,
+            "Z": 0.7
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.488553
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_0",
+          "sourceDefinitionLine": 2232,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.39999998,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.39999998,
+          "enabled": true,
+          "triggerChance": 0.0,
+          "included": false,
+          "dgNameCandidate": false,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_01.DA_Fx_Group_R1a04_01",
+          "socketName": null,
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 70.0
+          },
+          "rotation": {
+            "Pitch": -5.0,
+            "Yaw": -180.0,
+            "Roll": 0.0
+          },
+          "scale": {
+            "X": 2.0,
+            "Y": 2.0,
+            "Z": 2.0
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.5
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_11",
+          "sourceDefinitionLine": 2325,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.39999998,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.39999998,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N_Dg.DA_Fx_Group_R1a01_01_N_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": {
+            "Pitch": 0.0,
+            "Yaw": -180.0,
+            "Roll": 0.0
+          },
+          "scale": {
+            "X": 1.4,
+            "Y": 1.4,
+            "Z": 1.4
+          },
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.5
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_13",
+          "sourceDefinitionLine": 2401,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.39999998,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.39999998,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a01_01_N1_Dg.DA_Fx_Group_R1a01_01_N1_Dg",
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 90.0
+          },
+          "rotation": null,
+          "scale": null,
+          "attachedExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "proposedProjectNotifySeconds": 0.5
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_6",
+          "sourceDefinitionLine": 2462,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.59999996,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.59999996,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_01_Dgw.DA_Fx_Group_R1a04_01_DgW",
+          "socketName": "Root",
+          "location": null,
+          "rotation": {
+            "Pitch": 0.0,
+            "Yaw": -30.0,
+            "Roll": 0.0
+          },
+          "scale": {
+            "X": 0.9,
+            "Y": 0.9,
+            "Z": 0.9
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.75
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_8",
+          "sourceDefinitionLine": 2521,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.6666666,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.6666666,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_01_Dgw.DA_Fx_Group_R1a04_01_DgW",
+          "socketName": "Root",
+          "location": null,
+          "rotation": null,
+          "scale": {
+            "X": 0.9,
+            "Y": 0.9,
+            "Z": 0.9
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.833333
+        },
+        {
+          "notifyObject": "AnimNotifyEffect_C_5",
+          "sourceDefinitionLine": 2429,
+          "notifyClass": "AnimNotifyEffect_C",
+          "authoredSeconds": 0.7333333,
+          "triggerOffsetSeconds": 0.0,
+          "actualTriggerSeconds": 0.7333333,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "dgNameCandidate": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_01_Dgw.DA_Fx_Group_R1a04_01_DgW",
+          "socketName": "Root",
+          "location": null,
+          "rotation": {
+            "Pitch": 0.0,
+            "Yaw": 35.0,
+            "Roll": 0.0
+          },
+          "scale": {
+            "X": 0.9,
+            "Y": 0.9,
+            "Z": 0.9
+          },
+          "attachedExplicit": false,
+          "detachWhenSkillEndExplicit": null,
+          "proposedProjectNotifySeconds": 0.916667
+        }
+      ],
+      "proposedProjectBurstCount": 4,
+      "proposedProjectBursts": [
+        {
+          "sourceStartSeconds": 0.39999998,
+          "sourceEndSeconds": 0.39999998,
+          "projectNotifySeconds": 0.5,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_11",
+            "AnimNotifyEffect_C_13"
+          ],
+          "sourceCandidateLayers": 2
+        },
+        {
+          "sourceStartSeconds": 0.59999996,
+          "sourceEndSeconds": 0.59999996,
+          "projectNotifySeconds": 0.75,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_6"
+          ],
+          "sourceCandidateLayers": 1
+        },
+        {
+          "sourceStartSeconds": 0.6666666,
+          "sourceEndSeconds": 0.6666666,
+          "projectNotifySeconds": 0.833333,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_8"
+          ],
+          "sourceCandidateLayers": 1
+        },
+        {
+          "sourceStartSeconds": 0.7333333,
+          "sourceEndSeconds": 0.7333333,
+          "projectNotifySeconds": 0.916667,
+          "sourceNotifyObjects": [
+            "AnimNotifyEffect_C_5"
+          ],
+          "sourceCandidateLayers": 1
+        }
+      ],
+      "burstPolicy": "Original reconstruction proposal: combine enabled _Dg-name candidates within 0.010 source seconds into one authored preset burst. Preserve each original subevent in sourceEvents. This is not evidence that Kuro uses one renderer or one slash per group.",
+      "sourceSequenceEffects": [
+        {
+          "notifyObject": "AnimNotifyStateEffect_C_0",
+          "notifyClass": "AnimNotifyStateEffect_C",
+          "sourceDefinitionLine": 4,
+          "authoredBeginSeconds": 0.14207241,
+          "durationSeconds": 0.44162098,
+          "authoredEndSeconds": 0.5836934,
+          "enabled": true,
+          "triggerChance": 1.0,
+          "included": true,
+          "effectAsset": "/Game/Aki/Effect/EffectGroup/R2T1ChangliMd10011/DA_Fx_Group_R1a04_1_Trail.DA_Fx_Group_R1a04_1_Trail",
+          "dgNameCandidate": false,
+          "socketName": "Root",
+          "location": {
+            "X": 0.0,
+            "Y": 0.0,
+            "Z": 80.0
+          },
+          "rotation": null,
+          "scale": null,
+          "attachedExplicit": null,
+          "playOnEndExplicit": null,
+          "detachWhenSkillEndExplicit": true,
+          "whenSkillEndExplicit": "ESkillEffectType::NewEnumerator1",
+          "proposedProjectBeginSeconds": 0.177591,
+          "proposedProjectEndSeconds": 0.729617
+        }
+      ]
+    }
+  ]
+}

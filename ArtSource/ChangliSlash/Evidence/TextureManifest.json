@@ -1,0 +1,417 @@
+[
+  {
+    "name": "T_Color_009",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_009",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Color/T_Color_009.png",
+    "exists": true,
+    "width": 16,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "8a3b4a9688f44d77a6f5e5f8440e5c62658e26430c2f5fa61d5d6b60a2c5bde9",
+    "channelMinRGBA8": [
+      236,
+      126,
+      103,
+      254
+    ],
+    "channelMaxRGBA8": [
+      243,
+      202,
+      163,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 2599,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Color_140009",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_140009",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Color/T_Color_140009.png",
+    "exists": true,
+    "width": 128,
+    "height": 8,
+    "sourceMode": "RGBA",
+    "sha256": "209573bf2c03ae0b027cd58e647eefc8171fe1ccf5e7c43803507351815811c4",
+    "channelMinRGBA8": [
+      13,
+      173,
+      86,
+      254
+    ],
+    "channelMaxRGBA8": [
+      255,
+      184,
+      255,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 84,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Color_40010",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_40010",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Color/T_Color_40010.png",
+    "exists": true,
+    "width": 128,
+    "height": 4,
+    "sourceMode": "RGBA",
+    "sha256": "ef4c4a47b382b4836c7b28176c76ca6dea6dfd457fa880ea7a8a7d9564e73148",
+    "channelMinRGBA8": [
+      0,
+      15,
+      41,
+      254
+    ],
+    "channelMaxRGBA8": [
+      247,
+      246,
+      248,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 200,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Color_80007",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_80007",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Color/T_Color_80007.png",
+    "exists": true,
+    "width": 8,
+    "height": 128,
+    "sourceMode": "RGBA",
+    "sha256": "4757658c7d89f4f58a4b450b211cf598ddfe988bb62014fc7c7a6645a5c3eb9e",
+    "channelMinRGBA8": [
+      254,
+      93,
+      81,
+      254
+    ],
+    "channelMaxRGBA8": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 346,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Daoguang_40001",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Daoguang/T_Daoguang_40001",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Daoguang/T_Daoguang_40001.png",
+    "exists": true,
+    "width": 512,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "e22e2178d1579e3aa13c8fa890222b5ecf83287885b90d63c137aee55120ef69",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "channelMaxRGBA8": [
+      250,
+      236,
+      220,
+      150
+    ],
+    "alphaNonOpaquePixelCount": 131072,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Mask_30013",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30013",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Mask/T_Mask_30013.png",
+    "exists": true,
+    "width": 64,
+    "height": 64,
+    "sourceMode": "RGBA",
+    "sha256": "894ad679113fe94945a5539d457b39f7827f494ca2c1f7801597c74b9e953dfa",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      254
+    ],
+    "channelMaxRGBA8": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 1932,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Mask_30054_2",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30054_2",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Mask/T_Mask_30054_2.png",
+    "exists": true,
+    "width": 2,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "807d3040b2f3a9c3281a3ea197bb5b4fcec87d8f3244d9784956e8f268a02fa4",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      255
+    ],
+    "channelMaxRGBA8": [
+      252,
+      252,
+      252,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 0,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Mask_30157",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30157",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Mask/T_Mask_30157.png",
+    "exists": true,
+    "width": 128,
+    "height": 128,
+    "sourceMode": "RGBA",
+    "sha256": "0be158a022f801b196c5716bd9367537f0de0e239263504137b46a5ca08d315d",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      254
+    ],
+    "channelMaxRGBA8": [
+      253,
+      245,
+      245,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 3026,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Normal_011",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Normal/T_Normal_011",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Normal/T_Normal_011.png",
+    "exists": true,
+    "width": 256,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "0b3d1cc98a317a46880298f74f1ec7bbb0e01e154a699e2eca1f6b2b28b409da",
+    "channelMinRGBA8": [
+      37,
+      20,
+      181,
+      255
+    ],
+    "channelMaxRGBA8": [
+      222,
+      240,
+      254,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 0,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Particle_002",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Particle/T_Particle_002",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Particle/T_Particle_002.png",
+    "exists": true,
+    "width": 128,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "8584ae2e43f1cb7e16b9ab54b7bfcfbfd91903e5d15597d06cecc5f482f2ec2d",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "channelMaxRGBA8": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 18913,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Tile_046",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Tile/T_Tile_046.png",
+    "exists": true,
+    "width": 256,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "fa3ab0dcdabc3e4e01b4a468c6f053c20c5715d4d3420b3482a7c053cd42434c",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "channelMaxRGBA8": [
+      234,
+      234,
+      234,
+      234
+    ],
+    "alphaNonOpaquePixelCount": 65536,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Tile_19_Vec",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec.png",
+    "exists": true,
+    "width": 256,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "de38570a1be25ac9b46d0c8bb3a1e3b428215e04e572f97051955a2efb1050a4",
+    "channelMinRGBA8": [
+      37,
+      38,
+      180,
+      254
+    ],
+    "channelMaxRGBA8": [
+      229,
+      229,
+      193,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 21440,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Tile_300186",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_300186",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Tile/T_Tile_300186.png",
+    "exists": true,
+    "width": 128,
+    "height": 128,
+    "sourceMode": "RGBA",
+    "sha256": "13c663322b295c52916cd8407c8e37e5d0aae3a30af4335c5ab72ed2085e9a53",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      34
+    ],
+    "channelMaxRGBA8": [
+      223,
+      223,
+      223,
+      207
+    ],
+    "alphaNonOpaquePixelCount": 16384,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Wenli_20002",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002.png",
+    "exists": true,
+    "width": 256,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "41727a13b3cdb58101ba7ac86091d123734278a31d94507628ad2cf14ae1bdec",
+    "channelMinRGBA8": [
+      53,
+      53,
+      53,
+      0
+    ],
+    "channelMaxRGBA8": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 65482,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Changli_140004_wings",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140004_wings",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140004_wings.png",
+    "exists": true,
+    "width": 1024,
+    "height": 256,
+    "sourceMode": "RGBA",
+    "sha256": "23183b145ae3d06d982aab1f0c3935e87ea3f9518fac0e984cf727f0417e8ce4",
+    "channelMinRGBA8": [
+      8,
+      0,
+      0,
+      0
+    ],
+    "channelMaxRGBA8": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 257418,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Changli_140006_wings_Trail",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail.png",
+    "exists": true,
+    "width": 512,
+    "height": 1024,
+    "sourceMode": "RGBA",
+    "sha256": "1703ba3e5ca9c411ce146c987b757a383a5d250b128c3ac50b1010b2b8d25f47",
+    "channelMinRGBA8": [
+      0,
+      0,
+      0,
+      254
+    ],
+    "channelMaxRGBA8": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 5853,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_Wenli_Changli_140002_3",
+    "packagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Wenli_Changli_140002_3",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Effect/Texture/Wenli/T_Wenli_Changli_140002_3.png",
+    "exists": true,
+    "width": 1024,
+    "height": 512,
+    "sourceMode": "RGBA",
+    "sha256": "83976a60b6a0006688c4b6468e8a14c491acdaae319b33387d320c110cc3f36e",
+    "channelMinRGBA8": [
+      60,
+      0,
+      21,
+      0
+    ],
+    "channelMaxRGBA8": [
+      181,
+      101,
+      167,
+      255
+    ],
+    "alphaNonOpaquePixelCount": 473711,
+    "pngMetadata": {}
+  },
+  {
+    "name": "T_DefaultColorWhite_D",
+    "packagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+    "pngPath": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.png",
+    "exists": false,
+    "fallback": "/Engine/EngineResources/WhiteSquareTexture.WhiteSquareTexture"
+  }
+]

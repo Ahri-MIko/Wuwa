@@ -1,7 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
-#include "Camera/CameraComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 #include "Engine/World.h"
@@ -45,7 +45,14 @@ bool FWuwaPlayerInputSnapshotTest::RunTest(const FString& Parameters)
 	}
 
 	TestFalse(TEXT("No input initially"), Character->GetPlayerInputState().bHasMoveInput);
-	Character->FollowCamera->SetWorldRotation(FRotator(-35.f, 90.f, 0.f));
+	APlayerController* Controller = Fixture.World->SpawnActor<APlayerController>();
+	if (!TestNotNull(TEXT("Movement has a view rotation provider"), Controller))
+	{
+		return false;
+	}
+	// 只建立方向查询所需的控制关系，避免触发此单元测试无关的 GAS 初始化。
+	Character->SetController(Controller);
+	Controller->SetControlRotation(FRotator(-35.f, 90.f, 0.f));
 	// 不依赖实际移动：CMC 被禁用且没有速度时，仍能获得玩家意图。
 	Character->GetWuwaMovementComponent()->DisableMovement();
 	Character->HandleMoveInput(FInputActionValue(FVector2D(0.f, 0.5f)));
@@ -56,7 +63,7 @@ bool FWuwaPlayerInputSnapshotTest::RunTest(const FString& Parameters)
 		Pressed.MoveWorldDirection.Equals(FVector::RightVector, 0.001));
 
 	// 方向在读取时计算，转镜头后不沿用旧的 MoveInputDir。
-	Character->FollowCamera->SetWorldRotation(FRotator(0.f, 0.f, 0.f));
+	Controller->SetControlRotation(FRotator(0.f, 0.f, 0.f));
 	TestTrue(TEXT("Read uses current camera orientation"),
 		Character->GetPlayerInputState().MoveWorldDirection.Equals(FVector::ForwardVector, 0.001));
 

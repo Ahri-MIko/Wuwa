@@ -1,0 +1,3884 @@
+{
+  "AuditUtc": "2026-09-29T05:16:22.6303687Z",
+  "ExportRoot": "C:/GamePakExtractor/Output/Exports/Client/Content/Aki",
+  "Scope": "Actual renderer/material references for three requested Niagara assets. Explicit material texture overrides are counted; inherited effective shader dependencies remain unknown because all four immediate parent assets are missing. CachedReferencedTextures may include inactive master branches and are listed separately.",
+  "Counts": {
+    "Systems": 3,
+    "Renderers": 8,
+    "UniqueMaterialInstances": 6,
+    "UniqueMeshes": 4,
+    "MeshGeometryFilesPresent": 0,
+    "UniqueExplicitTextures": 18,
+    "MissingExplicitTextureImages": 18,
+    "ImmediateParentInstances": 4,
+    "MissingParentJson": 4
+  },
+  "Systems": [
+    {
+      "Name": "NS_Fx_Changli_R1a01_N_Dg",
+      "SourceJson": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg.json",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg.0",
+        "PackagePath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg.uasset",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg.uexp"
+        ],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg.json",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg.uasset",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg.uexp"
+        ]
+      },
+      "Renderers": [
+        {
+          "RendererType": "NiagaraMeshRendererProperties",
+          "RendererName": "NiagaraMeshRendererProperties_0",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N_Dg:Daoguang_BG_1'",
+          "Mesh": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140005.2",
+            "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140005",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140005",
+            "JsonExists": true,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": [
+              "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140005.json"
+            ]
+          },
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140109_MP.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140109_MP",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140109_MP",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140109_MP.json"
+              ]
+            }
+          ],
+          "SortOrderHint": -1,
+          "PivotOffset": null,
+          "Alignment": null,
+          "FacingMode": null,
+          "PivotInUVSpace": null,
+          "MaterialParameterBindings": null,
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": {
+            "bBindingExistsOnSource": true
+          }
+        },
+        {
+          "RendererType": "NiagaraMeshRendererProperties",
+          "RendererName": "NiagaraMeshRendererProperties_0",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N_Dg:Daoguang_Liang_0'",
+          "Mesh": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140004.2",
+            "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140004",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140004",
+            "JsonExists": true,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": [
+              "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140004.json"
+            ]
+          },
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140100_MP.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140100_MP",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140100_MP",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140100_MP.json"
+              ]
+            }
+          ],
+          "SortOrderHint": 10,
+          "PivotOffset": null,
+          "Alignment": null,
+          "FacingMode": null,
+          "PivotInUVSpace": null,
+          "MaterialParameterBindings": null,
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": null
+        },
+        {
+          "RendererType": "NiagaraMeshRendererProperties",
+          "RendererName": "NiagaraMeshRendererProperties_0",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N_Dg:Fether_B_10'",
+          "Mesh": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Zhuan_140001.2",
+            "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Zhuan_140001",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Zhuan_140001",
+            "JsonExists": true,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": [
+              "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Zhuan_140001.json"
+            ]
+          },
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140062_MP.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140062_MP",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140062_MP",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140062_MP.json"
+              ]
+            }
+          ],
+          "SortOrderHint": 5,
+          "PivotOffset": {
+            "X": -2.0,
+            "Y": -5.0,
+            "Z": 0.0
+          },
+          "Alignment": null,
+          "FacingMode": null,
+          "PivotInUVSpace": null,
+          "MaterialParameterBindings": null,
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": {
+            "bBindingExistsOnSource": true
+          }
+        },
+        {
+          "RendererType": "NiagaraMeshRendererProperties",
+          "RendererName": "NiagaraMeshRendererProperties_0",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N_Dg:Fether_R_11'",
+          "Mesh": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140003_a3.2",
+            "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140003_a3",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140003_a3",
+            "JsonExists": true,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": [
+              "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140003_a3.json"
+            ]
+          },
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140055_MP4.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140055_MP4",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140055_MP4",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140055_MP4.json"
+              ]
+            }
+          ],
+          "SortOrderHint": 2,
+          "PivotOffset": null,
+          "Alignment": null,
+          "FacingMode": null,
+          "PivotInUVSpace": null,
+          "MaterialParameterBindings": null,
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": {
+            "bBindingExistsOnSource": true
+          }
+        }
+      ]
+    },
+    {
+      "Name": "NS_Fx_Changli_R1a01_N_Dg1",
+      "SourceJson": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg1.json",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg1.0",
+        "PackagePath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N_Dg1",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg1",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg1.uasset",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg1.uexp"
+        ],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg1.json",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg1.uasset",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N_Dg1.uexp"
+        ]
+      },
+      "Renderers": [
+        {
+          "RendererType": "NiagaraSpriteRendererProperties",
+          "RendererName": "NiagaraSpriteRendererProperties_1",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N_Dg1:yumao001_2'",
+          "Mesh": null,
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S.json"
+              ]
+            }
+          ],
+          "SortOrderHint": 5,
+          "PivotOffset": null,
+          "Alignment": "ENiagaraSpriteAlignment::VelocityAligned",
+          "FacingMode": "ENiagaraSpriteFacingMode::CustomFacingVector",
+          "PivotInUVSpace": {
+            "X": 0.5,
+            "Y": 1.0
+          },
+          "MaterialParameterBindings": [
+            {
+              "MaterialParameterName": "Second_Contorl",
+              "NiagaraVariable": {
+                "Name": "Emitter.Second_Contorl",
+                "TypeDef": {
+                  "ClassStructOrEnum": {
+                    "ObjectName": "ScriptStruct'Vector4'",
+                    "ObjectPath": "/Script/CoreUObject"
+                  },
+                  "UnderlyingType": 2
+                }
+              },
+              "ResolvedNiagaraVariable": {
+                "Name": "yumao001.Second_Contorl",
+                "TypeDef": {
+                  "ClassStructOrEnum": {
+                    "ObjectName": "ScriptStruct'Vector4'",
+                    "ObjectPath": "/Script/CoreUObject"
+                  },
+                  "UnderlyingType": 2
+                }
+              },
+              "NiagaraChildVariable": {
+                "Name": "None",
+                "TypeDef": {
+                  "ClassStructOrEnum": {
+                    "ObjectName": "ScriptStruct'Vector4'",
+                    "ObjectPath": "/Script/CoreUObject"
+                  },
+                  "UnderlyingType": 2
+                }
+              }
+            }
+          ],
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": {
+            "bBindingExistsOnSource": true
+          }
+        },
+        {
+          "RendererType": "NiagaraSpriteRendererProperties",
+          "RendererName": "NiagaraSpriteRendererProperties_1",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N_Dg1:yumao002_4'",
+          "Mesh": null,
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S1.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S1",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S1",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S1.json"
+              ]
+            }
+          ],
+          "SortOrderHint": 5,
+          "PivotOffset": null,
+          "Alignment": "ENiagaraSpriteAlignment::VelocityAligned",
+          "FacingMode": "ENiagaraSpriteFacingMode::CustomFacingVector",
+          "PivotInUVSpace": {
+            "X": 0.5,
+            "Y": 1.0
+          },
+          "MaterialParameterBindings": null,
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": {
+            "bBindingExistsOnSource": true
+          }
+        }
+      ]
+    },
+    {
+      "Name": "NS_Fx_Changli_R1a01_N1_Dg",
+      "SourceJson": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N1_Dg.json",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N1_Dg.0",
+        "PackagePath": "Client/Content/Aki/Effect/Niagara/NI_R2T1ChangliMd10011/NS_Fx_Changli_R1a01_N1_Dg",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N1_Dg",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N1_Dg.uasset",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N1_Dg.uexp"
+        ],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N1_Dg.json",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N1_Dg.uasset",
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Niagara\\NI_R2T1ChangliMd10011\\NS_Fx_Changli_R1a01_N1_Dg.uexp"
+        ]
+      },
+      "Renderers": [
+        {
+          "RendererType": "NiagaraMeshRendererProperties",
+          "RendererName": "NiagaraMeshRendererProperties_0",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N1_Dg:Fether_B_10'",
+          "Mesh": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Zhuan_140001.2",
+            "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Zhuan_140001",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Zhuan_140001",
+            "JsonExists": true,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": [
+              "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Zhuan_140001.json"
+            ]
+          },
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140062_MP.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140062_MP",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140062_MP",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140062_MP.json"
+              ]
+            }
+          ],
+          "SortOrderHint": 5,
+          "PivotOffset": {
+            "X": -2.0,
+            "Y": -5.0,
+            "Z": 0.0
+          },
+          "Alignment": null,
+          "FacingMode": null,
+          "PivotInUVSpace": null,
+          "MaterialParameterBindings": null,
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": {
+            "bBindingExistsOnSource": true
+          }
+        },
+        {
+          "RendererType": "NiagaraMeshRendererProperties",
+          "RendererName": "NiagaraMeshRendererProperties_0",
+          "Emitter": "NiagaraEmitter'NS_Fx_Changli_R1a01_N1_Dg:Fether_R_11'",
+          "Mesh": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140003_a3.2",
+            "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140003_a3",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140003_a3",
+            "JsonExists": true,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": [
+              "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140003_a3.json"
+            ]
+          },
+          "Materials": [
+            {
+              "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140055_MP4.0",
+              "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140055_MP4",
+              "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140055_MP4",
+              "JsonExists": true,
+              "ImageFiles": [],
+              "GeometryFiles": [],
+              "RawPackageFiles": [],
+              "AllAvailableFiles": [
+                "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140055_MP4.json"
+              ]
+            }
+          ],
+          "SortOrderHint": 2,
+          "PivotOffset": null,
+          "Alignment": null,
+          "FacingMode": null,
+          "PivotInUVSpace": null,
+          "MaterialParameterBindings": null,
+          "DynamicMaterialBinding": {
+            "bBindingExistsOnSource": true
+          },
+          "DynamicMaterial1Binding": {
+            "bBindingExistsOnSource": true
+          }
+        }
+      ]
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "MI_Trans_Daoguang_140055_MP4",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140055_MP4.0",
+        "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140055_MP4",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140055_MP4",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140055_MP4.json"
+        ]
+      },
+      "Parent": {
+        "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_AdvancedEffect_MP.0",
+        "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_AdvancedEffect_MP",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\MeshParticle\\MI_AdvancedEffect_MP",
+        "JsonExists": false,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": []
+      },
+      "Textures": [
+        {
+          "ParameterName": "Base",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Wenli_Changli_140002_3.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Wenli_Changli_140002_3",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Wenli_Changli_140002_3",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Second",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+            "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Noise",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_19_Vec",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Mask",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30013.0",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30013",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Mask\\T_Mask_30013",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Dissolve",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_046",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        }
+      ],
+      "ScalarParameters": [
+        {
+          "Name": "Base_Alpha_Multiply",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_bClamp",
+          "Value": 1.0
+        },
+        {
+          "Name": "Second_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Second_Rotation",
+          "Value": 0.25
+        },
+        {
+          "Name": "Noise_Strength",
+          "Value": 0.2
+        },
+        {
+          "Name": "Mask_Rotation",
+          "Value": 0.5
+        },
+        {
+          "Name": "Mask_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_NoiseStrength",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_UOffset",
+          "Value": 0.07619
+        },
+        {
+          "Name": "Dissolve_VOffset",
+          "Value": 0.27619
+        },
+        {
+          "Name": "Dissolve_Dissolve",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_Smooth",
+          "Value": 3.0
+        },
+        {
+          "Name": "DIssolve_Rotation",
+          "Value": 0.133333
+        },
+        {
+          "Name": "Dissolve_NoiseStrength",
+          "Value": 0.5
+        },
+        {
+          "Name": "Opacity_bVertexAlphaToMask",
+          "Value": 1.0
+        },
+        {
+          "Name": "ScreenFadeDistance",
+          "Value": 1.0
+        },
+        {
+          "Name": "ScreenFadeFrom",
+          "Value": 1.0
+        },
+        {
+          "Name": "RefractionDepthBias",
+          "Value": 0.0
+        }
+      ],
+      "VectorParameters": [
+        {
+          "Name": "Base_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": -1.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Base_Refine",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.5,
+            "Hex": "7FFFFFFF"
+          }
+        },
+        {
+          "Name": "Base_ColorTint",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_AlphaSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 1.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Second_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Second_Contorl",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Noise_UV",
+          "Value": {
+            "R": 2.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Mask_UV",
+          "Value": {
+            "R": 0.5,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "BCFF00"
+          }
+        },
+        {
+          "Name": "Mask_AlphaSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Dissolve_UV",
+          "Value": {
+            "R": 2.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Dissolve_EdgeColor",
+          "Value": {
+            "R": 3.0,
+            "G": 0.388107,
+            "B": 0.179006,
+            "A": 0.0,
+            "Hex": "FFA775"
+          }
+        },
+        {
+          "Name": "Dissolve_ChannelSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        }
+      ],
+      "StaticSwitchParameters": [
+        {
+          "Name": "UseBase",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseNoise",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseMaskTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseDissolve",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseNoiseInMobile",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondInMobile",
+          "Value": true,
+          "OverridesParent": true
+        }
+      ],
+      "BasePropertyOverrides": {
+        "bOverride_BlendMode": true,
+        "bOverride_TwoSided": true,
+        "TwoSided": true,
+        "bEnableAdaptiveTessellation": true,
+        "PipelineStateCreationHint": "MPSCH_AsyncNoWait",
+        "BlendMode": "BLEND_Translucent",
+        "ShadingModel": "MSM_Unlit",
+        "OpacityMaskClipValue": 0.3333,
+        "RenderQueue": 200,
+        "bUsedWithNiagaraMeshParticles": true,
+        "bUseFullPrecision": true
+      },
+      "CachedReferencedAssets": [
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBlend",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBase.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBase",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBase",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq.0",
+          "PackagePath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\Good64x64TilingNoiseHighFreq",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin.0",
+          "PackagePath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin",
+          "JsonExists": true,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": [
+            "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin.json"
+          ]
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTextureArray.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTextureArray",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTextureArray",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_Linear_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_Default_Matcap_Metal",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultVolumeTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultVolumeTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultVolumeTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Plugins/rdLODtools/Content/Textures/LinearColor.0",
+          "PackagePath": "Engine/Plugins/rdLODtools/Content/Textures/LinearColor",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Plugins\\rdLODtools\\Content\\Textures\\LinearColor",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_OceanWave_Volume.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_OceanWave_Volume",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\SingleLayerWater\\Ocean\\T_OceanWave_Volume",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_DefaultBlack.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_DefaultBlack",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\SingleLayerWater\\Ocean\\T_DefaultBlack",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Scene/Assets/PCG/Map_2_1_HaiDao/HaiDao/OceanWave/Tex/OceanWave.0",
+          "PackagePath": "Client/Content/Aki/Scene/Assets/PCG/Map_2_1_HaiDao/HaiDao/OceanWave/Tex/OceanWave",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Scene\\Assets\\PCG\\Map_2_1_HaiDao\\HaiDao\\OceanWave\\Tex\\OceanWave",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/DefaultWhiteGrid.0",
+          "PackagePath": "Engine/Content/EngineMaterials/DefaultWhiteGrid",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\DefaultWhiteGrid",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        }
+      ]
+    },
+    {
+      "Name": "MI_Trans_Daoguang_140062_MP",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140062_MP.0",
+        "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140062_MP",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140062_MP",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140062_MP.json"
+        ]
+      },
+      "Parent": {
+        "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_AdvancedEffect_MP.0",
+        "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_AdvancedEffect_MP",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\MeshParticle\\MI_AdvancedEffect_MP",
+        "JsonExists": false,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": []
+      },
+      "Textures": [
+        {
+          "ParameterName": "Base",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140004_wings.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140004_wings",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Changli_140004_wings",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Second",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+            "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Noise",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_19_Vec",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Mask",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30054_2.0",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30054_2",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Mask\\T_Mask_30054_2",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Dissolve",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_046",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        }
+      ],
+      "ScalarParameters": [
+        {
+          "Name": "Base_Alpha_Multiply",
+          "Value": 1.5
+        },
+        {
+          "Name": "Base_Rotation",
+          "Value": 0.5
+        },
+        {
+          "Name": "Base_bClamp",
+          "Value": 1.0
+        },
+        {
+          "Name": "Second_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Second_Rotation",
+          "Value": 0.25
+        },
+        {
+          "Name": "Noise_Strength",
+          "Value": 0.2
+        },
+        {
+          "Name": "Mask_Rotation",
+          "Value": 0.2
+        },
+        {
+          "Name": "Mask_bClamp",
+          "Value": 1.0
+        },
+        {
+          "Name": "Mask_NoiseStrength",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_UOffset",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_VOffset",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_Dissolve",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_Smooth",
+          "Value": 3.0
+        },
+        {
+          "Name": "Dissolve_MaskLerp",
+          "Value": 0.6
+        },
+        {
+          "Name": "DIssolve_Rotation",
+          "Value": 0.35
+        },
+        {
+          "Name": "Dissolve_NoiseStrength",
+          "Value": 0.15
+        },
+        {
+          "Name": "Opacity_bVertexAlphaToMask",
+          "Value": 1.0
+        },
+        {
+          "Name": "RefractionDepthBias",
+          "Value": 0.0
+        }
+      ],
+      "VectorParameters": [
+        {
+          "Name": "Base_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": -1.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Base_Refine",
+          "Value": {
+            "R": 3.0,
+            "G": 5.0,
+            "B": 1.0,
+            "A": 0.5,
+            "Hex": "7FFFFFFF"
+          }
+        },
+        {
+          "Name": "Base_ColorTint",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_AlphaSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 1.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Second_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Second_Contorl",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Noise_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.2,
+            "A": 0.2,
+            "Hex": "33FFFF7C"
+          }
+        },
+        {
+          "Name": "Mask_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 1.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Mask_AlphaSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Dissolve_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Dissolve_EdgeColor",
+          "Value": {
+            "R": 10.0,
+            "G": 1.126482,
+            "B": 0.828007,
+            "A": 0.0,
+            "Hex": "FFFFEB"
+          }
+        },
+        {
+          "Name": "Dissolve_ChannelSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        }
+      ],
+      "StaticSwitchParameters": [
+        {
+          "Name": "UseBase",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseNoise",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseMaskTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseDissolve",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseNoiseInMobile",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondInMobile",
+          "Value": true,
+          "OverridesParent": true
+        }
+      ],
+      "BasePropertyOverrides": {
+        "bOverride_BlendMode": true,
+        "bOverride_TwoSided": true,
+        "TwoSided": true,
+        "bEnableAdaptiveTessellation": true,
+        "PipelineStateCreationHint": "MPSCH_AsyncNoWait",
+        "BlendMode": "BLEND_Translucent",
+        "ShadingModel": "MSM_Unlit",
+        "OpacityMaskClipValue": 0.3333,
+        "RenderQueue": 200,
+        "bUsedWithNiagaraMeshParticles": true,
+        "bUseFullPrecision": true
+      },
+      "CachedReferencedAssets": [
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBlend",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBase.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBase",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBase",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq.0",
+          "PackagePath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\Good64x64TilingNoiseHighFreq",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin.0",
+          "PackagePath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin",
+          "JsonExists": true,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": [
+            "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin.json"
+          ]
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTextureArray.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTextureArray",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTextureArray",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_Linear_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_Default_Matcap_Metal",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultVolumeTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultVolumeTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultVolumeTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Plugins/rdLODtools/Content/Textures/LinearColor.0",
+          "PackagePath": "Engine/Plugins/rdLODtools/Content/Textures/LinearColor",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Plugins\\rdLODtools\\Content\\Textures\\LinearColor",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_OceanWave_Volume.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_OceanWave_Volume",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\SingleLayerWater\\Ocean\\T_OceanWave_Volume",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_DefaultBlack.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_DefaultBlack",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\SingleLayerWater\\Ocean\\T_DefaultBlack",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Scene/Assets/PCG/Map_2_1_HaiDao/HaiDao/OceanWave/Tex/OceanWave.0",
+          "PackagePath": "Client/Content/Aki/Scene/Assets/PCG/Map_2_1_HaiDao/HaiDao/OceanWave/Tex/OceanWave",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Scene\\Assets\\PCG\\Map_2_1_HaiDao\\HaiDao\\OceanWave\\Tex\\OceanWave",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/DefaultWhiteGrid.0",
+          "PackagePath": "Engine/Content/EngineMaterials/DefaultWhiteGrid",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\DefaultWhiteGrid",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        }
+      ]
+    },
+    {
+      "Name": "MI_Trans_Daoguang_140100_MP",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140100_MP.0",
+        "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140100_MP",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140100_MP",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140100_MP.json"
+        ]
+      },
+      "Parent": {
+        "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_SimpleEffect_MP.0",
+        "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_SimpleEffect_MP",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\MeshParticle\\MI_SimpleEffect_MP",
+        "JsonExists": false,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": []
+      },
+      "Textures": [
+        {
+          "ParameterName": "Base",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Particle/T_Particle_002.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Particle/T_Particle_002",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Particle\\T_Particle_002",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Second",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_140009.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_140009",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_140009",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Noise",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+            "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Mask",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Particle/T_Particle_002.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Particle/T_Particle_002",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Particle\\T_Particle_002",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Dissolve",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_300186.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_300186",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_300186",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        }
+      ],
+      "ScalarParameters": [
+        {
+          "Name": "Base_Alpha_Multiply",
+          "Value": 10.0
+        },
+        {
+          "Name": "Base_Emissive_Add",
+          "Value": 0.0
+        },
+        {
+          "Name": "Base_bUseChannelAsEmissive",
+          "Value": 0.3
+        },
+        {
+          "Name": "Base_bAddSecond",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_Rotation",
+          "Value": 0.3
+        },
+        {
+          "Name": "Base_bClamp",
+          "Value": 1.0
+        },
+        {
+          "Name": "Second_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Second_Rotation",
+          "Value": 0.5
+        },
+        {
+          "Name": "Noise_Strength",
+          "Value": 0.05
+        },
+        {
+          "Name": "Mask_Rotation",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_bClamp",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_UOffset",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_VOffset",
+          "Value": 0.257143
+        },
+        {
+          "Name": "Dissolve_Dissolve",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_Smooth",
+          "Value": 5.0
+        },
+        {
+          "Name": "DIssolve_Rotation",
+          "Value": 0.25
+        },
+        {
+          "Name": "RefractionDepthBias",
+          "Value": 0.0
+        }
+      ],
+      "VectorParameters": [
+        {
+          "Name": "Base_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Base_Refine",
+          "Value": {
+            "R": 2.0,
+            "G": 5.0,
+            "B": 1.0,
+            "A": 0.5,
+            "Hex": "7FFFFFFF"
+          }
+        },
+        {
+          "Name": "Base_ColorTint",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_EmissiveSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 1.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Base_AlphaSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 1.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Second_UV",
+          "Value": {
+            "R": 0.5,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "BCFF00"
+          }
+        },
+        {
+          "Name": "Second_Contorl",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Noise_UV",
+          "Value": {
+            "R": 2.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": -0.35,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Mask_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Mask_AlphaSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Dissolve_UV",
+          "Value": {
+            "R": 0.0,
+            "G": 4.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Dissolve_EdgeColor",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Dissolve_ChannelSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        }
+      ],
+      "StaticSwitchParameters": [
+        {
+          "Name": "UseSecondTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseMaskTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseDissolve",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondInMobile",
+          "Value": true,
+          "OverridesParent": true
+        }
+      ],
+      "BasePropertyOverrides": {
+        "bOverride_BlendMode": true,
+        "bOverride_TwoSided": true,
+        "TwoSided": true,
+        "bEnableAdaptiveTessellation": true,
+        "PipelineStateCreationHint": "MPSCH_AsyncNoWait",
+        "BlendMode": "BLEND_Translucent",
+        "ShadingModel": "MSM_Unlit",
+        "OpacityMaskClipValue": 0.3333,
+        "RenderQueue": 200,
+        "ForceFightTranslucentOpacity": true,
+        "bUsedWithNiagaraMeshParticles": true,
+        "bUseFullPrecision": true
+      },
+      "CachedReferencedAssets": [
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBlend",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBase.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBase",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBase",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq.0",
+          "PackagePath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\Good64x64TilingNoiseHighFreq",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin.0",
+          "PackagePath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin",
+          "JsonExists": true,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": [
+            "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin.json"
+          ]
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTextureArray.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTextureArray",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTextureArray",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_Linear_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        }
+      ]
+    },
+    {
+      "Name": "MI_Trans_Daoguang_140109_MP",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140109_MP.0",
+        "PackagePath": "Client/Content/Aki/Effect/Materials/MI_MeshParticle/MI_Trans_Daoguang_140109_MP",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140109_MP",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_MeshParticle\\MI_Trans_Daoguang_140109_MP.json"
+        ]
+      },
+      "Parent": {
+        "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_Refraction_MP.0",
+        "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_Refraction_MP",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\MeshParticle\\MI_Refraction_MP",
+        "JsonExists": false,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": []
+      },
+      "Textures": [
+        {
+          "ParameterName": "Base",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Daoguang/T_Daoguang_40001.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Daoguang/T_Daoguang_40001",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Daoguang\\T_Daoguang_40001",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Second",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_80007.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_80007",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_80007",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Noise",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+            "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Mask",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30157.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30157",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Mask\\T_Mask_30157",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Dissolve",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_046",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        }
+      ],
+      "ScalarParameters": [
+        {
+          "Name": "Base_Alpha_Multiply",
+          "Value": 3.0
+        },
+        {
+          "Name": "Base_Emissive_Add",
+          "Value": 0.0
+        },
+        {
+          "Name": "Base_bAddSecond",
+          "Value": 0.3
+        },
+        {
+          "Name": "Base_bClamp",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_NoiseStrength",
+          "Value": 1.0
+        },
+        {
+          "Name": "Second_Rotation",
+          "Value": 0.75
+        },
+        {
+          "Name": "Noise_Offset",
+          "Value": -0.390476
+        },
+        {
+          "Name": "Noise_Strength",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_Rotation",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_bClamp",
+          "Value": 1.0
+        },
+        {
+          "Name": "Mask_NoiseStrength",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_UOffset",
+          "Value": 1.7
+        },
+        {
+          "Name": "Dissolve_VOffset",
+          "Value": 1.296884
+        },
+        {
+          "Name": "Dissolve_Dissolve",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_Smooth",
+          "Value": 6.443491
+        },
+        {
+          "Name": "Refraction",
+          "Value": 1.0
+        },
+        {
+          "Name": "RefractionDepthBias",
+          "Value": 0.0
+        }
+      ],
+      "VectorParameters": [
+        {
+          "Name": "Base_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_UV_Offset",
+          "Value": {
+            "R": 0.0,
+            "G": -0.01,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Base_Refine",
+          "Value": {
+            "R": 3.928144,
+            "G": 1.6272,
+            "B": 2.980786,
+            "A": 0.602458,
+            "Hex": "9AFFFFFF"
+          }
+        },
+        {
+          "Name": "Base_ColorTint",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_AlphaSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 1.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Second_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Second_Contorl",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "00FFFF"
+          }
+        },
+        {
+          "Name": "Noise_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.764253,
+            "B": 0.190476,
+            "A": 0.161905,
+            "Hex": "29FFFF79"
+          }
+        },
+        {
+          "Name": "Mask_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 0.5,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFBCFF"
+          }
+        },
+        {
+          "Name": "Mask_AlphaSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Dissolve_UV",
+          "Value": {
+            "R": 0.3,
+            "G": 0.5,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "95BC00"
+          }
+        }
+      ],
+      "StaticSwitchParameters": [
+        {
+          "Name": "UseBase",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseMaskTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseDissolve",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondInMobile",
+          "Value": true,
+          "OverridesParent": true
+        }
+      ],
+      "BasePropertyOverrides": {
+        "bOverride_BlendMode": true,
+        "bOverride_TwoSided": true,
+        "TwoSided": true,
+        "bEnableAdaptiveTessellation": true,
+        "PipelineStateCreationHint": "MPSCH_AsyncNoWait",
+        "BlendMode": "BLEND_Translucent",
+        "ShadingModel": "MSM_Unlit",
+        "OpacityMaskClipValue": 0.3333,
+        "RenderQueue": 200,
+        "RenderTranslucentOpacity": true,
+        "bUsedWithNiagaraMeshParticles": true,
+        "bUseMobileDistortion": true,
+        "bUseFullPrecision": true
+      },
+      "CachedReferencedAssets": [
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq.0",
+          "PackagePath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\Good64x64TilingNoiseHighFreq",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin.0",
+          "PackagePath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin",
+          "JsonExists": true,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": [
+            "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin.json"
+          ]
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTextureArray.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTextureArray",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTextureArray",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_Linear_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_Default_Matcap_Metal",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        }
+      ]
+    },
+    {
+      "Name": "MI_Trans_Wenli_140031_S",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S.0",
+        "PackagePath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S.json"
+        ]
+      },
+      "Parent": {
+        "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/Sprite/MI_SimpleEffect_S.0",
+        "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/Sprite/MI_SimpleEffect_S",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\Sprite\\MI_SimpleEffect_S",
+        "JsonExists": false,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": []
+      },
+      "Textures": [
+        {
+          "ParameterName": "Base",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Changli_140006_wings_Trail",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Second",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_009.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_009",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_009",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Noise",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Normal/T_Normal_011.0",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Normal/T_Normal_011",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Normal\\T_Normal_011",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Mask",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Changli_140006_wings_Trail",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Dissolve",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Wenli_20002",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        }
+      ],
+      "ScalarParameters": [
+        {
+          "Name": "Base_Alpha_Multiply",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_Emissive_Add",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_bUseChannelAsEmissive",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_Rotation",
+          "Value": 0.0
+        },
+        {
+          "Name": "Base_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Base_NoiseStrength",
+          "Value": 1.0
+        },
+        {
+          "Name": "Second_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Second_Rotation",
+          "Value": 0.0
+        },
+        {
+          "Name": "Noise_Offset",
+          "Value": -0.5
+        },
+        {
+          "Name": "Noise_Strength",
+          "Value": 0.2
+        },
+        {
+          "Name": "Mask_Alpha_Multiply",
+          "Value": 1.0
+        },
+        {
+          "Name": "Mask_Rotation",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_NoiseStrength",
+          "Value": 0.2
+        },
+        {
+          "Name": "Dissolve_VOffset",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_Dissolve",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_Smooth",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_MaskLerp",
+          "Value": 0.5
+        },
+        {
+          "Name": "Dissolve_NoiseStrength",
+          "Value": 1.0
+        },
+        {
+          "Name": "RefractionDepthBias",
+          "Value": 0.0
+        }
+      ],
+      "VectorParameters": [
+        {
+          "Name": "Base_UVSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Base_UV",
+          "Value": {
+            "R": 1.0,
+            "G": -1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Base_UV_Offset",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Base_Refine",
+          "Value": {
+            "R": 1.0,
+            "G": 3.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_ColorTint",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_EmissiveSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 3.0,
+            "B": 2.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_AlphaSwitch",
+          "Value": {
+            "R": 2.0,
+            "G": 3.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Second_UVSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Second_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Second_Contorl",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Noise_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": -0.2,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Mask_UVSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Mask_UV",
+          "Value": {
+            "R": 1.0,
+            "G": -1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Mask_AlphaSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "0000FF"
+          }
+        },
+        {
+          "Name": "Dissolve_UVSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Dissolve_UV",
+          "Value": {
+            "R": 0.5,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.25,
+            "Hex": "3FBCFF00"
+          }
+        },
+        {
+          "Name": "Dissolve_EdgeColor",
+          "Value": {
+            "R": 2.0,
+            "G": 0.727631,
+            "B": 0.787338,
+            "A": 0.0,
+            "Hex": "FFDEE6"
+          }
+        },
+        {
+          "Name": "Dissolve_ChannelSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "00FFFF"
+          }
+        }
+      ],
+      "StaticSwitchParameters": [
+        {
+          "Name": "UseBase",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseNoise",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseMaskTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseDissolve",
+          "Value": true,
+          "OverridesParent": true
+        }
+      ],
+      "BasePropertyOverrides": {
+        "bOverride_BlendMode": true,
+        "bOverride_TwoSided": true,
+        "TwoSided": true,
+        "bEnableAdaptiveTessellation": true,
+        "PipelineStateCreationHint": "MPSCH_AsyncNoWait",
+        "BlendMode": "BLEND_Translucent",
+        "ShadingModel": "MSM_Unlit",
+        "OpacityMaskClipValue": 0.3333,
+        "RenderQueue": 200,
+        "RenderTranslucentOpacity": true,
+        "bUsedWithNiagaraSprites": true,
+        "bRemoveLocalVertexFactory": true,
+        "bUseFullPrecision": true
+      },
+      "CachedReferencedAssets": [
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq.0",
+          "PackagePath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\Good64x64TilingNoiseHighFreq",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin.0",
+          "PackagePath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin",
+          "JsonExists": true,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": [
+            "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin.json"
+          ]
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTextureArray.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTextureArray",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTextureArray",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_Linear_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBlend",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBase.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBase",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBase",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        }
+      ]
+    },
+    {
+      "Name": "MI_Trans_Wenli_140031_S1",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S1.0",
+        "PackagePath": "Client/Content/Aki/Effect/Materials/MI_Sprite/MI_Trans_Wenli_140031_S1",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S1",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Materials\\MI_Sprite\\MI_Trans_Wenli_140031_S1.json"
+        ]
+      },
+      "Parent": {
+        "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/Sprite/MI_SimpleEffect_S.0",
+        "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/Sprite/MI_SimpleEffect_S",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\Sprite\\MI_SimpleEffect_S",
+        "JsonExists": false,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": []
+      },
+      "Textures": [
+        {
+          "ParameterName": "Base",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Changli_140006_wings_Trail",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Second",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_40010.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_40010",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_40010",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Noise",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Normal/T_Normal_011.0",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Normal/T_Normal_011",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Normal\\T_Normal_011",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Mask",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Changli_140006_wings_Trail",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        },
+        {
+          "ParameterName": "Dissolve",
+          "Asset": {
+            "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002.1",
+            "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002",
+            "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Wenli_20002",
+            "JsonExists": false,
+            "ImageFiles": [],
+            "GeometryFiles": [],
+            "RawPackageFiles": [],
+            "AllAvailableFiles": []
+          }
+        }
+      ],
+      "ScalarParameters": [
+        {
+          "Name": "Base_Alpha_Multiply",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_Emissive_Add",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_bUseChannelAsEmissive",
+          "Value": 1.0
+        },
+        {
+          "Name": "Base_Rotation",
+          "Value": 0.0
+        },
+        {
+          "Name": "Base_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Base_NoiseStrength",
+          "Value": 1.0
+        },
+        {
+          "Name": "Second_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Second_Rotation",
+          "Value": 0.25
+        },
+        {
+          "Name": "Noise_Offset",
+          "Value": -0.5
+        },
+        {
+          "Name": "Noise_Strength",
+          "Value": 0.2
+        },
+        {
+          "Name": "Mask_Alpha_Multiply",
+          "Value": 1.0
+        },
+        {
+          "Name": "Mask_Rotation",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_bClamp",
+          "Value": 0.0
+        },
+        {
+          "Name": "Mask_NoiseStrength",
+          "Value": 0.2
+        },
+        {
+          "Name": "Dissolve_VOffset",
+          "Value": 0.0
+        },
+        {
+          "Name": "Dissolve_Dissolve",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_Smooth",
+          "Value": 1.0
+        },
+        {
+          "Name": "Dissolve_MaskLerp",
+          "Value": 0.5
+        },
+        {
+          "Name": "Dissolve_NoiseStrength",
+          "Value": 1.0
+        },
+        {
+          "Name": "RefractionDepthBias",
+          "Value": 0.0
+        }
+      ],
+      "VectorParameters": [
+        {
+          "Name": "Base_UVSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Base_UV",
+          "Value": {
+            "R": 1.0,
+            "G": -1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Base_UV_Offset",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Base_Refine",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_ColorTint",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "FFFFFF"
+          }
+        },
+        {
+          "Name": "Base_EmissiveSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 2.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Base_AlphaSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 3.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Second_UVSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Second_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Second_Contorl",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Noise_UV",
+          "Value": {
+            "R": 1.0,
+            "G": 2.0,
+            "B": -0.2,
+            "A": 0.0,
+            "Hex": "FFFF00"
+          }
+        },
+        {
+          "Name": "Mask_UVSwitch",
+          "Value": {
+            "R": 1.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Mask_UV",
+          "Value": {
+            "R": 1.0,
+            "G": -1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "FF0000"
+          }
+        },
+        {
+          "Name": "Mask_AlphaSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "0000FF"
+          }
+        },
+        {
+          "Name": "Dissolve_UVSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Dissolve_UV",
+          "Value": {
+            "R": -1.0,
+            "G": 1.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "00FF00"
+          }
+        },
+        {
+          "Name": "Dissolve_EdgeColor",
+          "Value": {
+            "R": 0.0,
+            "G": 0.0,
+            "B": 0.0,
+            "A": 0.0,
+            "Hex": "000000"
+          }
+        },
+        {
+          "Name": "Dissolve_ChannelSwitch",
+          "Value": {
+            "R": 0.0,
+            "G": 1.0,
+            "B": 1.0,
+            "A": 0.0,
+            "Hex": "00FFFF"
+          }
+        }
+      ],
+      "StaticSwitchParameters": [
+        {
+          "Name": "UseBase",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseNoise",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseMaskTex",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseDissolve",
+          "Value": true,
+          "OverridesParent": true
+        },
+        {
+          "Name": "UseSecondInMobile",
+          "Value": true,
+          "OverridesParent": true
+        }
+      ],
+      "BasePropertyOverrides": {
+        "bOverride_BlendMode": true,
+        "bOverride_TwoSided": true,
+        "TwoSided": true,
+        "bEnableAdaptiveTessellation": true,
+        "PipelineStateCreationHint": "MPSCH_AsyncNoWait",
+        "BlendMode": "BLEND_Translucent",
+        "ShadingModel": "MSM_Unlit",
+        "OpacityMaskClipValue": 0.3333,
+        "RenderQueue": 200,
+        "RenderTranslucentOpacity": true,
+        "bUsedWithNiagaraSprites": true,
+        "bRemoveLocalVertexFactory": true,
+        "bUseFullPrecision": true
+      },
+      "CachedReferencedAssets": [
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq.0",
+          "PackagePath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\Good64x64TilingNoiseHighFreq",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin.0",
+          "PackagePath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin",
+          "JsonExists": true,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": [
+            "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin.json"
+          ]
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTextureArray.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTextureArray",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTextureArray",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTexture.0",
+          "PackagePath": "Engine/Content/EngineResources/DefaultTexture",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTexture",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D.0",
+          "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_Linear_D",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBlend",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        },
+        {
+          "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBase.0",
+          "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBase",
+          "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBase",
+          "JsonExists": false,
+          "ImageFiles": [],
+          "GeometryFiles": [],
+          "RawPackageFiles": [],
+          "AllAvailableFiles": []
+        }
+      ]
+    }
+  ],
+  "Meshes": [
+    {
+      "Name": "Mod_Changli_Daoguang_140003_a3",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140003_a3.2",
+        "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140003_a3",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140003_a3",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140003_a3.json"
+        ]
+      },
+      "RenderDataMetadataOnly": {
+        "LODs": [
+          {
+            "Sections": [
+              {
+                "MaterialIndex": 0,
+                "FirstIndex": 0,
+                "NumTriangles": 176,
+                "MinVertexIndex": 0,
+                "MaxVertexIndex": 114,
+                "bEnableCollision": true,
+                "bCastShadow": true,
+                "bForceOpaque": false,
+                "bVisibleInRayTracing": true
+              }
+            ],
+            "MaxDeviation": 0.0,
+            "PositionVertexBuffer": {
+              "Stride": 12,
+              "NumVertices": 115
+            },
+            "VertexBuffer": {
+              "NumTexCoords": 1,
+              "NumVertices": 115,
+              "Strides": -1,
+              "UseHighPrecisionTangentBasis": false,
+              "UseFullPrecisionUVs": false
+            },
+            "ColorVertexBuffer": {
+              "Stride": 4,
+              "NumVertices": 115
+            }
+          }
+        ],
+        "Bounds": {
+          "Origin": {
+            "X": 2.3240204,
+            "Y": -25.41811,
+            "Z": 0.0
+          },
+          "BoxExtent": {
+            "X": 68.97063,
+            "Y": 44.053646,
+            "Z": 15.654197
+          },
+          "SphereRadius": 80.40659
+        },
+        "bLODsShareStaticLighting": true,
+        "ScreenSize": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "GeometryWarning": "Export JSON lists buffer sizes and bounds, but does not contain vertex positions, UV values, indices, or vertex-color arrays. Preserve UV and vertex colors in actual geometry export."
+    },
+    {
+      "Name": "Mod_Changli_Daoguang_140004",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140004.2",
+        "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140004",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140004",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140004.json"
+        ]
+      },
+      "RenderDataMetadataOnly": {
+        "LODs": [
+          {
+            "Sections": [
+              {
+                "MaterialIndex": 0,
+                "FirstIndex": 0,
+                "NumTriangles": 120,
+                "MinVertexIndex": 0,
+                "MaxVertexIndex": 92,
+                "bEnableCollision": true,
+                "bCastShadow": true,
+                "bForceOpaque": false,
+                "bVisibleInRayTracing": true
+              }
+            ],
+            "MaxDeviation": 0.0,
+            "PositionVertexBuffer": {
+              "Stride": 12,
+              "NumVertices": 93
+            },
+            "VertexBuffer": {
+              "NumTexCoords": 1,
+              "NumVertices": 93,
+              "Strides": -1,
+              "UseHighPrecisionTangentBasis": false,
+              "UseFullPrecisionUVs": false
+            },
+            "ColorVertexBuffer": {
+              "Stride": 0,
+              "NumVertices": 0
+            }
+          }
+        ],
+        "Bounds": {
+          "Origin": {
+            "X": 4.799637,
+            "Y": -5.4174614,
+            "Z": 0.21622765
+          },
+          "BoxExtent": {
+            "X": 45.01201,
+            "Y": 44.568924,
+            "Z": 1.6746382
+          },
+          "SphereRadius": 51.660885
+        },
+        "bLODsShareStaticLighting": true,
+        "ScreenSize": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "GeometryWarning": "Export JSON lists buffer sizes and bounds, but does not contain vertex positions, UV values, indices, or vertex-color arrays. Preserve UV and vertex colors in actual geometry export."
+    },
+    {
+      "Name": "Mod_Changli_Daoguang_140005",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140005.2",
+        "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Daoguang_140005",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140005",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Daoguang_140005.json"
+        ]
+      },
+      "RenderDataMetadataOnly": {
+        "LODs": [
+          {
+            "Sections": [
+              {
+                "MaterialIndex": 0,
+                "FirstIndex": 0,
+                "NumTriangles": 240,
+                "MinVertexIndex": 0,
+                "MaxVertexIndex": 185,
+                "bEnableCollision": true,
+                "bCastShadow": true,
+                "bForceOpaque": false,
+                "bVisibleInRayTracing": true
+              }
+            ],
+            "MaxDeviation": 0.0,
+            "PositionVertexBuffer": {
+              "Stride": 12,
+              "NumVertices": 186
+            },
+            "VertexBuffer": {
+              "NumTexCoords": 1,
+              "NumVertices": 186,
+              "Strides": -1,
+              "UseHighPrecisionTangentBasis": false,
+              "UseFullPrecisionUVs": false
+            },
+            "ColorVertexBuffer": {
+              "Stride": 4,
+              "NumVertices": 186
+            }
+          }
+        ],
+        "Bounds": {
+          "Origin": {
+            "X": 7.1028557,
+            "Y": -4.2025337,
+            "Z": -3.21944
+          },
+          "BoxExtent": {
+            "X": 42.85303,
+            "Y": 45.763702,
+            "Z": 3.2268333
+          },
+          "SphereRadius": 52.83337
+        },
+        "bLODsShareStaticLighting": true,
+        "ScreenSize": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "GeometryWarning": "Export JSON lists buffer sizes and bounds, but does not contain vertex positions, UV values, indices, or vertex-color arrays. Preserve UV and vertex colors in actual geometry export."
+    },
+    {
+      "Name": "Mod_Changli_Zhuan_140001",
+      "Availability": {
+        "ReferenceObjectPath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Zhuan_140001.2",
+        "PackagePath": "Client/Content/Aki/Effect/Mesh/Changli/Mod_Changli_Zhuan_140001",
+        "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Zhuan_140001",
+        "JsonExists": true,
+        "ImageFiles": [],
+        "GeometryFiles": [],
+        "RawPackageFiles": [],
+        "AllAvailableFiles": [
+          "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Mesh\\Changli\\Mod_Changli_Zhuan_140001.json"
+        ]
+      },
+      "RenderDataMetadataOnly": {
+        "LODs": [
+          {
+            "Sections": [
+              {
+                "MaterialIndex": 0,
+                "FirstIndex": 0,
+                "NumTriangles": 128,
+                "MinVertexIndex": 0,
+                "MaxVertexIndex": 84,
+                "bEnableCollision": true,
+                "bCastShadow": true,
+                "bForceOpaque": false,
+                "bVisibleInRayTracing": true
+              }
+            ],
+            "MaxDeviation": 0.0,
+            "PositionVertexBuffer": {
+              "Stride": 12,
+              "NumVertices": 85
+            },
+            "VertexBuffer": {
+              "NumTexCoords": 1,
+              "NumVertices": 85,
+              "Strides": -1,
+              "UseHighPrecisionTangentBasis": false,
+              "UseFullPrecisionUVs": false
+            },
+            "ColorVertexBuffer": {
+              "Stride": 4,
+              "NumVertices": 85
+            }
+          }
+        ],
+        "Bounds": {
+          "Origin": {
+            "X": -30.92047,
+            "Y": 11.34127,
+            "Z": -1.2846775
+          },
+          "BoxExtent": {
+            "X": 23.46721,
+            "Y": 62.786156,
+            "Z": 22.411594
+          },
+          "SphereRadius": 69.133286
+        },
+        "bLODsShareStaticLighting": true,
+        "ScreenSize": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "GeometryWarning": "Export JSON lists buffer sizes and bounds, but does not contain vertex positions, UV values, indices, or vertex-color arrays. Preserve UV and vertex colors in actual geometry export."
+    }
+  ],
+  "ExplicitTextureAssets": [
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_009.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_009",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_009",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_140009.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_140009",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_140009",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_40010.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_40010",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_40010",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Color/T_Color_80007.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Color/T_Color_80007",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Color\\T_Color_80007",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Daoguang/T_Daoguang_40001.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Daoguang/T_Daoguang_40001",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Daoguang\\T_Daoguang_40001",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30013.0",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30013",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Mask\\T_Mask_30013",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30054_2.0",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30054_2",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Mask\\T_Mask_30054_2",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30157.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Mask/T_Mask_30157",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Mask\\T_Mask_30157",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Normal/T_Normal_011.0",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Normal/T_Normal_011",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Normal\\T_Normal_011",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Particle/T_Particle_002.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Particle/T_Particle_002",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Particle\\T_Particle_002",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_046",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_046",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_19_Vec",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_19_Vec",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_300186.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Tile_300186",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Tile_300186",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Tile/T_Wenli_20002",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Tile\\T_Wenli_20002",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140004_wings.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140004_wings",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Changli_140004_wings",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Changli_140006_wings_Trail",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Changli_140006_wings_Trail",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Texture/Wenli/T_Wenli_Changli_140002_3.1",
+      "PackagePath": "Client/Content/Aki/Effect/Texture/Wenli/T_Wenli_Changli_140002_3",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Texture\\Wenli\\T_Wenli_Changli_140002_3",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+      "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    }
+  ],
+  "MissingImmediateParents": [
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_AdvancedEffect_MP.0",
+      "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_AdvancedEffect_MP",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\MeshParticle\\MI_AdvancedEffect_MP",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_Refraction_MP.0",
+      "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_Refraction_MP",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\MeshParticle\\MI_Refraction_MP",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_SimpleEffect_MP.0",
+      "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/MeshParticle/MI_SimpleEffect_MP",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\MeshParticle\\MI_SimpleEffect_MP",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/MaterialInstance/Effect/Sprite/MI_SimpleEffect_S.0",
+      "PackagePath": "Client/Content/Aki/Render/MaterialInstance/Effect/Sprite/MI_SimpleEffect_S",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\MaterialInstance\\Effect\\Sprite\\MI_SimpleEffect_S",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    }
+  ],
+  "CachedReferencedAssets": [
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin.0",
+      "PackagePath": "Client/Content/Aki/Effect/Curves/CurveAtlas/CA_Effect_Robin",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin",
+      "JsonExists": true,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": [
+        "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Effect\\Curves\\CurveAtlas\\CA_Effect_Robin.json"
+      ]
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_DefaultBlack.0",
+      "PackagePath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_DefaultBlack",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\SingleLayerWater\\Ocean\\T_DefaultBlack",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_OceanWave_Volume.0",
+      "PackagePath": "Client/Content/Aki/Render/Common/SingleLayerWater/Ocean/T_OceanWave_Volume",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\SingleLayerWater\\Ocean\\T_OceanWave_Volume",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal.0",
+      "PackagePath": "Client/Content/Aki/Render/Common/T_Default_Matcap_Metal",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_Default_Matcap_Metal",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D.0",
+      "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_D",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_D",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D.0",
+      "PackagePath": "Client/Content/Aki/Render/Common/T_DefaultColorWhite_Linear_D",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Render\\Common\\T_DefaultColorWhite_Linear_D",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Client/Content/Aki/Scene/Assets/PCG/Map_2_1_HaiDao/HaiDao/OceanWave/Tex/OceanWave.0",
+      "PackagePath": "Client/Content/Aki/Scene/Assets/PCG/Map_2_1_HaiDao/HaiDao/OceanWave/Tex/OceanWave",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Client\\Content\\Aki\\Scene\\Assets\\PCG\\Map_2_1_HaiDao\\HaiDao\\OceanWave\\Tex\\OceanWave",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBase.0",
+      "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBase",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBase",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend.0",
+      "PackagePath": "Engine/Content/EngineMaterials/BlendFunc_DefBlend",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\BlendFunc_DefBlend",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Content/EngineMaterials/DefaultWhiteGrid.0",
+      "PackagePath": "Engine/Content/EngineMaterials/DefaultWhiteGrid",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\DefaultWhiteGrid",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq.0",
+      "PackagePath": "Engine/Content/EngineMaterials/Good64x64TilingNoiseHighFreq",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineMaterials\\Good64x64TilingNoiseHighFreq",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTexture.0",
+      "PackagePath": "Engine/Content/EngineResources/DefaultTexture",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTexture",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultTextureArray.0",
+      "PackagePath": "Engine/Content/EngineResources/DefaultTextureArray",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultTextureArray",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Content/EngineResources/DefaultVolumeTexture.0",
+      "PackagePath": "Engine/Content/EngineResources/DefaultVolumeTexture",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Content\\EngineResources\\DefaultVolumeTexture",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    },
+    {
+      "ReferenceObjectPath": "Engine/Plugins/rdLODtools/Content/Textures/LinearColor.0",
+      "PackagePath": "Engine/Plugins/rdLODtools/Content/Textures/LinearColor",
+      "ExpectedLocalBasePath": "C:\\GamePakExtractor\\Output\\Exports\\Engine\\Plugins\\rdLODtools\\Content\\Textures\\LinearColor",
+      "JsonExists": false,
+      "ImageFiles": [],
+      "GeometryFiles": [],
+      "RawPackageFiles": [],
+      "AllAvailableFiles": []
+    }
+  ]
+}

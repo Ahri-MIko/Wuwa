@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Development": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Binaries\\Win64\\UnrealEditor.exe",
+      "commandLineArgs": "\"C:\\UEProjects\\Wuwa\\Wuwa.uproject\""
+    },
+    "Debug": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\Epic Games\\UE_5.7\\Engine\\Binaries\\Win64\\UnrealEditor-Win64-DebugGame.exe",
+      "commandLineArgs": "\"C:\\UEProjects\\Wuwa\\Wuwa.uproject\""
+    }
+  }
+}
