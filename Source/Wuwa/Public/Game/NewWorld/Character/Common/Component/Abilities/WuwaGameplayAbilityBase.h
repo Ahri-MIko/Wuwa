@@ -9,7 +9,6 @@
 #include "Game/NewWorld/Character/Common/Component/Skill/WuwaSkillTypes.h"
 #include "WuwaGameplayAbilityBase.generated.h"
 
-class UWuwaUnifiedStateBridgeComponent;
 class UWuwaSkillBridgeComponent;
 
 /**
@@ -39,44 +38,33 @@ public:
 
 	//申请为主技能时返回的句柄
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat|Skill")
-	int32 GetSkillHandle() const { return SkillLeaseHandle; }
+	int32 GetSkillHandle() const { return FightStateHandle; }
 
-	/** 只作用于本次 GA；动画通知也通过带归属的技能接口更新权限。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Combat|Skill")
-	bool SetSkillAcceptInput(bool bAcceptInput);
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Combat|Skill")
-	bool SetSkillReadyEnd(bool bReadyEnd);
 
-	/** 只检查缓存，不修改同级接招/让位权限；返回值表示请求被接受。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Combat|Input")
-	bool CallAnimBreakPoint();
-	/** 空 Tag 清空预输入；非空 Tag 只清对应指令，不重置物理/语义按键状态。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Combat|Input")
-	bool ClearBufferedInput(FGameplayTag InputTag);
-
-	
 	/** 脚本管理器使用的 GAS 执行接口；不包含技能优先级规则。 */
-	//是否正在被执行
+	
+	//是否正在被正常执行
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat|Skill")
 	bool IsSkillExecutionActive() const;
+	
 	//是否正在为输入的Avatar执行
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat|Skill")
 	bool IsSkillExecutionFor(AActor* ExpectedAvatar) const;
-	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat|Skill")
+	
 	//是否可以现在就结束,前提是当前的GA正在执行,并且没有被其他的程序上锁
+	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat|Skill")
 	bool CanEndSkillExecutionNow() const;
+	
+	//判断是否能够终止,从引擎层和脚本的技能句柄的双重判断
 	UFUNCTION(BlueprintCallable, Category = "Wuwa|Combat|Skill")
 	bool TryEndSkillExecution(int32 ExpectedHandle);
 
-	/** 显式配置的动作才取得统一移动状态；普通能力不会自动覆盖步态。 */
+	/**
+	 * 技能开始时写入运动状态的移动状态（如 Dash → Dodge），结束后让 RoleGait 立即重算一次；Other 表示不写入。
+	 * 与原作一样只写入、不占用：之后 RoleGait 按普通规则覆盖（有方向输入时）或在停稳后转为 Stand。
+	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Wuwa|State")
-	bool bOverridesMoveState = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Wuwa|State", meta=(EditCondition="bOverridesMoveState"))
-	EWuwaMoveState ActionMoveState = EWuwaMoveState::Other;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Wuwa|State", meta=(EditCondition="bOverridesMoveState"))
-	int32 ActionMoveStatePriority = 100;
+	EWuwaMoveState StartMoveState = EWuwaMoveState::Other;
 
 	/**
 	 * 在 GA 实例中读取当前 Avatar 的移动输入，无角色上下文时返回零值。
@@ -97,7 +85,7 @@ public:
 	bool StopMontageForMovement(float BlendOutTime = 0.1f);
 
 	
-	/** 先纯查询当前 Avatar 的动作占用规则，成功后保留 GAS 自身的激活检查。 */
+	/** 先查询当前 Avatar 的主技能让位规则和动作状态的位置合法性，成功后保留 GAS 自身的激活检查。 */
 	virtual  bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
 protected:
@@ -110,11 +98,12 @@ protected:
 		const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 private:
-	TWeakObjectPtr<UWuwaSkillBridgeComponent> SkillLeaseOwner;
-	int32 SkillLeaseHandle = 0;
-	bool bSkillLeaseRequiredForActivation = false;
-	TWeakObjectPtr<UWuwaUnifiedStateBridgeComponent> MoveStateLeaseOwner;
-	int32 MoveStateLeaseHandle = 0;
-	uint64 MoveStateActivationSerial = 0;
-	bool bMoveStateLeaseRequiredForActivation = false;
+	bool WritesStartMoveState() const { return StartMoveState != EWuwaMoveState::Other; }
+
+	// 本次主技能登记的技能组件和 FightState 句柄（原作 Skill.FightStateHandle），结束时用它回报 EndSkill。
+	TWeakObjectPtr<UWuwaSkillBridgeComponent> SkillOwner;
+	int32 FightStateHandle = 0;
+	
+	//防止重入导致的重复激活
+	uint64 ActivationSerial = 0;
 };

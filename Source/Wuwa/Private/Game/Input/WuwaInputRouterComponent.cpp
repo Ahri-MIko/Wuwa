@@ -125,18 +125,12 @@ bool UWuwaInputRouterComponent::UnregisterHandler(const FGameplayTag& RouteTag,U
 bool UWuwaInputRouterComponent::DispatchInput(const FWuwaInputEvent& InputEvent)
 {
 	check(IsInGameThread());
-	
-	// 先记录语义输入，再交给系统处理。GA 拒绝激活或没有 Handler 不能吞掉松开事件。
+
 	FWuwaInputEvent RoutedEvent = InputEvent;
-	RoutedEvent.InputTag = InputEvent.InputTag;
-	RoutedEvent.SourceAction = InputEvent.SourceAction;
 	if ((!FMath::IsFinite(RoutedEvent.Timestamp) || RoutedEvent.Timestamp <= 0.0) && GetWorld())
 	{
 		RoutedEvent.Timestamp = GetWorld()->GetTimeSeconds();
 	}
-	
-	
-	UpdateInputState(RoutedEvent);
 
 	//查找注册表里的RouterHandler
 	const TWeakObjectPtr<UObject>* FoundHandler =RouteHandlers.Find(InputEvent.RouteTag);
@@ -173,76 +167,4 @@ bool UWuwaInputRouterComponent::DispatchInput(const FWuwaInputEvent& InputEvent)
 		Execute_HandleWuwaInput(
 			Handler,
 			RoutedEvent);
-}
-
-void UWuwaInputRouterComponent::UpdateInputState(const FWuwaInputEvent& InputEvent)
-{
-	//check validation
-	if (!InputEvent.InputTag.IsValid() || !IsValid(InputEvent.SourceAction) || !GetWorld())
-	{
-		return;
-	}
-	//其实有些冗余了,因为所有的Action都可以对应多个映射
-	//HeldInputs有<Inputag,FHeldInput<Vector<SourceAction>,PressedAt>>下面就是更新按键状态,因为一个Tag可以由多个Action触发比如手柄之类的所以收集所有的源头
-	const TWeakObjectPtr<const UInputAction> Source(InputEvent.SourceAction.Get());
-	if (InputEvent.Phase == EWuwaInputPhase::Pressed)
-	{
-		FHeldInput& State = HeldInputs.FindOrAdd(InputEvent.InputTag);
-		for (auto It = State.ActiveSources.CreateIterator(); It; ++It)
-		{
-			if (!It->IsValid())
-			{
-				It.RemoveCurrent();
-			}
-		}
-		if (State.ActiveSources.IsEmpty())
-		{
-			State.PressedAt = FMath::Clamp(InputEvent.Timestamp, 0.0, GetWorld()->GetTimeSeconds());
-		}
-		State.ActiveSources.Add(Source);
-	}
-	else if (InputEvent.Phase == EWuwaInputPhase::Released || InputEvent.Phase == EWuwaInputPhase::Canceled)
-	{
-		if (FHeldInput* State = HeldInputs.Find(InputEvent.InputTag))
-		{
-			State->ActiveSources.Remove(Source);
-			if (State->ActiveSources.IsEmpty())
-			{
-				HeldInputs.Remove(InputEvent.InputTag);
-			}
-		}
-	}
-	// Triggered 只表达持续采样，不重新计时，也不让 Flush/Cancel 后的输入复活。
-}
-
-//得到当前输入的状态
-FWuwaInputActionState UWuwaInputRouterComponent::GetInputActionState(FGameplayTag InputTag) const
-{
-	FWuwaInputActionState Result;
-	const FHeldInput* State = HeldInputs.Find(InputTag);
-	if (!State || !GetWorld())
-	{
-		return Result;
-	}
-	for (const auto& Source : State->ActiveSources)
-	{
-		if (Source.IsValid())
-		{
-			Result.bHeld = true;
-			Result.HeldSeconds = static_cast<float>(FMath::Max(0.0, GetWorld()->GetTimeSeconds() - State->PressedAt));
-			break;
-		}
-	}
-	return Result;
-}
-
-void UWuwaInputRouterComponent::ResetInputStates()
-{
-	HeldInputs.Empty();
-}
-
-void UWuwaInputRouterComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	ResetInputStates();
-	Super::EndPlay(EndPlayReason);
 }

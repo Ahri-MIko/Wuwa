@@ -1,8 +1,19 @@
 #include "Game/NewWorld/Character/Common/Component/Skill/WuwaSkillBridgeComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Combat/WuwaFightStateBridgeComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
+#include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
 
 UWuwaSkillBridgeComponent::UWuwaSkillBridgeComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UWuwaSkillBridgeComponent::BindDependencies(UWuwaFightStateBridgeComponent* InFightState,
+	UWuwaUnifiedStateBridgeComponent* InUnifiedState, UWuwaRoleGaitBridgeComponent* InRoleGait)
+{
+	FightState = InFightState;
+	UnifiedState = InUnifiedState;
+	RoleGait = InRoleGait;
 }
 
 bool UWuwaSkillBridgeComponent::CanBeginSkill_Implementation(UWuwaGameplayAbilityBase*) const { return false; }

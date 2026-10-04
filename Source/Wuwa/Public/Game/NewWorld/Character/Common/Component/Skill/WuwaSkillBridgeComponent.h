@@ -7,6 +7,9 @@
 #include "WuwaSkillBridgeComponent.generated.h"
 
 class UWuwaSkillBridgeComponent;
+class UWuwaFightStateBridgeComponent;
+class UWuwaUnifiedStateBridgeComponent;
+class UWuwaRoleGaitBridgeComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FWuwaAnimBreakPoint, UWuwaSkillBridgeComponent*, Skills, int32, SkillHandle);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FWuwaInputCacheClearRequest, UWuwaSkillBridgeComponent*, Skills, int32, SkillHandle, FGameplayTag, InputTag);
 
@@ -18,6 +21,10 @@ class WUWA_API UWuwaSkillBridgeComponent : public UActorComponent
 
 public:
 	UWuwaSkillBridgeComponent();
+
+	/** 由角色组装时注入；本组件不查找、也不读取角色。运动相关的两个可以为空（运动状态尚未装配）。 */
+	void BindDependencies(UWuwaFightStateBridgeComponent* InFightState, UWuwaUnifiedStateBridgeComponent* InUnifiedState,
+		UWuwaRoleGaitBridgeComponent* InRoleGait);
 
 	/** 纯查询。Ability 可以是本次待激活能力的 CDO。 */
 	UFUNCTION(BlueprintPure, BlueprintNativeEvent, Category = "Wuwa|Combat|Skill")
@@ -69,4 +76,14 @@ public:
 	void BroadcastAnimBreakPoint(int32 SkillHandle);
 	UFUNCTION(BlueprintCallable, Category = "Wuwa|Combat|Input", meta = (BlueprintProtected))
 	void BroadcastInputCacheClear(int32 SkillHandle, FGameplayTag InputTag);
+
+private:
+	/** 脚本读取：申请/释放战斗状态。 */
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "Wuwa|Combat|Skill", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWuwaFightStateBridgeComponent> FightState;
+	/** 脚本读取：主技能开始时的移动处理（原作 DoSkillBeginMoveAction）。 */
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "Wuwa|Combat|Skill", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWuwaUnifiedStateBridgeComponent> UnifiedState;
+	UPROPERTY(Transient, BlueprintReadOnly, Category = "Wuwa|Combat|Skill", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWuwaRoleGaitBridgeComponent> RoleGait;
 };

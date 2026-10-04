@@ -45,7 +45,7 @@ namespace WuwaSkillNotifyTests
 		TGuardValue<bool> MainGuard{Defaults->bIsMainSkill, true};
 		TGuardValue<int32> LevelGuard{Defaults->InterruptLevel, 100};
 		TGuardValue<EWuwaSkillOverrideType> OverrideGuard{Defaults->SkillOverrideType, EWuwaSkillOverrideType::None};
-		TGuardValue<bool> MovementGuard{Defaults->bOverridesMoveState, false};
+		TGuardValue<EWuwaMoveState> MovementGuard{Defaults->StartMoveState, EWuwaMoveState::Other};
 
 		explicit FFixture(UClass* InAbilityClass = UWuwaSkillTestAbility::StaticClass(),
 			UClass* InAnimClass = UAnimInstance::StaticClass())

@@ -1,6 +1,8 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Movement/WuwaTestGait.h"
+#include "Tests/Input/WuwaTestMoveInput.h"
 #include "Misc/ScopeExit.h"
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaLocomotionMath.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
@@ -67,23 +69,25 @@ bool FWuwaGaitPolicyTest::RunTest(const FString& Parameters)
 	Movement->MovementMode = MOVE_Walking;
 	Movement->MovementSettings = NewObject<UWuwaMovementSettings>(Character);
 	Movement->MovementSettings->Run.MaxSpeed = 650.f;
+	// 未初始化 Actor 的测试世界不会调用 PostInitializeComponents：设好移动模式后显式装配运动状态。
+	if (!TestTrue(TEXT("Gait policy test assembles its movement state"), Character->EnsureMovementStateSystem())) return false;
 	Movement->RefreshMovementSettings();
-	Character->HandleMoveInput(FInputActionValue(FVector2D(0.f, 1.f)));
+	WuwaTestInput::SetMoveAxis(Character, FVector2D(0.f, 1.f));
 	TestTrue(TEXT("Default gait remains Run"), Movement->GetAllowedGait() == EWuwaGait::Run);
 	TestEqual(TEXT("Run applies its configured speed"), Movement->GetMaxSpeed(), 650.f);
-	Movement->ToggleWalkRun();
+	WuwaTestGait::ToggleWalkPreference(Movement);
 	TestTrue(TEXT("Walk toggle changes policy"), Movement->GetAllowedGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("Walk speed is no faster than Run"), Movement->GetMaxSpeed() <= 650.f);
-	Movement->ToggleWalkRun();
+	WuwaTestGait::ToggleWalkPreference(Movement);
 	TestTrue(TEXT("Toggle returns to Run"), Movement->GetAllowedGait() == EWuwaGait::Run);
-	Movement->SetSprintAllowed(false);
-	Movement->SetDesiredGait(EWuwaGait::Sprint);
+	WuwaTestGait::SetSprintAllowed(Movement, false);
+	WuwaTestGait::SetDesiredGait(Movement, EWuwaGait::Sprint);
 	TestTrue(TEXT("Sprint request preserves Run preference"), Movement->GetDesiredGait() == EWuwaGait::Run);
-	TestTrue(TEXT("Sprint request is retained separately"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	TestTrue(TEXT("Sprint request is retained separately"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	TestTrue(TEXT("Sprint requires permission"), Movement->GetAllowedGait() == EWuwaGait::Run);
-	Movement->SetSprintAllowed(true);
+	WuwaTestGait::SetSprintAllowed(Movement, true);
 	TestTrue(TEXT("Permission enables Sprint"), Movement->GetAllowedGait() == EWuwaGait::Sprint);
-	Movement->SetSprintAllowed(false);
+	WuwaTestGait::SetSprintAllowed(Movement, false);
 	TestEqual(TEXT("Revoking permission restores Run speed"), Movement->GetMaxSpeed(), 650.f);
 	Movement->MovementMode = MOVE_Custom;
 	Movement->CustomMovementMode = ECustomMoveMode::MOVE_Climb;

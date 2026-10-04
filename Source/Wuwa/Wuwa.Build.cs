@@ -26,8 +26,7 @@ public class Wuwa : ModuleRules
         PrivateDependencyModuleNames.AddRange(new string[] {  });
         if (Target.bBuildEditor)
         {
-            PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "BlueprintGraph", "AnimGraph", "KismetCompiler", "Json",
-                "NiagaraEditor", "MeshDescription", "StaticMeshDescription", "RenderCore", "RHI", "ImageWrapper", "AssetRegistry" });
+            PrivateDependencyModuleNames.AddRange(new string[] { "UnrealEd", "BlueprintGraph", "AnimGraph", "KismetCompiler", "Json" });
         }
 
 		// Uncomment if you are using Slate UI

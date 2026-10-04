@@ -71,17 +71,8 @@ bool UWuwaAbilitySystemComponent::MatchesOwnedTagQuery(const FGameplayTagQuery& 
 	return Query.Matches(OwnedTags);
 }
 
-//读取属性中的某个属性的值
-bool UWuwaAbilitySystemComponent::TryGetAttributeValue(FGameplayAttribute Attribute, float& Value) const
-{
-	Value = 0.f;
-	if (!Attribute.IsValid() || !HasAttributeSetForAttribute(Attribute)) return false;
-	Value = GetNumericAttribute(Attribute);
-	return FMath::IsFinite(Value);
-}
-
 //检查当前技能是否激活,是不是可激活的技能
-bool UWuwaAbilitySystemComponent::CanRequestAbilityFromInput(FGameplayAbilitySpecHandle AbilityHandle) const
+bool UWuwaAbilitySystemComponent::IsSpecAvailableForActivation(FGameplayAbilitySpecHandle AbilityHandle) const
 {
 	const FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(AbilityHandle);
 	const UWuwaGameplayAbilityBase* Ability = GetAbilityForInput(AbilityHandle);
@@ -114,8 +105,8 @@ EWuwaAbilityRequestResult UWuwaAbilitySystemComponent::RequestAbilityActivation(
 	FGameplayAbilitySpec* Spec =FindAbilitySpecFromHandle(AbilityHandle);
 
 	if (!Spec|| !Spec->Ability|| Spec->PendingRemove|| Spec->RemoveAfterActivation){return EWuwaAbilityRequestResult::InvalidHandle;}
-
-	if (Spec->IsActive() && !CanRequestAbilityFromInput(AbilityHandle)){return EWuwaAbilityRequestResult::AlreadyActive;}
+	
+	if (Spec->IsActive() && !IsSpecAvailableForActivation(AbilityHandle)){return EWuwaAbilityRequestResult::AlreadyActive;}
 
 	return TryActivateAbility(AbilityHandle)? EWuwaAbilityRequestResult::ActivationRequested: EWuwaAbilityRequestResult::Rejected;
 }

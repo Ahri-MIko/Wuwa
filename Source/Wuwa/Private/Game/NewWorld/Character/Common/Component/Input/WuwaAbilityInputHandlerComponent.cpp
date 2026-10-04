@@ -35,13 +35,7 @@ bool UWuwaAbilityInputHandlerComponent::HandleWuwaInput_Implementation(const FWu
 
 	const float* Override = BufferLifetimeOverrides.Find(InputEvent.InputTag);
 	const float Lifetime = Override ? *Override : DefaultBufferLifetimeSeconds;
-	const EWuwaCombatInputResult Result = Runtime->ProcessInput(ASC, InputEvent, Lifetime);
- 
-	if (InputEvent.Phase == EWuwaInputPhase::Pressed)
-	{
-		UE_LOG(LogTemp, Log, TEXT("CombatInput [%s]: %s"),*InputEvent.InputTag.ToString(),*UEnum::GetValueAsString(Result));
-	}
-
+	Runtime->ProcessInput(ASC, InputEvent, Lifetime);
 	// 表示事件已交给战斗输入系统处理，不表示 GA 激活成功。
 	return true;
 }

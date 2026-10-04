@@ -1,6 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Input/WuwaTestMoveInput.h"
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -12,18 +13,12 @@
 #include "HAL/FileManager.h"
 #include "InputAction.h"
 #include "Misc/FileHelper.h"
-#include "Misc/App.h"
 #include "Misc/Paths.h"
-#include "NiagaraComponent.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
 #include "UObject/Script.h"
 #include "UObject/UnrealType.h"
-#include "UObject/UObjectIterator.h"
 #include "Game/Animation/Notifies/WuwaAnimNotify_SkillReadyEndBridge.h"
-#include "Game/Animation/Notifies/WuwaAnimNotify_SlashFx.h"
-#include "Game/Render/Effect/WuwaSlashFxComponent.h"
-#include "Game/Render/Effect/WuwaSlashFxPreset.h"
 #include "Game/Common/WuwaGameTags.h"
 #include "Game/Controller/WuwaPlayerController.h"
 #include "Game/Input/WuwaInputRouterComponent.h"
@@ -314,7 +309,7 @@ namespace WuwaRealAttackPreinputTests
 		{
 			// This is the public input entry that populates PlayerInputState; the
 			// animation notification observes exactly the same semantic move intent.
-			Character->HandleMoveInput(FInputActionValue(FVector2D(0.f, 1.f)));
+			WuwaTestInput::SetMoveAxis(Character, FVector2D(0.f, 1.f));
 			Character->GetWuwaMovementComponent()->ConsumeInputVector();
 			Test.TestTrue(TEXT("Public movement input is visible through PlayerInputState"), Character->GetPlayerInputState().bHasMoveInput);
 			Capture(TEXT("MovementKeyHeld"));
@@ -550,60 +545,6 @@ bool FWuwaRealAttackGraphPreinputTest::RunTest(const FString& Parameters)
 		if (!Fixture.Start(FWuwaGameTags::Get().Input_Combat_Attack, Fixture.AttackClasses[0], Fixture.AttackMontages[0])) return false;
 		Fixture.ReplayAttackAtReadyEnd(Fixture.AttackClasses[1]);
 	}
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaRealAttackSlashNotifyTest,
-	"Wuwa.Effects.Slash.RealAttack01MontageDeliversNotify",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
-
-bool FWuwaRealAttackSlashNotifyTest::RunTest(const FString& Parameters)
-{
-	FEditorScriptExecutionGuard Guard;
-	WuwaRealAttackPreinputTests::FFixture Fixture(*this, TEXT("Attack01RealSlashNotify"));
-	if (!Fixture.Initialize()) return false;
-	if (!Fixture.Start(FWuwaGameTags::Get().Input_Combat_Attack, Fixture.AttackClasses[0], Fixture.AttackMontages[0])) return false;
-	const UWuwaAnimNotify_SlashFx* SlashNotify = nullptr;
-	float NotifyTime = 0.f;
-	for (const FAnimNotifyEvent& Event : Fixture.SourceMontage->Notifies)
-	{
-		if (const auto* Notify = Cast<UWuwaAnimNotify_SlashFx>(Event.Notify))
-		{
-			SlashNotify = Notify;
-			NotifyTime = Event.GetTime();
-			break;
-		}
-	}
-	if (!TestNotNull(TEXT("Real Attack01 montage contains the authored slash notify"), SlashNotify)
-		|| !TestNotNull(TEXT("Real slash notify owns its preset"), SlashNotify->Preset.Get())) return false;
-	const FAnimMontageInstance* Instance = Fixture.Anim->GetMontageInstanceForID(Fixture.SourcePlaybackId);
-	const float Rate = Instance ? FMath::Abs(Instance->GetPlayRate() * Fixture.SourceMontage->RateScale) : 0.f;
-	if (!TestTrue(TEXT("Slash is ahead of the live positive-rate montage"), NotifyTime > 0.01f && Rate > 0.f)) return false;
-	UWuwaGameplayAbilityBase* SourceAbility = Fixture.Character->SkillComponent->GetCurrentSkillData().ActiveAbility.Get();
-	Fixture.Advance((NotifyTime - 0.01f) / Rate);
-	TestNull(TEXT("No effect playback component appears before the authored moment"),
-		Fixture.Character->FindComponentByClass<UWuwaSlashFxComponent>());
-	Fixture.Advance(0.02f / Rate);
-	UWuwaSlashFxComponent* Effects = Fixture.Character->FindComponentByClass<UWuwaSlashFxComponent>();
-	if (!TestNotNull(TEXT("Engine montage dispatch passes the real skill/ASC/playback ownership guards"), Effects)) return false;
-	TestTrue(TEXT("The real notify starts a preset playback"), Effects->GetActivePlaybackCount() > 0);
-	TestTrue(TEXT("A delivered slash enables its component tick"), Effects->IsComponentTickEnabled());
-	TestTrue(TEXT("The cosmetic notification leaves the original GA active"), SourceAbility && SourceAbility->IsSkillExecutionActive());
-	TestEqual(TEXT("Cosmetic playback does not switch the current skill"),
-		Fixture.Character->SkillComponent->GetCurrentSkillData().FightStateHandle, Fixture.SourceSkillHandle);
-	int32 SpawnedParticles = 0;
-	for (TObjectIterator<UNiagaraComponent> It; It; ++It)
-		if (IsValid(*It) && It->GetWorld() == Fixture.World && It->IsRegistered()) ++SpawnedParticles;
-	if (FApp::CanEverRender()) TestTrue(TEXT("Real notify creates a Niagara component in a rendering world"), SpawnedParticles > 0);
-	else AddInfo(TEXT("Headless rendering: real montage delivery/playback is asserted; Niagara component rendering is checked by the preview run."));
-	Fixture.Report->SetNumberField(TEXT("slashPlaybackCountAfterNotify"), Effects->GetActivePlaybackCount());
-	Fixture.Report->SetNumberField(TEXT("slashNiagaraComponentsAfterNotify"), SpawnedParticles);
-	Fixture.Capture(TEXT("AfterActualSlashNotify"));
-	if (!TestTrue(TEXT("Original GA can still end normally"), SourceAbility->TryEndSkillExecution(Fixture.SourceSkillHandle))) return false;
-	Effects->TickComponent(0.04f, LEVELTICK_All, &Effects->PrimaryComponentTick);
-	Effects->TickComponent(SlashNotify->Preset->MaximumLifetime + 0.01f, LEVELTICK_All, &Effects->PrimaryComponentTick);
-	TestEqual(TEXT("Ending the real attack leaves no persistent slash playback"), Effects->GetActivePlaybackCount(), 0);
-	TestFalse(TEXT("The completed effect returns to idle without ticking"), Effects->IsComponentTickEnabled());
 	return true;
 }
 

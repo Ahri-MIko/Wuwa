@@ -5,34 +5,29 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Game/Input/IWuwaInputRouteHandler.h"
-#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputCommand.h"
 #include "WuwaMoveInputHandler.generated.h"
 
-class UWuwaMovementComponent;
+class UWuwaMoveInputConfig;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMoveInput, const FInputActionValue&, Value);
-
+/**
+ * 处理移动类的一次性指令（比如走跑切换）：按配置表把语义输入映射到指令对象执行，本身不含任何按键分支。
+ * 移动轴不经过这里，由角色的输入意图组件记录、CMC 每帧读取。
+ */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class WUWA_API UWuwaMoveInputHandler : public UActorComponent,public IIWuwaInputRouteHandler
 {
 	GENERATED_BODY()
 
-public:	
-	// Sets default values for this component's properties
+public:
 	UWuwaMoveInputHandler();
 
-public:
-	//把输入指令打包给CMC执行
 	virtual bool HandleWuwaInput_Implementation(const FWuwaInputEvent& InputEvent) override;
-	
-	// 第一步：输入 + 当前角色上下文 -> 命令。此函数不修改角色或动画。
-	static FWuwaInputCommand ResolveCommand(
-		const FWuwaInputEvent& InputEvent, const UWuwaMovementComponent* Movement);
-	
-	#pragma  region 持续输入意图
-	UPROPERTY(BlueprintAssignable, Category = "Wuwa|Input")
-	FOnMoveInput OnMove;
-	
-	#pragma endregion
-	
+
+	/** 移动类输入 -> 指令的配置表；默认指向项目里的 DA_WuwaMoveInputConfig，可在蓝图里替换。 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wuwa|Input")
+	TSoftObjectPtr<UWuwaMoveInputConfig> Config;
+
+private:
+	// 移动轴每帧都会经过这里，配置缺失只提示一次。
+	bool bReportedMissingConfig = false;
 };

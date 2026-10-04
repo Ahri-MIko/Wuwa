@@ -1,6 +1,8 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Movement/WuwaTestGait.h"
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputIntentComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaAnimDataLibrary.h"
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaAnimDataTypes.h"
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaAnimInstance.h"
@@ -11,7 +13,7 @@
 #include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
-#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputCommand.h"
+#include "Game/NewWorld/Character/Common/Component/Input/MoveActions/WuwaMoveInputAction_ToggleWalkPreference.h"
 #include "Curves/CurveFloat.h"
 
 namespace WuwaAnimationDataTests
@@ -88,8 +90,8 @@ bool FWuwaAnimationDataCaptureTest::RunTest(const FString& Parameters)
 
 	Fixture.Character->SetActorRotation(FRotator(0.f, 90.f, 0.f));
 	Fixture.Movement->Velocity = FVector(0.f, 120.f, 25.f);
-	Fixture.Character->MoveInput = FVector2D(0.f, 1.f);
-	Fixture.Movement->SetDesiredGait(EWuwaGait::Walk);
+	Fixture.Character->InputIntent->SetMoveAxis(FVector2D(0.f, 1.f));
+	WuwaTestGait::SetDesiredGait(Fixture.Movement, EWuwaGait::Walk);
 	UWuwaAnimLogicParams* Params = NewObject<UWuwaAnimLogicParams>(Fixture.Character);
 	TestTrue(TEXT("Movement can be captured"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	TestTrue(TEXT("Capture is marked valid"), Params->HasValidData());
@@ -114,14 +116,12 @@ bool FWuwaAnimationDataCaptureTest::RunTest(const FString& Parameters)
 		&& Snapshot.MoveState == EWuwaMoveState::Walk && Snapshot.bGroundMoveActive);
 	TestTrue(TEXT("Snapshot construction never writes Movement velocity"), Fixture.Movement->Velocity.Equals(FVector(0.f, 120.f, 25.f)));
 
-	Fixture.Movement->MovementMode = MOVE_Falling;
-	Fixture.Character->RoleGaitComponent->RefreshPolicy();
+	// The movement state follows the CMC's movement-mode event, so change the mode through the CMC.
+	Fixture.Movement->SetMovementMode(MOVE_Falling);
 	TestTrue(TEXT("Falling can be captured"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	TestTrue(TEXT("Falling state is reflected"), Params->GetStateData().bStateAir);
 	TestFalse(TEXT("Falling clears grounded state"), Params->GetStateData().bStateGround);
-	Fixture.Movement->MovementMode = MOVE_Custom;
-	Fixture.Movement->CustomMovementMode = ECustomMoveMode::MOVE_Climb;
-	Fixture.Character->RoleGaitComponent->RefreshPolicy();
+	Fixture.Movement->SetMovementMode(MOVE_Custom, static_cast<uint8>(ECustomMoveMode::MOVE_Climb));
 	TestTrue(TEXT("Custom movement can be captured"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	TestTrue(TEXT("Climbing state is reflected"), Params->GetStateData().bStateClimb);
 	TestTrue(TEXT("Movement mode is copied"), Params->GetStateData().MovementMode == MOVE_Custom);
@@ -143,7 +143,7 @@ bool FWuwaAnimationInputIntentTest::RunTest(const FString& Parameters)
 
 	Fixture.Character->SetActorRotation(FRotator(0.f, 90.f, 0.f));
 	// 只消费输入，不计算控制加速度和速度，证明输入不从 Acceleration 反推。
-	Fixture.Character->MoveInput = FVector2D(0.f, 0.5f);
+	Fixture.Character->InputIntent->SetMoveAxis(FVector2D(0.f, 0.5f));
 	Fixture.Character->RoleGaitComponent->RefreshPolicy();
 	Fixture.Character->AddMovementInput(FVector::RightVector, 0.5f, true);
 	Fixture.Movement->ConsumeInputVector();
@@ -161,7 +161,7 @@ bool FWuwaAnimationInputIntentTest::RunTest(const FString& Parameters)
 	// 再消费一次空输入代表松开；实际速度可以继续存在。
 	Fixture.Movement->ConsumeInputVector();
 	Fixture.Movement->Velocity = FVector(0.f, 180.f, 0.f);
-	Fixture.Character->MoveInput = FVector2D::ZeroVector;
+	Fixture.Character->InputIntent->SetMoveAxis(FVector2D::ZeroVector);
 	Fixture.Character->RoleGaitComponent->RefreshPolicy();
 	TestTrue(TEXT("Momentum can be captured"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	const FWuwaLocomotionAnimData Stopping = BuildSnapshot(*Params, true);
@@ -186,16 +186,19 @@ bool FWuwaAnimationGaitCommandTest::RunTest(const FString& Parameters)
 	}
 
 	Fixture.Movement->Velocity = FVector(300.f, 0.f, 0.f);
-	Fixture.Character->MoveInput = FVector2D(0.f, 1.f);
+	Fixture.Character->InputIntent->SetMoveAxis(FVector2D(0.f, 1.f));
 	Fixture.Character->RoleGaitComponent->RefreshPolicy();
 	UWuwaAnimLogicParams* Params = NewObject<UWuwaAnimLogicParams>(Fixture.Character);
 	TestTrue(TEXT("Initial run state can be captured"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	const FWuwaLocomotionAnimData Before = BuildSnapshot(*Params);
 	TestEqual(TEXT("Run snapshot exposes the configured run speed limit"), Before.MaxSpeed, 650.f);
 	TestEqual(TEXT("Run snapshot reports actual speed separately"), Before.GroundSpeed, 300.f);
-	FWuwaInputCommand Command;
-	Command.Type = EWuwaInputCommandType::SwitchWalk;
-	TestTrue(TEXT("Grounded SwitchWalk is accepted"), Fixture.Movement->ExecuteInputCommand(Command));
+	const UWuwaMoveInputAction_ToggleWalkPreference* Toggle = NewObject<UWuwaMoveInputAction_ToggleWalkPreference>(Fixture.Character);
+	FWuwaMoveInputContext Context;
+	Context.Character = Fixture.Character;
+	TestTrue(TEXT("Grounded walk toggle is accepted"), Toggle->Execute(Context));
+	// 走跑键只改偏好；真实游戏里本帧 CMC Tick 开头 RoleGait 才按新偏好决定状态，测试不跑 Tick，手动刷新一次。
+	Fixture.Character->RoleGaitComponent->RefreshPolicy();
 	TestTrue(TEXT("Accepted state can be captured"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	const FWuwaLocomotionAnimData After = BuildSnapshot(*Params, true);
 	TestTrue(TEXT("Animation reads the accepted Walk state"), After.DesiredGait == EWuwaGait::Walk && After.AllowedGait == EWuwaGait::Walk);
@@ -211,15 +214,15 @@ bool FWuwaAnimationGaitCommandTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Prior snapshot retains Run"), Before.DesiredGait == EWuwaGait::Run);
 	TestTrue(TEXT("New max speed reflects Walk policy"), Params->GetMoveData().MaxSpeed <= 650.f);
 
-	Fixture.Movement->MovementMode = MOVE_Falling;
-	Fixture.Character->RoleGaitComponent->RefreshPolicy();
-	TestFalse(TEXT("Air SwitchWalk is rejected"), Fixture.Movement->ExecuteInputCommand(Command));
+	Fixture.Movement->SetMovementMode(MOVE_Falling);
+	TestFalse(TEXT("Air walk toggle is rejected"), Toggle->Execute(Context));
 	TestTrue(TEXT("Rejected command still allows state capture"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	TestTrue(TEXT("Rejected command does not change accepted gait"), Params->GetStateData().DesiredGait == EWuwaGait::Walk);
 	TestFalse(TEXT("Air snapshot does not show grounded walk"), BuildSnapshot(*Params).bStateGroundWalk);
-	Fixture.Movement->MovementMode = MOVE_Walking;
+	Fixture.Movement->SetMovementMode(MOVE_Walking);
+	TestTrue(TEXT("A second ground walk toggle returns to Run"), Toggle->Execute(Context));
+	// 同上：本帧 Tick 开头 RoleGait 才读到新偏好。
 	Fixture.Character->RoleGaitComponent->RefreshPolicy();
-	TestTrue(TEXT("A second ground SwitchWalk returns to Run"), Fixture.Movement->ExecuteInputCommand(Command));
 	TestTrue(TEXT("Restored run state can be captured"), UWuwaAnimDataLibrary::UpdateAnimationData(Fixture.Movement, Params));
 	const FWuwaLocomotionAnimData RestoredRun = BuildSnapshot(*Params, true);
 	TestEqual(TEXT("Returning to Run restores the original effective speed limit"), RestoredRun.MaxSpeed, Before.MaxSpeed);
@@ -283,7 +286,7 @@ bool FWuwaAnimationPerInstanceTest::RunTest(const FString& Parameters)
 		return false;
 	}
 	Fixture.Movement->Velocity = FVector(100.f, 0.f, 0.f);
-	Fixture.Movement->SetDesiredGait(EWuwaGait::Walk);
+	WuwaTestGait::SetDesiredGait(Fixture.Movement, EWuwaGait::Walk);
 	OtherMovement->MovementMode = MOVE_Falling;
 	OtherMovement->Velocity = FVector(0.f, 250.f, -100.f);
 	UWuwaAnimLogicParams* FirstParams = NewObject<UWuwaAnimLogicParams>(Fixture.Character);
@@ -316,7 +319,7 @@ bool FWuwaAnimationInstanceLifecycleTest::RunTest(const FString& Parameters)
 	UWuwaAnimInstance* Anim = NewObject<UWuwaAnimInstance>(Fixture.Character->GetMesh());
 	Anim->NativeInitializeAnimation();
 	TestFalse(TEXT("Initialization starts with an invalid snapshot"), Anim->LocomotionData.bHasValidMovementData);
-	Fixture.Character->MoveInput = FVector2D(0.f, 1.f);
+	Fixture.Character->InputIntent->SetMoveAxis(FVector2D(0.f, 1.f));
 	Fixture.Character->RoleGaitComponent->RefreshPolicy();
 	Fixture.Movement->Velocity = FVector(120.f, 0.f, 0.f);
 	Anim->NativeUpdateAnimation(1.f / 60.f);
@@ -331,21 +334,21 @@ bool FWuwaAnimationInstanceLifecycleTest::RunTest(const FString& Parameters)
 
 	UObject* SprintWindow = NewObject<UCurveFloat>(Fixture.Character);
 	UObject* OpenSprintWindow = NewObject<UCurveFloat>(Fixture.Character);
-	Fixture.Movement->BeginSprintDesireWindow(SprintWindow);
-	Fixture.Movement->EndSprintDesireWindow(SprintWindow);
-	Fixture.Movement->BeginSprintDesireWindow(OpenSprintWindow);
+	WuwaTestGait::Of(Fixture.Movement)->OpenSprintWindow(SprintWindow);
+	WuwaTestGait::Of(Fixture.Movement)->CloseSprintWindow(SprintWindow);
+	WuwaTestGait::Of(Fixture.Movement)->OpenSprintWindow(OpenSprintWindow);
 	Anim->NativeUpdateAnimation(1.f / 60.f);
 	TestTrue(TEXT("Animation sees the temporary sprint request before reset"), Anim->LocomotionData.SprintDesire == EWuwaSprintDesire::Temporary);
 	TestTrue(TEXT("Animation sees the actual Sprint state before reset"), Anim->LocomotionData.bStateGroundSprint);
 	Anim->ResetSprintDesire();
-	TestTrue(TEXT("Animation reset clears the owning character's retained and active request"), Fixture.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Animation reset clears the owning character's retained and active request"), WuwaTestGait::Of(Fixture.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	TestTrue(TEXT("Reset updates the animation snapshot immediately"), Anim->LocomotionData.SprintDesire == EWuwaSprintDesire::None);
 	TestTrue(TEXT("Reset also refreshes the animation parameter view"), Anim->AnimLogicParams->GetStateData().SprintDesire == EWuwaSprintDesire::None);
 	TestTrue(TEXT("Reset refreshes the resolved state immediately"), Anim->LocomotionData.MoveState == EWuwaMoveState::Run
 		&& Anim->LocomotionData.bStateGroundRun && !Anim->LocomotionData.bStateGroundSprint);
 	TestEqual(TEXT("Reset does not discard the animation's current movement speed"), Anim->LocomotionData.GroundSpeed, 120.f);
-	Fixture.Movement->EndSprintDesireWindow(OpenSprintWindow);
-	TestTrue(TEXT("A late notify End cannot undo the animation reset"), Fixture.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(Fixture.Movement)->CloseSprintWindow(OpenSprintWindow);
+	TestTrue(TEXT("A late notify End cannot undo the animation reset"), WuwaTestGait::Of(Fixture.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 
 	UWuwaAnimInstance* OtherAnim = NewObject<UWuwaAnimInstance>(Fixture.Character->GetMesh());
 	OtherAnim->NativeInitializeAnimation();
@@ -357,7 +360,7 @@ bool FWuwaAnimationInstanceLifecycleTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Reinitialization discards the old snapshot"), Anim->LocomotionData.bHasValidMovementData);
 	TestTrue(TEXT("Reinitialization discards prior parameter validity"), !Anim->AnimLogicParams || !Anim->AnimLogicParams->HasValidData());
 	Fixture.Movement->Velocity = FVector::ZeroVector;
-	Fixture.Character->MoveInput = FVector2D::ZeroVector;
+	Fixture.Character->InputIntent->SetMoveAxis(FVector2D::ZeroVector);
 	Fixture.Character->RoleGaitComponent->RefreshPolicy();
 	Fixture.Movement->ConsumeInputVector();
 	Anim->NativeUpdateAnimation(1.f / 60.f);

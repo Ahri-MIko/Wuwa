@@ -4,62 +4,41 @@
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputHandler.h"
 
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
-#include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
-#include "Game/Controller/WuwaPlayerController.h"
-// Sets default values for this component's properties
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputConfig.h"
+#include "GameFramework/PlayerController.h"
+#include "Game/Input/WuwaInputTypes.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogWuwaMoveInput, Log, All);
+
 UWuwaMoveInputHandler::UWuwaMoveInputHandler()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
-	// ...
+	// 与角色上托管组件类的默认值一样用软路径：不在构造时加载资产，蓝图里仍可替换。
+	Config = TSoftObjectPtr<UWuwaMoveInputConfig>(FSoftObjectPath(TEXT("/Game/CoreInput/DataAsset/DA_WuwaMoveInputConfig.DA_WuwaMoveInputConfig")));
 }
 
 bool UWuwaMoveInputHandler::HandleWuwaInput_Implementation(const FWuwaInputEvent& InputEvent)
 {
-	const FWuwaGameTags& Tags = FWuwaGameTags::Get();
-	if (InputEvent.InputTag == Tags.Player_Common_Movement_WalkRun)
+	const UWuwaMoveInputConfig* LoadedConfig = Config.LoadSynchronous();
+	if (!LoadedConfig)
 	{
-		// 每次都取当前控制的 Pawn；切人后不能继续切换旧角色的步态。
-		const APlayerController* PC = Cast<APlayerController>(GetOwner());
-		const AWuwaCharacter* Character = PC ? Cast<AWuwaCharacter>(PC->GetPawn()) : nullptr;
-		UWuwaMovementComponent* Movement = Character ? Character->GetWuwaMovementComponent() : nullptr;
-		if (!Movement)
+		if (!bReportedMissingConfig)
 		{
-			return false;
+			UE_LOG(LogWuwaMoveInput, Warning, TEXT("Move input config is missing: %s"), *Config.ToString());
+			bReportedMissingConfig = true;
 		}
-
-		const FWuwaInputCommand Command = ResolveCommand(InputEvent, Movement);
-		// 第二步：交给拥有移动状态的组件执行，不直接改速度或 AnimInstance。
-		return Movement->ExecuteInputCommand(Command);
+		return false;
 	}
-
-	// Move 是连续值，Started 不再额外消费一遍，避免首帧重复移动。
-	const bool bAxisUpdate = InputEvent.Phase == EWuwaInputPhase::Triggered
-		|| InputEvent.Phase == EWuwaInputPhase::Released
-		|| InputEvent.Phase == EWuwaInputPhase::Canceled;
-	if (!bAxisUpdate)
+	const FWuwaMoveInputBinding* Binding = LoadedConfig->FindBinding(InputEvent.InputTag, InputEvent.Phase);
+	if (!Binding || !Binding->Action)
 	{
 		return false;
 	}
 
-	if (InputEvent.InputTag == Tags.Player_Common_Movement_Move)
-	{
-		OnMove.Broadcast(InputEvent.Value);
-		return true;
-	}
-	return false;
+	// 每次都取当前控制的 Pawn；切人后不能继续操作旧角色。
+	const APlayerController* PC = Cast<APlayerController>(GetOwner());
+	FWuwaMoveInputContext Context;
+	Context.InputEvent = InputEvent;
+	Context.Character = PC ? Cast<AWuwaCharacter>(PC->GetPawn()) : nullptr;
+	return IsValid(Context.Character) && Binding->Action->Execute(Context);
 }
-
-//输入对应具体的状态改变
-FWuwaInputCommand UWuwaMoveInputHandler::ResolveCommand(const FWuwaInputEvent& InputEvent, const UWuwaMovementComponent* Movement)
-{
-	FWuwaInputCommand Command;
-	if (InputEvent.InputTag == FWuwaGameTags::Get().Player_Common_Movement_WalkRun&& InputEvent.Phase == EWuwaInputPhase::Pressed&& Movement && Movement->CanSwitchWalk())
-	{
-		Command.Type = EWuwaInputCommandType::SwitchWalk;
-	}
-	return Command;
-}
-

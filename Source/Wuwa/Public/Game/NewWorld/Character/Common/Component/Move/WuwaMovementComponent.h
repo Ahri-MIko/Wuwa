@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "InputActionValue.h"     
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementTypes.h"
@@ -10,8 +9,9 @@
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementSettings.h"
 #include "WuwaMovementComponent.generated.h"
 
-struct FWuwaInputCommand;
 class UWuwaRoleGaitBridgeComponent;
+class UWuwaUnifiedStateBridgeComponent;
+class UWuwaInputIntentComponent;
 
 /**
  *
@@ -35,62 +35,33 @@ class WUWA_API UWuwaMovementComponent : public UCharacterMovementComponent
 
 public:
 
-	// 语义化移动策略。调用方可以是输入路由、蓝图或 AI，不接受 Alt/Shift 键名。
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion")
-	void SetDesiredGait(EWuwaGait NewGait);
-
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion")
-	void ToggleWalkRun();
-
-	/** 当前 Demo 规则：仅站立地面状态可切换；不是原作 CanWalkPress 的完整还原。 */
+	/** 原作 CanWalkPress：运动状态的位置为 Ground 才能切换走跑偏好；本项目另外要求未蹲伏且由本端驱动状态。 */
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion")
-	bool CanSwitchWalk() const;
+	bool CanToggleWalkPreference() const;
 
-	// 兼容现有蓝图/输入路由的转发入口；规则和运行状态属于 C# RoleGait。
-	bool ExecuteInputCommand(const FWuwaInputCommand& Command);
-
-	/** Sprint 许可由移动/动作规则提供，不能仅凭一个按键绕过规则。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion")
-	void SetSprintAllowed(bool bAllowed);
-
+	/** 运动状态组件保存的走跑偏好，以步态表示（Walk / Run）。 */
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion")
 	EWuwaGait GetDesiredGait() const;
+	/** 出生时的走跑偏好配置，运动状态组件初始化时读取。 */
+	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion")
 	EWuwaGait GetInitialDesiredGait() const { return DesiredGait; }
 
+	/** 运动状态当前采用的步态（决定速度配置）。 */
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion")
 	EWuwaGait GetAllowedGait() const;
 
-	/** 窗口登记冲刺意图，再由脚本规则决定是否提交 Sprint；不覆盖走跑偏好。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
-	void BeginSprintDesireWindow(UObject* WindowSource);
+	/** 由角色组装时注入；CMC 每帧物理更新前从这里读取移动意图，不去找角色或控制器。 */
+	void BindInputIntent(UWuwaInputIntentComponent* InInputIntent);
 
-	/** InputHeldSeconds 来自语义输入层（游戏秒）；只计算与窗口重叠的部分。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
-	void UpdateSprintDesireWindow(UObject* WindowSource, float InputHeldSeconds, float HoldThresholdSeconds);
+	/** 由角色组装时注入运动状态与步态组件；RoleGait 传空表示不再驱动步态（角色结束）。 */
+	void BindMovementState(UWuwaUnifiedStateBridgeComponent* InUnifiedState, UWuwaRoleGaitBridgeComponent* InRoleGait);
 
-	/** 提交窗口最后采样的需求，再移除窗口；Temporary 从此刻开始计时。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
-	void EndSprintDesireWindow(UObject* WindowSource);
-
-	/** 退出地面移动、失去控制或动作规则要求重置时调用；迟到的 Tick/End 不会恢复需求。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Locomotion|Sprint")
-	void ClearSprintDesire();
-
-	/** 来自角色语义移动输入；结束移动时清除已经提交的长期冲刺。 */
-	void NotifyMoveInputChanged(bool bHasMoveInput);
-
-	/** 窗口结束后暂时冲刺保留的游戏秒数，不包含窗口自身的时长。 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wuwa|Locomotion|Sprint", meta = (ClampMin = "0", Units = "s"))
-	float TemporarySprintDuration = 1.f;
-
-	UFUNCTION(BlueprintPure, Category = "Wuwa|Locomotion|Sprint")
-	EWuwaSprintDesire GetSprintDesire() const;
-
-	/** 物理模式事实，由脚本转换为角色位置状态。 */
+	/** 物理模式事实：移动模式变化时交给运动状态组件同步位置。 */
 	UFUNCTION(BlueprintPure, Category="Wuwa|State") EWuwaPositionState ReadPositionState() const;
 	UFUNCTION(BlueprintPure, Category="Wuwa|State") FWuwaUnifiedStateData GetUnifiedStateData() const;
-	UFUNCTION(BlueprintPure, Category="Wuwa|State") EWuwaGait GetStopGait() const;
-	UFUNCTION() void HandleUnifiedStateChanged(const FWuwaUnifiedStateData& OldState, const FWuwaUnifiedStateData& NewState);
+	/** 原作 CMC 监听 CharOnUnifiedMoveStateChanged 更新速度配置；步态维度是本项目扩展。 */
+	UFUNCTION() void HandleMoveStateChanged(EWuwaMoveState OldState, EWuwaMoveState NewState);
+	UFUNCTION() void HandleGaitChanged(EWuwaGait OldGait, EWuwaGait NewGait);
 	UFUNCTION(BlueprintCallable, Category="Wuwa|Movement") void RefreshMovementSettings();
 	/** 可选统一配置；未指定时沿用现有 Walk/Run/Sprint 速度与 CMC 原有加速度/摩擦。 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Wuwa|Movement") TObjectPtr<UWuwaMovementSettings> MovementSettings;
@@ -167,7 +138,7 @@ public:
 	void PhysClimbing(float deltaTime, int32 Iterations);
 
 protected:
-	/** 仅为出生时的走跑偏好配置；运行值由脚本组件维护。 */
+	/** 仅为出生时的走跑偏好配置；运行值由 C# 运动状态组件维护。 */
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wuwa|Locomotion")
 	EWuwaGait DesiredGait = EWuwaGait::Run;
@@ -183,7 +154,18 @@ protected:
 	float RunSpeed = 500.f;
 
 private:
+	/** 原作 MoveComponent 每帧读取输入方向：地面按世界方向移动，攀爬沿墙面移动。 */
+	void ApplyMoveIntent();
+
+	UPROPERTY(Transient)
+	TObjectPtr<UWuwaInputIntentComponent> InputIntent;
+	UPROPERTY(Transient)
+	TObjectPtr<UWuwaUnifiedStateBridgeComponent> UnifiedState;
+	UPROPERTY(Transient)
+	TObjectPtr<UWuwaRoleGaitBridgeComponent> RoleGait;
+
 	UWuwaRoleGaitBridgeComponent* ResolveGaitComponent() const;
+	UWuwaUnifiedStateBridgeComponent* ResolveUnifiedState() const;
 	bool bCapturedDefaultMovementSettings = false;
 	FWuwaGaitMovementSettings DefaultMovementSettings;
 

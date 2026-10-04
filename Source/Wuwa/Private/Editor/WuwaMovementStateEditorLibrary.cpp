@@ -450,12 +450,9 @@ FString UWuwaMovementStateEditorLibrary::MigrateGroundStateAssets(bool bSave)
 	if (DashInstancing != EGameplayAbilityInstancingPolicy::InstancedPerActor
 		&& DashInstancing != EGameplayAbilityInstancingPolicy::InstancedPerExecution)
 	{
-		return TEXT("ERROR: BP_Ability_Dash must use InstancedPerActor or InstancedPerExecution to own a movement-state override. Its existing instancing policy was not changed. No assets saved.");
+		return TEXT("ERROR: BP_Ability_Dash must use InstancedPerActor or InstancedPerExecution to write a movement state on activation. Its existing instancing policy was not changed. No assets saved.");
 	}
-	const int32 DashPriority = FMath::Max(100, DashDefaults->ActionMoveStatePriority);
-	const bool bDashDefaultsChanged = !DashDefaults->bOverridesMoveState
-		|| DashDefaults->ActionMoveState != EWuwaMoveState::Dodge
-		|| DashDefaults->ActionMoveStatePriority != DashPriority;
+	const bool bDashDefaultsChanged = DashDefaults->StartMoveState != EWuwaMoveState::Dodge;
 	for (const FName Required : { FName(TEXT("bGroundMoveActive")), FName(TEXT("bWantsToStop")),
 		FName(TEXT("bStateGroundSprint")), FName(TEXT("StopGait")) })
 	{
@@ -530,9 +527,7 @@ FString UWuwaMovementStateEditorLibrary::MigrateGroundStateAssets(bool bSave)
 	{
 		DashBlueprint->Modify();
 		DashDefaults->Modify();
-		DashDefaults->bOverridesMoveState = true;
-		DashDefaults->ActionMoveState = EWuwaMoveState::Dodge;
-		DashDefaults->ActionMoveStatePriority = DashPriority;
+		DashDefaults->StartMoveState = EWuwaMoveState::Dodge;
 		FBlueprintEditorUtils::MarkBlueprintAsModified(DashBlueprint);
 	}
 	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
@@ -555,8 +550,7 @@ FString UWuwaMovementStateEditorLibrary::MigrateGroundStateAssets(bool bSave)
 	// Blueprint compilation may replace its generated class and CDO. Inspect the replacement.
 	DashDefaults = DashBlueprint->GeneratedClass
 		? Cast<UWuwaGameplayAbilityBase>(DashBlueprint->GeneratedClass->GetDefaultObject()) : nullptr;
-	if (!DashDefaults || !DashDefaults->bOverridesMoveState || DashDefaults->ActionMoveState != EWuwaMoveState::Dodge
-		|| DashDefaults->ActionMoveStatePriority != DashPriority)
+	if (!DashDefaults || DashDefaults->StartMoveState != EWuwaMoveState::Dodge)
 	{
 		return TEXT("ERROR: Compiled Dash defaults did not retain Dodge override settings. No assets saved.");
 	}
@@ -576,9 +570,9 @@ FString UWuwaMovementStateEditorLibrary::MigrateGroundStateAssets(bool bSave)
 			return TEXT("ERROR: ABP_Changli saved, but BP_Ability_Dash could not be saved. Both compiled successfully; retry saving Dash or restore the caller's asset backups.");
 		}
 	}
-	return FString::Printf(TEXT("OK: ABP_Changli and BP_Ability_Dash compiled; %s. Added %d nodes and changed %d connections. Dash overrides movement with Dodge at priority %d (%s), retaining its instancing policy. Dash interruption/cancellation exits: %d connected to EndAbility, %d already connected, %d existing user connections preserved. Stop selection uses stable StopGait and the existing left-foot/StepProgress convention; user right-foot drafts were retained. Existing idle, IK, physics, root-motion and Slot settings were preserved."),
+	return FString::Printf(TEXT("OK: ABP_Changli and BP_Ability_Dash compiled; %s. Added %d nodes and changed %d connections. Dash writes Dodge on activation (%s), retaining its instancing policy. Dash interruption/cancellation exits: %d connected to EndAbility, %d already connected, %d existing user connections preserved. Stop selection uses stable StopGait and the existing left-foot/StepProgress convention; user right-foot drafts were retained. Existing idle, IK, physics, root-motion and Slot settings were preserved."),
 		bSave ? TEXT("both saved") : TEXT("memory only, not saved"), Migration.AddedNodes, Migration.ChangedConnections,
-		DashPriority, bDashDefaultsChanged ? TEXT("updated defaults") : TEXT("defaults already configured"),
+		bDashDefaultsChanged ? TEXT("updated defaults") : TEXT("defaults already configured"),
 		Migration.AddedDashExits, Migration.ExistingDashExits, Migration.PreservedDashExits);
 #else
 	return TEXT("ERROR: MigrateGroundStateAssets is supported only in editor builds.");

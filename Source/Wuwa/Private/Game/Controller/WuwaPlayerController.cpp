@@ -5,11 +5,14 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
+#include "InputTriggers.h"
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputHandler.h"
 #include "Game/Input/WuwaEnhancedInputComponent.h"
 #include "Game/Input/WuwaInputRouterComponent.h"
 #include "Core/Utilities/DebugHelper.h"
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaAbilityInputHandlerComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputIntentComponent.h"
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 #include "Game/Camera/WuwaPlayerCameraManager.h"
 
@@ -72,13 +75,10 @@ void AWuwaPlayerController::SetPawn(APawn* InPawn)
 	const bool bPawnChanged = GetPawn() != InPawn;
 	if (bPawnChanged)
 	{
+		// 旧 Pawn 的输入意图（移动轴、按住的按键）随控制权一起清空。
 		if (AWuwaCharacter* PreviousCharacter = Cast<AWuwaCharacter>(GetPawn()))
 		{
 			PreviousCharacter->ResetPlayerInputState();
-		}
-		if (IsValid(InputRouter))
-		{
-			InputRouter->ResetInputStates();
 		}
 		// ASC 缓存也属于旧 Pawn，不能让下一次输入发给上一个角色。
 		AscComponent = nullptr;
@@ -105,10 +105,6 @@ void AWuwaPlayerController::FlushPressedKeys()
 	{
 		ControlledCharacter->ResetPlayerInputState();
 	}
-	if (IsValid(InputRouter))
-	{
-		InputRouter->ResetInputStates();
-	}
 	if (AWuwaPlayerCameraManager* CameraManager = Cast<AWuwaPlayerCameraManager>(PlayerCameraManager))
 	{
 		CameraManager->ResetCameraInput();
@@ -118,24 +114,33 @@ void AWuwaPlayerController::FlushPressedKeys()
 	{
 		AbilityInputHandler->ResetRuntime();
 	}
-	
+	HeldDispatchedActions.Empty();
 }
 
 
-//将指令交给InputRouter,让Router内部消化,并且在内部会记录每个按键的按下时间
+//把 Enhanced Input 的回调整理成语义事件,交给 RouteInputEvent
 void AWuwaPlayerController::HandleRoutedInput(const FInputActionInstance& Instance,FGameplayTag InputTag,FGameplayTag RouteTag,EWuwaInputPhase Phase)
 {
-	if (!IsValid(InputRouter))
-	{
-		return;
-	}
-
 	const UInputAction* SourceAction =
 		Instance.GetSourceAction();
 
 	if (!SourceAction)
 	{
 		return;
+	}
+
+	// Held 每次按下只发一次：Hold 触发器到点后每帧都会 Triggered，只取第一帧。
+	if (Phase == EWuwaInputPhase::Held)
+	{
+		if (HeldDispatchedActions.Contains(SourceAction))
+		{
+			return;
+		}
+		HeldDispatchedActions.Add(SourceAction);
+	}
+	else if (Phase != EWuwaInputPhase::Triggered)
+	{
+		HeldDispatchedActions.Remove(SourceAction);
 	}
 	
 	FWuwaInputEvent InputEvent;
@@ -152,7 +157,21 @@ void AWuwaPlayerController::HandleRoutedInput(const FInputActionInstance& Instan
 		InputEvent.Value.Reset();
 	}
 
-	InputRouter->DispatchInput(InputEvent);
+	RouteInputEvent(InputEvent);
+}
+
+bool AWuwaPlayerController::RouteInputEvent(const FWuwaInputEvent& InputEvent)
+{
+	// 先记录再分发：GA 拒绝激活或没有系统处理时，按住/松开也不能丢。
+	// 只写给当前控制的 Pawn；没有 Pawn 时输入不记录在任何地方。
+	if (const APawn* ControlledPawn = GetPawn())
+	{
+		if (UWuwaInputIntentComponent* Intent = ControlledPawn->FindComponentByClass<UWuwaInputIntentComponent>())
+		{
+			Intent->RecordInputEvent(InputEvent);
+		}
+	}
+	return IsValid(InputRouter) && InputRouter->DispatchInput(InputEvent);
 }
 
 //确保Router和所有的Handler都有效,有效的话就注册对应事件
@@ -168,12 +187,15 @@ void AWuwaPlayerController::SetupInputComponent()
 		AbilityInputHandler->ResetRuntime();
 	}
 	
-	//初始化按下事件记录
-	if (IsValid(InputRouter))
+	//重新绑定输入时，清空当前 Pawn 的按下记录
+	if (const APawn* ControlledPawn = GetPawn())
 	{
-		InputRouter->ResetInputStates();
+		if (UWuwaInputIntentComponent* Intent = ControlledPawn->FindComponentByClass<UWuwaInputIntentComponent>())
+		{
+			Intent->ResetInputs();
+		}
 	}
-	
+
 	UWuwaEnhancedInputComponent* WuwaInputComponent = CastChecked<UWuwaEnhancedInputComponent>(InputComponent);
 	
 	if (!ensureMsgf(IsValid(InputTagMap),TEXT("InputTagMap is not configured on %s."),*GetName()))
@@ -203,6 +225,20 @@ void AWuwaPlayerController::SetupInputComponent()
 			Binding.InputTag,
 			Binding.RouteTag,
 			EWuwaInputPhase::Pressed);
+
+		// 按键配了 Hold 触发器：到达阈值时 Triggered，转成 Held（每次按下一次）。
+		// 没配 Hold 的按键不绑 Triggered，否则按住期间每帧都会触发。
+		if (Binding.InputAction->ValueType == EInputActionValueType::Boolean && HasHoldTrigger(Binding.InputAction))
+		{
+			WuwaInputComponent->BindAction(
+				Binding.InputAction,
+				ETriggerEvent::Triggered,
+				this,
+				&AWuwaPlayerController::HandleRoutedInput,
+				Binding.InputTag,
+				Binding.RouteTag,
+				EWuwaInputPhase::Held);
+		}
 
 		// 轴输入，例如 Move、Look
 		if (Binding.InputAction->ValueType !=
@@ -240,6 +276,19 @@ void AWuwaPlayerController::SetupInputComponent()
 	}
 	
 	
+}
+
+bool AWuwaPlayerController::HasHoldTrigger(const UInputAction* Action) const
+{
+	auto IsHold = [](const UInputTrigger* Trigger) { return Trigger && Trigger->IsA<UInputTriggerHold>(); };
+	if (!Action) return false;
+	if (Action->Triggers.ContainsByPredicate(IsHold)) return true;
+	if (!DefaultMappingContext) return false;
+	for (const FEnhancedActionKeyMapping& Mapping : DefaultMappingContext->GetMappings())
+	{
+		if (Mapping.Action == Action && Mapping.Triggers.ContainsByPredicate(IsHold)) return true;
+	}
+	return false;
 }
 
 UWuwaAbilitySystemComponent* AWuwaPlayerController::GetASC()

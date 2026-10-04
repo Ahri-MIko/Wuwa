@@ -22,38 +22,17 @@ public:
 	// Sets default values for this component's properties
 	UWuwaInputRouterComponent();
 
-protected:
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-public:	
+public:
 
 	//注册输入到对应系统
 	bool RegisterHandler(const FGameplayTag& RouteTag,UObject* Handler);
 
 	bool UnregisterHandler(const FGameplayTag& RouteTag,UObject* Handler);
 
+	/** 只负责按 RouteTag 把事件交给对应系统；按键的按住状态记录在角色的输入意图组件里。 */
 	bool DispatchInput(const FWuwaInputEvent& InputEvent);
 
-	/** 失焦、切换 Pawn 或重绑输入时清空；旧 Triggered 不会重新置为按住。 */
-	UFUNCTION(BlueprintCallable, Category = "Wuwa|Input")
-	void ResetInputStates();
-	
-	/** 根据传入标签查询当前输入状态 */
-	UFUNCTION(BlueprintPure, Category = "Wuwa|Input")
-	FWuwaInputActionState GetInputActionState(FGameplayTag InputTag) const;
-	
 private:
-	
-	struct FHeldInput
-	{
-		double PressedAt = 0.0;
-		// 不同 InputAction 可映射到同一个意图；释放一个来源不能解除其他来源。
-		TSet<TWeakObjectPtr<const UInputAction>> ActiveSources;
-	};
-	
-	void UpdateInputState(const FWuwaInputEvent& InputEvent);
-	
-	TMap<FGameplayTag, FHeldInput> HeldInputs;
 
 	// Router 不拥有 Handler，因此使用弱引用
 	//存储Handler标签对应的实际处理类

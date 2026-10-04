@@ -1,6 +1,8 @@
 #if WITH_DEV_AUTOMATION_TESTS && WITH_EDITOR
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Movement/WuwaTestGait.h"
+#include "Tests/Input/WuwaTestMoveInput.h"
 #include "UObject/Script.h"
 #include "AbilitySystemComponent.h"
 #include "Animation/AnimInstance.h"
@@ -8,12 +10,14 @@
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/LocalPlayer.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "Misc/CommandLine.h"
 #include "Misc/PackageName.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "Game/Controller/WuwaPlayerController.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaGameplayAbilityBase.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
 #include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
@@ -51,6 +55,7 @@ namespace WuwaMontageMovementHandoffTests
 		FEditorScriptExecutionGuard ScriptExecutionGuard;
 		FOptionalContentMount ContentMount;
 		UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
+		AWuwaPlayerController* Controller = nullptr;
 		AWuwaCharacter* Character = nullptr;
 		UAbilitySystemComponent* ASC = nullptr;
 		UAnimInstance* AnimInstance = nullptr;
@@ -78,6 +83,10 @@ namespace WuwaMontageMovementHandoffTests
 			{
 				ASC->ClearActorInfo();
 			}
+			if (IsValid(Controller))
+			{
+				Controller->SetPawn(nullptr);
+			}
 			if (World)
 			{
 				World->DestroyWorld(false);
@@ -93,17 +102,28 @@ namespace WuwaMontageMovementHandoffTests
 			FActorSpawnParameters SpawnParameters;
 			SpawnParameters.ObjectFlags |= RF_Transient;
 			SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			Controller = World->SpawnActor<AWuwaPlayerController>(SpawnParameters);
 			Character = World->SpawnActor<AWuwaCharacter>(SpawnParameters);
 			USkeletalMesh* MeshAsset = LoadObject<USkeletalMesh>(nullptr,
 				TEXT("/Game/Characters/Role/changli/Model/Changli.Changli"));
 			Montage = LoadObject<UAnimMontage>(nullptr,
 				TEXT("/Game/Characters/Role/changli/AnimMontage/AM_Changli_Dash_F.AM_Changli_Dash_F"));
-			if (!Test.TestNotNull(TEXT("Native character exists"), Character)
+			if (!Test.TestNotNull(TEXT("Player controller exists"), Controller)
+				|| !Test.TestNotNull(TEXT("Native character exists"), Character)
 				|| !Test.TestNotNull(TEXT("Existing Changli mesh loads"), MeshAsset)
 				|| !Test.TestNotNull(TEXT("Existing forward dash montage loads"), Montage))
 			{
 				return false;
 			}
+			// The real Dash GA activates only for a locally controlled Avatar.
+			// Possess requires gameplay PlayerState initialization; this fixture only needs the ownership link.
+			// Without a NetDriver a PlayerController is local only with a LocalPlayer (same setup as the real-asset tests).
+			Controller->SetAsLocalPlayerController();
+			ULocalPlayer* LocalPlayer = NewObject<ULocalPlayer>(GEngine);
+			LocalPlayer->PlayerController = Controller;
+			Controller->Player = LocalPlayer;
+			Controller->SetPawn(Character);
+			Character->SetController(Controller);
 
 			USkeletalMeshComponent* Mesh = Character->GetMesh();
 			Mesh->SetSkeletalMeshAsset(MeshAsset);
@@ -171,24 +191,24 @@ namespace WuwaMontageMovementHandoffTests
 			if (!Test.TestNotNull(TEXT("Real Dash Blueprint loads"), DashClass)
 				|| !Test.TestNotNull(TEXT("Backward Dash montage loads"), BackwardMontage)) return false;
 			const UWuwaGameplayAbilityBase* DashDefaults = DashClass->GetDefaultObject<UWuwaGameplayAbilityBase>();
-			if (!Test.TestTrue(TEXT("Migrated Dash explicitly owns Dodge state"),
-				DashDefaults->bOverridesMoveState && DashDefaults->ActionMoveState == EWuwaMoveState::Dodge)) return false;
+			if (!Test.TestTrue(TEXT("Migrated Dash writes the Dodge state on activation"),
+				DashDefaults->StartMoveState == EWuwaMoveState::Dodge)) return false;
 
 			Character->GetWuwaMovementComponent()->MovementMode = MOVE_Walking;
 			if (!Test.TestTrue(TEXT("Managed movement state is available"), Character->EnsureMovementStateSystem())) return false;
 			if (!Test.TestTrue(TEXT("Managed skill system is available"), Character->EnsureSkillSystem())) return false;
-			Character->RoleGaitComponent->RequestDesiredGait(EWuwaGait::Run);
+			WuwaTestGait::SetDesiredGait(Character->GetWuwaMovementComponent(), EWuwaGait::Run);
 			Character->RoleGaitComponent->RefreshPolicy();
-			// Authority GAS can activate without a local player. Queued movement-cancel/sprint
-			// notifies deliberately skip this pawn, isolating the real montage task's end callbacks.
-			if (!Test.TestTrue(TEXT("Authority ActorInfo can activate Dash locally"), ASC->AbilityActorInfo->IsLocallyControlled())) return false;
+			// The cases with movement input end the Dash before advancing its montage, so its
+			// movement-cancel/sprint notifies only run in the no-input natural completion case.
+			if (!Test.TestTrue(TEXT("The local player's ActorInfo can activate Dash"), ASC->AbilityActorInfo->IsLocallyControlled())) return false;
 			DashHandle = ASC->GiveAbility(FGameplayAbilitySpec(DashClass, 1));
 			return Test.TestTrue(TEXT("Real Dash ability is granted"), DashHandle.IsValid());
 		}
 
 		bool StartDash(FAutomationTestBase& Test, const FVector2D Input)
 		{
-			Character->HandleMoveInput(FInputActionValue(Input));
+			WuwaTestInput::SetMoveAxis(Character, Input);
 			Character->GetWuwaMovementComponent()->ConsumeInputVector();
 			if (!Test.TestTrue(TEXT("Real Dash Blueprint activates"), ASC->TryActivateAbility(DashHandle, false))) return false;
 			UWuwaGameplayAbilityBase* ActiveDash = Cast<UWuwaGameplayAbilityBase>(ASC->GetAnimatingAbility());
@@ -199,7 +219,7 @@ namespace WuwaMontageMovementHandoffTests
 			bValid &= Test.TestTrue(TEXT("Dash GA remains active while its montage runs"), ActiveDash->IsActive());
 			bValid &= Test.TestEqual(TEXT("Blueprint selects forward/backward montage from input"), ActiveDash->GetCurrentMontage(), ExpectedMontage);
 			const FWuwaUnifiedStateData State = Character->UnifiedStateComponent->GetStateData();
-			bValid &= Test.TestTrue(TEXT("Active Dash owns the Dodge state"), State.bHasActionOverride && State.MoveState == EWuwaMoveState::Dodge);
+			bValid &= Test.TestTrue(TEXT("Dash writes Dodge when it starts"), State.bHasActionOverride && State.MoveState == EWuwaMoveState::Dodge);
 			FAnimMontageInstance* Instance = AnimInstance->GetActiveInstanceForMontage(ExpectedMontage);
 			if (!Test.TestNotNull(TEXT("Dash has a live montage playback instance"), Instance)) return false;
 			LastMontageInstanceID = Instance->GetInstanceID();
@@ -220,8 +240,7 @@ namespace WuwaMontageMovementHandoffTests
 			bool bValid = Test.TestFalse(Prefix + TEXT("GAS spec is inactive"), IsDashActive());
 			bValid &= Test.TestTrue(Prefix + TEXT("execution instance ended"), !LastDash.IsValid() || !LastDash->IsActive());
 			const FWuwaUnifiedStateData State = Character->UnifiedStateComponent->GetStateData();
-			bValid &= Test.TestFalse(Prefix + TEXT("action lease released"), State.bHasActionOverride);
-			bValid &= Test.TestTrue(Prefix + TEXT("gait resumes from current input"), State.MoveState == ExpectedMove);
+			bValid &= Test.TestTrue(Prefix + TEXT("RoleGait recomputes from current input at EndAbility"), State.MoveState == ExpectedMove);
 			bValid &= Test.TestNull(Prefix + TEXT("old Dash no longer owns ASC animation"), ASC->GetAnimatingAbility());
 			return bValid;
 		}
@@ -278,7 +297,7 @@ bool FWuwaMontageMovementHandoffTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Rejected handoff does not start blend-out"), Instance->IsStopped());
 	TestEqual(TEXT("Rejected handoff preserves velocity"), Movement->Velocity, InitialVelocity);
 
-	Fixture.Character->HandleMoveInput(FInputActionValue(FVector2D(0.f, 1.f)));
+	WuwaTestInput::SetMoveAxis(Fixture.Character, FVector2D(0.f, 1.f));
 	// Even a stale matching montage asset on another GA does not confer ownership.
 	Fixture.OtherAbility->SetCurrentMontage(Fixture.Montage);
 	TestFalse(TEXT("Another ability cannot stop the owner's montage"),
@@ -343,7 +362,7 @@ bool FWuwaDashStateLifecycleTest::RunTest(const FString& Parameters)
 {
 	WuwaMontageMovementHandoffTests::FDashLifecycleFixture Fixture;
 	// Requires the asset migration: both montage task OnInterrupted/OnCancelled outputs
-	// must reach the existing EndAbility node, and the Dash CDO must opt into Dodge ownership.
+	// must reach the existing EndAbility node, and the Dash CDO must write Dodge on activation.
 	if (!Fixture.InitializeDash(*this)) return false;
 	UWuwaMovementComponent* Movement = Fixture.Character->GetWuwaMovementComponent();
 	Movement->Velocity = FVector(-310.f, 0.f, 0.f);
@@ -351,8 +370,13 @@ bool FWuwaDashStateLifecycleTest::RunTest(const FString& Parameters)
 	const int32 FirstPlaybackID = Fixture.LastMontageInstanceID;
 	Fixture.AnimInstance->Montage_Stop(0.05f, Fixture.BackwardMontage);
 	Fixture.AnimInstance->DispatchQueuedAnimEvents();
-	if (!Fixture.CheckFinished(*this, TEXT("Direct montage stop"), EWuwaMoveState::Stand)) return false;
+	// Original RoleGait: without a direction, a non-locomotion state is kept until the character stops.
+	if (!Fixture.CheckFinished(*this, TEXT("Direct montage stop while still moving"), EWuwaMoveState::Dodge)) return false;
 	TestEqual(TEXT("Ending a no-input Dash leaves physical velocity untouched"), Movement->Velocity, FVector(-310.f, 0.f, 0.f));
+	Movement->Velocity = FVector::ZeroVector;
+	Fixture.Character->RoleGaitComponent->RefreshPolicy();
+	TestTrue(TEXT("The kept Dodge settles to Stand once the character stops"),
+		Fixture.Character->UnifiedStateComponent->GetStateData().MoveState == EWuwaMoveState::Stand);
 
 	if (!Fixture.StartDash(*this, FVector2D(0.f, 1.f))) return false;
 	TestNotEqual(TEXT("Next Dash gets a new playback after interruption"), Fixture.LastMontageInstanceID, FirstPlaybackID);

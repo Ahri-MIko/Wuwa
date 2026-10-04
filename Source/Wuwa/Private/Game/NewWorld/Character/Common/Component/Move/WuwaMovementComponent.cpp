@@ -1,60 +1,43 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
-#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputCommand.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Core/Utilities/DebugHelper.h"
 #include "Engine/World.h"
-#include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 #include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputIntentComponent.h"
 
 #pragma region Common
 
+void UWuwaMovementComponent::BindMovementState(UWuwaUnifiedStateBridgeComponent* InUnifiedState, UWuwaRoleGaitBridgeComponent* InRoleGait)
+{
+    UnifiedState = InUnifiedState;
+    RoleGait = InRoleGait;
+}
+
 UWuwaRoleGaitBridgeComponent* UWuwaMovementComponent::ResolveGaitComponent() const
 {
-    AWuwaCharacter* Character = Cast<AWuwaCharacter>(GetOwner());
-    if (Character && (!IsValid(Character->RoleGaitComponent) || !IsValid(Character->UnifiedStateComponent))
-        && !Character->HasAnyFlags(RF_ClassDefaultObject))
-    {
-        Character->EnsureMovementStateSystem();
-    }
-    return Character && !Character->IsMovementStateEnding() && IsValid(Character->RoleGaitComponent)
-        ? Character->RoleGaitComponent.Get() : nullptr;
+    return IsValid(RoleGait) ? RoleGait.Get() : nullptr;
 }
 
-void UWuwaMovementComponent::SetDesiredGait(EWuwaGait NewGait)
+UWuwaUnifiedStateBridgeComponent* UWuwaMovementComponent::ResolveUnifiedState() const
 {
-    if (auto* Gait = ResolveGaitComponent()) Gait->RequestDesiredGait(NewGait);
+    // 与 RoleGait 同时装配；步态不再驱动（角色结束）后，这里也不再修改运动状态。
+    return ResolveGaitComponent() && IsValid(UnifiedState) ? UnifiedState.Get() : nullptr;
 }
 
-void UWuwaMovementComponent::ToggleWalkRun()
+bool UWuwaMovementComponent::CanToggleWalkPreference() const
 {
-    if (auto* Gait = ResolveGaitComponent()) Gait->RequestWalkRunToggle();
-}
-
-bool UWuwaMovementComponent::CanSwitchWalk() const
-{
-    const auto* Gait = ResolveGaitComponent();
-    return Gait && Gait->CanRequestWalkRun();
-}
-
-bool UWuwaMovementComponent::ExecuteInputCommand(const FWuwaInputCommand& Command)
-{
-    auto* Gait = ResolveGaitComponent();
-    return Command.Type == EWuwaInputCommandType::SwitchWalk && Gait && Gait->RequestWalkRunToggle();
-}
-
-void UWuwaMovementComponent::SetSprintAllowed(bool bAllowed)
-{
-    // 旧 bool API 只是 CMC 这个来源的一条限制，不能解除其他 GA/系统持有的限制。
-    if (auto* Gait = ResolveGaitComponent()) Gait->SetGaitBlocked(this, EWuwaGait::Sprint, !bAllowed);
+    const auto* State = ResolveUnifiedState();
+    return State && State->CanDriveState() && !IsCrouching()
+        && State->GetStateData().PositionState == EWuwaPositionState::Ground;
 }
 
 EWuwaGait UWuwaMovementComponent::GetDesiredGait() const
 {
-    const auto* Gait = ResolveGaitComponent();
-    return Gait ? Gait->DesiredGait : DesiredGait;
+    const auto* State = ResolveUnifiedState();
+    return State ? (State->IsWalkPreferred() ? EWuwaGait::Walk : EWuwaGait::Run) : DesiredGait;
 }
 
 EWuwaGait UWuwaMovementComponent::GetAllowedGait() const
@@ -62,42 +45,27 @@ EWuwaGait UWuwaMovementComponent::GetAllowedGait() const
     return GetUnifiedStateData().Gait;
 }
 
-EWuwaGait UWuwaMovementComponent::GetStopGait() const
+void UWuwaMovementComponent::BindInputIntent(UWuwaInputIntentComponent* InInputIntent)
 {
-    const auto* Gait = ResolveGaitComponent();
-    return Gait ? Gait->StopGait : EWuwaGait::Run;
+    InputIntent = InInputIntent;
 }
 
-void UWuwaMovementComponent::BeginSprintDesireWindow(UObject* WindowSource)
+void UWuwaMovementComponent::ApplyMoveIntent()
 {
-    if (auto* Gait = ResolveGaitComponent()) Gait->OpenSprintWindow(WindowSource);
-}
-
-void UWuwaMovementComponent::UpdateSprintDesireWindow(UObject* WindowSource, float InputHeldSeconds, float HoldThresholdSeconds)
-{
-    if (auto* Gait = ResolveGaitComponent()) Gait->SampleSprintWindow(WindowSource, InputHeldSeconds, HoldThresholdSeconds);
-}
-
-void UWuwaMovementComponent::EndSprintDesireWindow(UObject* WindowSource)
-{
-    if (auto* Gait = ResolveGaitComponent()) Gait->CloseSprintWindow(WindowSource);
-}
-
-EWuwaSprintDesire UWuwaMovementComponent::GetSprintDesire() const
-{
-    const auto* Gait = ResolveGaitComponent();
-    return Gait ? Gait->ReadSprintDesire() : EWuwaSprintDesire::None;
-}
-
-void UWuwaMovementComponent::ClearSprintDesire()
-{
-    if (auto* Gait = ResolveGaitComponent()) Gait->ResetSprintRequest();
-}
-
-void UWuwaMovementComponent::NotifyMoveInputChanged(bool bHasMoveInput)
-{
-    // 参数保留以兼容调用方；脚本始终读取角色刚更新的语义输入快照。
-    if (auto* Gait = ResolveGaitComponent()) Gait->RefreshPolicy();
+    if (!IsValid(InputIntent) || !PawnOwner) return;
+    const FWuwaMoveIntent Move = InputIntent->GetMoveIntent();
+    if (IsClimbing())
+    {
+        // 攀爬：前后沿墙面上下，左右沿墙面横向，保留轴的幅度。
+        const FVector ForwardDirection = FVector::CrossProduct(-ProcessedSurfaceNomal, PawnOwner->GetActorRightVector());
+        const FVector RightDirection = FVector::CrossProduct(-ProcessedSurfaceNomal, -PawnOwner->GetActorUpVector());
+        AddInputVector(ForwardDirection * Move.Axis.Y);
+        AddInputVector(RightDirection * Move.Axis.X);
+    }
+    else if (Move.bHasInput)
+    {
+        AddInputVector(Move.WorldDirection);
+    }
 }
 
 EWuwaPositionState UWuwaMovementComponent::ReadPositionState() const
@@ -111,12 +79,15 @@ EWuwaPositionState UWuwaMovementComponent::ReadPositionState() const
 
 FWuwaUnifiedStateData UWuwaMovementComponent::GetUnifiedStateData() const
 {
-    const AWuwaCharacter* Character = Cast<AWuwaCharacter>(GetOwner());
-    return Character && IsValid(Character->UnifiedStateComponent)
-        ? Character->UnifiedStateComponent->GetStateData() : FWuwaUnifiedStateData{};
+    return IsValid(UnifiedState) ? UnifiedState->GetStateData() : FWuwaUnifiedStateData{};
 }
 
-void UWuwaMovementComponent::HandleUnifiedStateChanged(const FWuwaUnifiedStateData&, const FWuwaUnifiedStateData&)
+void UWuwaMovementComponent::HandleMoveStateChanged(EWuwaMoveState, EWuwaMoveState)
+{
+    RefreshMovementSettings();
+}
+
+void UWuwaMovementComponent::HandleGaitChanged(EWuwaGait, EWuwaGait)
 {
     RefreshMovementSettings();
 }
@@ -146,8 +117,11 @@ void UWuwaMovementComponent::RefreshMovementSettings()
 
 void UWuwaMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-    // UE 默认让 CMC 先于 Character Tick。固定在本帧物理前调度脚本，避免形成 Tick 依赖环。
+    // 原作 RoleGait 在自己的 OnTick 中决策。UE 默认让 CMC 先于 Character Tick，
+    // 这里固定在本帧物理前调度脚本，避免形成 Tick 依赖环。
     if (auto* Gait = ResolveGaitComponent()) Gait->RefreshPolicy();
+    // 输入在本帧物理前写入，Super 中立刻消费，不依赖输入事件和角色 Tick 的先后。
+    ApplyMoveIntent();
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
     if (CanEnterClimbState())
     {
@@ -179,7 +153,12 @@ void UWuwaMovementComponent::OnMovementModeChanged(EMovementMode PrevMode, uint8
 		bOrientRotationToMovement = true;
 	}
 	Super::OnMovementModeChanged(PrevMode, PrevCustomMode);
-    if (auto* Gait = ResolveGaitComponent()) Gait->RefreshPolicy();
+    // 原作运动状态组件监听 CharMovementModeChanged 同步位置；随后本帧重算一次步态，不等下一次 Tick。
+    if (auto* Gait = ResolveGaitComponent())
+    {
+        if (auto* State = ResolveUnifiedState()) State->HandleMovementModeChanged(ReadPositionState(), MovementMode.GetValue());
+        Gait->RefreshPolicy();
+    }
 }
 
 float UWuwaMovementComponent::GetMaxSpeed() const

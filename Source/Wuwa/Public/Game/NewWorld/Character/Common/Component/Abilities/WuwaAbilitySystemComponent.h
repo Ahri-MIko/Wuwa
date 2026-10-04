@@ -53,20 +53,20 @@ public:
 	/** 按技能身份精确查找；输入语义到技能身份的转换由脚本完成。 */
 	UFUNCTION(BlueprintCallable, Category = "Wuwa|Combat|Input")
 	TArray<FGameplayAbilitySpecHandle> FindAbilityHandlesByAbilityTag(FGameplayTag AbilityTag);
+	/*一个ASC里面是否有这样一个GA并且判断是否这个GA有有对应传入的Tag*/
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat|Input")
 	bool HasActiveSkillAbilityTag(UWuwaGameplayAbilityBase* Ability, FGameplayTag AbilityTag) const;
+	//判断这个 ASC 当前身上拥有的 GameplayTag，是否满足给定的 Tag 查询条件
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat|Input")
 	bool MatchesOwnedTagQuery(const FGameplayTagQuery& Query) const;
-	/** 无效/未注册的属性返回 false，不能当作数值零参与条件判断。 */
-	UFUNCTION(BlueprintPure, Category = "Wuwa|Attribute")
-	bool TryGetAttributeValue(FGameplayAttribute Attribute, float& Value) const;
 
 	/** 输入解析所需的配置；只返回仍有效的已授予能力，不创建执行实例。 */
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat")
 	UWuwaGameplayAbilityBase* GetAbilityForInput(FGameplayAbilitySpecHandle AbilityHandle) const;
-	/** 只检查 Spec/实例策略。技能门槛由脚本判断，GAS 条件在提交时检查。 */
+	
+	/** 这个Spec能不能接收一次新的请求 */
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Combat")
-	bool CanRequestAbilityFromInput(FGameplayAbilitySpecHandle AbilityHandle) const;
+	bool IsSpecAvailableForActivation(FGameplayAbilitySpecHandle AbilityHandle) const;
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Input")
 	AWuwaCharacter* GetInputAvatar() const;
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Input")

@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "WuwaPlayerInputState.generated.h"
 
-/** 当前角色的输入意图快照；数据来自输入系统，不读取物理键或从角色速度反推。 */
+/** 当前角色的输入意图快照，由输入意图组件组合生成；不读取物理键或从角色速度反推。 */
 USTRUCT(BlueprintType)
 struct WUWA_API FWuwaPlayerInputState
 {
@@ -21,7 +21,7 @@ struct WUWA_API FWuwaPlayerInputState
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wuwa|Input")
 	bool bHasMoveInput = false;
 
-	/** 冲刺语义指令是否仍按住，来自 Controller 的 InputRouter。 */
+	/** 冲刺（Dash 语义指令）是否仍按住。 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wuwa|Input")
 	bool bSprintHeld = false;
 

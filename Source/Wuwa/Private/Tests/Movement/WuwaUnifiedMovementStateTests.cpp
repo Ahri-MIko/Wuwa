@@ -1,6 +1,8 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Input/WuwaTestMoveInput.h"
+#include "Tests/Movement/WuwaTestGait.h"
 #include "Engine/World.h"
 #include "InputAction.h"
 #include "UObject/Script.h"
@@ -14,8 +16,9 @@
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaAnimDataLibrary.h"
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaAnimLogicParams.h"
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaLocomotionMath.h"
-#include "Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputHandler.h"
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputIntentComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
+#include "WuwaStateEventRecorder.h"
 
 namespace WuwaUnifiedMovementStateTests
 {
@@ -46,7 +49,7 @@ namespace WuwaUnifiedMovementStateTests
 			Controller->SetPawn(Character);
 			Character->Controller = Controller;
 			Controller->RegisterInputRouteHandlers();
-			Controller->MoveInputHandler->OnMove.AddUniqueDynamic(Character, &AWuwaCharacter::HandleMoveInput);
+			WuwaTestInput::UseTestMoveInputConfig(Controller);
 			Movement = Character->GetWuwaMovementComponent();
 			if (!Movement) return;
 			Movement->MovementMode = MOVE_Walking;
@@ -112,25 +115,27 @@ namespace WuwaUnifiedMovementStateTests
 			Event.Timestamp = Time;
 			Event.Value = Value;
 			// The transient world deliberately skips BeginPlay. AActor::ProcessEvent otherwise
-			// discards OnMove's dynamic callback even though the route handler reports success.
+			// discards reflected handler calls even though the route handler reports success.
 			// Permit reflection dispatch here without bypassing the real Router/delegate path.
 			FEditorScriptExecutionGuard ScriptExecutionGuard;
-			return Controller->GetInputRouter()->DispatchInput(Event);
+			return Controller->RouteInputEvent(Event);
 		}
 
+		// 移动轴记录进角色的输入意图，不经过 Router 的 Handler；返回角色是否收到了这次输入。
 		bool Move(FVector2D Axis, double Time) const
 		{
-			const bool bHandled = Dispatch(MoveBinding, Axis.IsNearlyZero() ? EWuwaInputPhase::Released : EWuwaInputPhase::Triggered,
+			Dispatch(MoveBinding, Axis.IsNearlyZero() ? EWuwaInputPhase::Released : EWuwaInputPhase::Triggered,
 				Time, FInputActionValue(Axis));
-			Movement->ConsumeInputVector();
-			return bHandled;
+			// 测试不跑世界 Tick：手动执行本帧 CMC 物理更新前的 RoleGait 刷新。
+			Gait->RefreshPolicy();
+			return Character->InputIntent->GetMoveIntent().Axis.Equals(Axis);
 		}
 
 		void Sample(UObject* Window, double Time) const
 		{
 			World->TimeSeconds = Time;
 			const FWuwaPlayerInputState Input = Character->GetPlayerInputState();
-			Movement->UpdateSprintDesireWindow(Window, Input.bSprintHeld ? Input.SprintHeldSeconds : 0.f, 0.2f);
+			WuwaTestGait::Of(Movement)->SampleSprintWindow(Window, Input.bSprintHeld ? Input.SprintHeldSeconds : 0.f, 0.2f);
 		}
 
 		FWuwaLocomotionAnimData Snapshot(FAutomationTestBase& Test) const
@@ -143,10 +148,10 @@ namespace WuwaUnifiedMovementStateTests
 	};
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaManagedStateOwnershipTest, "Wuwa.Movement.ManagedState.LegalityAndOwnership",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaManagedStateDimensionsTest, "Wuwa.Movement.ManagedState.LegalityAndDimensions",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FWuwaManagedStateOwnershipTest::RunTest(const FString& Parameters)
+bool FWuwaManagedStateDimensionsTest::RunTest(const FString& Parameters)
 {
 	using namespace WuwaUnifiedMovementStateTests;
 	FFixture F;
@@ -171,58 +176,76 @@ bool FWuwaManagedStateOwnershipTest::RunTest(const FString& Parameters)
 	}
 	TestFalse(TEXT("Unknown position fails closed"), F.State->IsMoveStateLegal(static_cast<P>(255), M::Other));
 	TestFalse(TEXT("Unknown movement fails closed"), F.State->IsMoveStateLegal(P::Ground, static_cast<M>(255)));
-	TestFalse(TEXT("Ground state rejects airborne movement"), F.State->TrySetMoveState(M::Jump, EWuwaGait::Run));
-	TestFalse(TEXT("Unknown gait fails closed"), F.State->TrySetMoveState(M::Stand, static_cast<EWuwaGait>(255)));
+	TestFalse(TEXT("Ground state rejects airborne movement"), F.State->SetMoveState(M::Jump, EWuwaGait::Run));
+	TestFalse(TEXT("Unknown gait fails closed"), F.State->SetMoveState(M::Stand, static_cast<EWuwaGait>(255)));
+	TestFalse(TEXT("Unknown position is rejected"), F.State->SetPositionState(static_cast<P>(255)));
 	const int32 InitialRevision = F.State->GetStateData().Revision;
-	TestTrue(TEXT("The same valid state is an accepted no-op"), F.State->TrySetMoveState(M::Stand, EWuwaGait::Run));
+	TestTrue(TEXT("The same valid state is an accepted no-op"), F.State->SetMoveState(M::Stand, EWuwaGait::Run));
 	TestEqual(TEXT("Identical state does not publish another revision"), F.State->GetStateData().Revision, InitialRevision);
 
+	// Each dimension has its own setter and event, as in the original CharacterUnifiedStateComponent.
+	UWuwaStateEventRecorder* Recorder = NewObject<UWuwaStateEventRecorder>(F.Character);
+	Recorder->Bind(F.State);
+	TestTrue(TEXT("Direction changes through its own setter"), F.State->SetDirectionState(EWuwaDirectionState::LockDirection));
+	TestFalse(TEXT("Setting the same direction reports no change"), F.State->SetDirectionState(EWuwaDirectionState::LockDirection));
+	TestEqual(TEXT("Only the direction event is broadcast"), Recorder->Events, TArray<FString>{TEXT("Direction FaceDirection->LockDirection")});
+	Recorder->Events.Reset();
+	TestTrue(TEXT("An action state is written directly"), F.State->SetMoveState(M::Dodge, EWuwaGait::Run));
+	TestEqual(TEXT("Writing a move state with the same gait broadcasts only the move event"), Recorder->Events,
+		TArray<FString>{TEXT("Move Stand->Dodge")});
+	TestTrue(TEXT("Dodge is reported to animation as an action state"), F.State->GetStateData().bHasActionOverride);
+	TestTrue(TEXT("Position and direction are untouched by a move write"), F.State->GetStateData().PositionState == P::Ground
+		&& F.State->GetStateData().DirectionState == EWuwaDirectionState::LockDirection);
+	TestTrue(TEXT("There is no lease: an ordinary write replaces the action state"), F.State->SetMoveState(M::Stand, EWuwaGait::Walk));
+	TestFalse(TEXT("The compatibility flag follows the move state"), F.State->GetStateData().bHasActionOverride);
+	TestEqual(TEXT("A gait change has its own event after the move event"), Recorder->Events,
+		(TArray<FString>{TEXT("Move Stand->Dodge"), TEXT("Move Dodge->Stand"), TEXT("Gait Run->Walk")}));
+
+	// Position follows the physical movement mode through the CMC event, not RoleGait polling.
+	Recorder->Events.Reset();
+	F.Movement->SetMovementMode(MOVE_Falling);
+	TestTrue(TEXT("Falling moves the state into Air"), F.State->GetStateData().PositionState == P::Air);
+	TestTrue(TEXT("The falling handler writes Other, then RoleGait resolves Fall in the same frame"),
+		F.State->GetStateData().MoveState == M::Fall);
+	TestTrue(TEXT("Leaving the ground broadcasts the position change before the airborne move"),
+		Recorder->IndexOf(TEXT("Position Ground->Air")) == 0 && Recorder->IndexOf(TEXT("Move Stand->Other")) > 0
+		&& Recorder->IndexOf(TEXT("Move Other->Fall")) > Recorder->IndexOf(TEXT("Move Stand->Other")));
+	Recorder->Events.Reset();
+	F.Movement->SetMovementMode(MOVE_Walking);
+	TestTrue(TEXT("Walking returns the state to Ground"), F.State->GetStateData().PositionState == P::Ground);
+	TestTrue(TEXT("Original OnLand writes Other before the position event is broadcast"),
+		Recorder->IndexOf(TEXT("Move Fall->Other")) >= 0
+		&& Recorder->IndexOf(TEXT("Move Fall->Other")) < Recorder->IndexOf(TEXT("Position Air->Ground")));
+	TestTrue(TEXT("RoleGait then settles the landed character to Stand"), F.State->GetStateData().MoveState == M::Stand);
+	TestTrue(TEXT("Walk preference is unchanged by position changes"), F.Movement->GetDesiredGait() == EWuwaGait::Run);
+
+	// Dash only writes Dodge at the start. RoleGait keeps the original rules afterwards.
 	TestTrue(TEXT("Semantic movement is routed"), F.Move(FVector2D(0.f, 1.f), 1.0));
 	TestEqual(TEXT("The routed axis reaches the character through its dynamic delegate"),
 		F.Character->GetPlayerInputState().MoveAxis, FVector2D(0.f, 1.f));
 	TestTrue(TEXT("The managed context sees the routed movement intent"), F.Gait->ReadMovementContext().bHasMoveInput);
-	UObject* OldAction = NewObject<UInputAction>(F.Character);
-	UObject* NewAction = NewObject<UInputAction>(F.Character);
-	const int32 OldHandle = F.State->AcquireMoveState(OldAction, M::Dodge, 100);
-	TestTrue(TEXT("Dash acquires an action handle"), OldHandle > 0);
+	TestTrue(TEXT("Held movement resolves Run"), F.State->GetStateData().MoveState == M::Run);
+	TestTrue(TEXT("A Dash-like action writes Dodge"), F.State->SetMoveState(M::Dodge, EWuwaGait::Run));
 	F.Gait->RefreshPolicy();
-	TestTrue(TEXT("Continuous movement does not overwrite the active action"), F.State->GetStateData().MoveState == M::Dodge);
-	TestFalse(TEXT("Ordinary state requests cannot overwrite an action lease"), F.State->TrySetMoveState(M::Run, EWuwaGait::Run));
-	TestEqual(TEXT("Lower priority action is rejected"), F.State->AcquireMoveState(NewAction, M::Dodge, 99), 0);
-	const int32 NewHandle = F.State->AcquireMoveState(NewAction, M::Dodge, 100);
-	TestTrue(TEXT("Equal priority replacement receives a distinct handle"), NewHandle > OldHandle);
-	const int32 ReplacementRevision = F.State->GetStateData().Revision;
-	TestFalse(TEXT("A late end from the old action cannot release the replacement"), F.State->ReleaseMoveState(OldHandle));
-	TestEqual(TEXT("An invalid release does not publish"), F.State->GetStateData().Revision, ReplacementRevision);
-	TestTrue(TEXT("The new action still owns the state"), F.State->GetStateData().bHasActionOverride);
-	TestTrue(TEXT("The active owner can release"), F.State->ReleaseMoveState(NewHandle));
-	TestFalse(TEXT("Releasing does not resurrect the old action"), F.State->GetStateData().bHasActionOverride);
-	TestTrue(TEXT("Release recomputes Run from the held movement input"), F.State->GetStateData().MoveState == M::Run);
+	TestTrue(TEXT("Original RoleGait: a held direction overwrites Dodge on the next refresh"), F.State->GetStateData().MoveState == M::Run);
 
 	F.Movement->Velocity = FVector(-310.f, 0.f, 0.f);
-	const int32 NoInputDash = F.State->AcquireMoveState(NewAction, M::Dodge, 100);
 	F.Move(FVector2D::ZeroVector, 1.2);
+	TestTrue(TEXT("Releasing a moving Run enters RunStop"), F.State->GetStateData().MoveState == M::RunStop);
+	TestTrue(TEXT("A no-input Dash writes Dodge"), F.State->SetMoveState(M::Dodge, EWuwaGait::Run));
+	F.Gait->RefreshPolicy();
+	TestTrue(TEXT("Original RoleGait: without input Dodge is kept while the character still moves"),
+		F.State->GetStateData().MoveState == M::Dodge);
 	const FWuwaLocomotionAnimData DuringDash = F.Snapshot(*this);
-	TestTrue(TEXT("Animation exposes the managed action override"), DuringDash.bHasUnifiedState && DuringDash.bHasActionOverride);
+	TestTrue(TEXT("Animation sees the action state"), DuringDash.bHasUnifiedState && DuringDash.bHasActionOverride);
 	TestFalse(TEXT("Dash residual speed cannot trigger ordinary Stop animation"), DuringDash.bWantsToStop);
 	TestFalse(TEXT("Dash is not ground locomotion"), DuringDash.bGroundMoveActive);
-	TestTrue(TEXT("No-input Dash releases"), F.State->ReleaseMoveState(NoInputDash));
-	TestTrue(TEXT("Residual Dash velocity does not manufacture RunStop"), F.State->GetStateData().MoveState == M::Stand);
-	TestEqual(TEXT("State release never zeroes physical velocity"), F.Movement->Velocity, FVector(-310.f, 0.f, 0.f));
-	TestFalse(TEXT("Animation remains out of Stop after no-input action release"), F.Snapshot(*this).bWantsToStop);
-
-	UObject* DeadOwner = NewObject<UInputAction>(F.Character);
-	const int32 DeadHandle = F.State->AcquireMoveState(DeadOwner, M::Dodge, 100);
-	DeadOwner->MarkAsGarbage();
-	F.State->PruneStateOwners();
-	TestFalse(TEXT("A destroyed action owner cannot keep its lease"), F.State->GetStateData().bHasActionOverride);
-	TestFalse(TEXT("A pruned handle never becomes active again"), F.State->ReleaseMoveState(DeadHandle));
-	const int32 BeforeReset = F.State->AcquireMoveState(NewAction, M::Dodge, 100);
-	F.State->ResetActionStates();
-	const int32 AfterReset = F.State->AcquireMoveState(NewAction, M::Dodge, 100);
-	TestTrue(TEXT("Reset does not reuse an old action handle"), AfterReset > BeforeReset);
-	TestFalse(TEXT("A pre-reset End cannot release a post-reset action"), F.State->ReleaseMoveState(BeforeReset));
-	F.State->ReleaseMoveState(AfterReset);
+	TestEqual(TEXT("State decisions never zero physical velocity"), F.Movement->Velocity, FVector(-310.f, 0.f, 0.f));
+	F.Movement->Velocity = FVector::ZeroVector;
+	F.Gait->RefreshPolicy();
+	TestTrue(TEXT("Dodge settles to Stand once the character stops, without manufacturing RunStop"),
+		F.State->GetStateData().MoveState == M::Stand);
+	TestFalse(TEXT("Animation remains out of Stop after the action settles"), F.Snapshot(*this).bWantsToStop);
 	return true;
 }
 
@@ -248,6 +271,8 @@ bool FWuwaManagedSprintPipelineTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Movement command reaches the controlled character"), F.Move(FVector2D(0.f, 1.f), 1.0));
 	TestTrue(TEXT("The movement command updates the character input snapshot"), F.Character->GetPlayerInputState().bHasMoveInput);
 	TestTrue(TEXT("Walk/Run command reaches managed gait policy"), F.Dispatch(F.WalkRunBinding, EWuwaInputPhase::Pressed, 1.01));
+	// 走跑键只改偏好；真实游戏里本帧 CMC Tick 开头 RoleGait 才按新偏好决定状态，测试不跑 Tick，手动刷新一次。
+	F.Gait->RefreshPolicy();
 	TestTrue(TEXT("Managed state accepts the Walk preference"), F.State->GetStateData().MoveState == M::Walk);
 	F.Movement->Velocity = FVector(350.f, 0.f, 0.f);
 	TestEqual(TEXT("Walk applies configured speed cap"), F.Movement->MaxWalkSpeed, 210.f);
@@ -257,15 +282,15 @@ bool FWuwaManagedSprintPipelineTest::RunTest(const FString& Parameters)
 
 	UObject* Window = NewObject<UInputAction>(F.Character);
 	F.World->TimeSeconds = 2.0;
-	F.Movement->BeginSprintDesireWindow(Window);
-	F.Movement->EndSprintDesireWindow(Window);
+	WuwaTestGait::Of(F.Movement)->OpenSprintWindow(Window);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
 	TestTrue(TEXT("Temporary sprint is accepted through the managed state"), F.State->GetStateData().MoveState == M::Sprint);
 	TestTrue(TEXT("Sprint keeps the saved Walk preference"), F.Movement->GetDesiredGait() == EWuwaGait::Walk);
 	TestEqual(TEXT("Sprint applies its own configured speed cap"), F.Movement->MaxWalkSpeed, 940.f);
 	TestEqual(TEXT("Sprint applies its own configured acceleration"), F.Movement->MaxAcceleration, 2700.f);
 	TestEqual(TEXT("Sprint applies its own configured friction"), F.Movement->GroundFriction, 4.f);
 	TestEqual(TEXT("Sprint applies its own configured braking"), F.Movement->BrakingDecelerationWalking, 1300.f);
-	F.State->ChangeDirectionState(EWuwaDirectionState::LockDirection);
+	F.State->SetDirectionState(EWuwaDirectionState::LockDirection);
 	const FWuwaLocomotionAnimData Sprint = F.Snapshot(*this);
 	TestTrue(TEXT("Anim snapshot reads actual unified Sprint"), Sprint.bHasUnifiedState && Sprint.MoveState == M::Sprint);
 	TestTrue(TEXT("Anim snapshot carries Ground and direction state"), Sprint.PositionState == EWuwaPositionState::Ground
@@ -276,11 +301,11 @@ bool FWuwaManagedSprintPipelineTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Changing policy leaves actual speed independent of the cap"), Sprint.GroundSpeed, 350.f);
 	F.World->TimeSeconds = 2.99;
 	F.Gait->RefreshPolicy();
-	F.Movement->EndSprintDesireWindow(Window);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
 	TestTrue(TEXT("Temporary sprint survives until its one-second deadline"), F.State->GetStateData().MoveState == M::Sprint);
 	F.World->TimeSeconds = 3.0;
 	F.Gait->RefreshPolicy();
-	TestTrue(TEXT("Expiration runs without an animation update or notify Tick"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Expiration runs without an animation update or notify Tick"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	TestTrue(TEXT("Expiration restores the retained Walk preference"), F.State->GetStateData().MoveState == M::Walk);
 	TestEqual(TEXT("Walk configuration is reapplied at expiry"), F.Movement->MaxWalkSpeed, 210.f);
 	TestEqual(TEXT("Expiry does not reset velocity"), F.Movement->Velocity, FVector(350.f, 0.f, 0.f));
@@ -288,17 +313,17 @@ bool FWuwaManagedSprintPipelineTest::RunTest(const FString& Parameters)
 	// The same semantic Dash action drives the hold snapshot even when no ASC accepts a GA.
 	TestNull(TEXT("This input path does not require a working ASC"), F.Controller->GetASC());
 	F.Dispatch(F.SprintBinding, EWuwaInputPhase::Pressed, 4.0);
-	F.Movement->BeginSprintDesireWindow(Window);
+	WuwaTestGait::Of(F.Movement)->OpenSprintWindow(Window);
 	F.Sample(Window, 4.2);
-	TestTrue(TEXT("Exactly the threshold remains temporary"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	TestTrue(TEXT("Exactly the threshold remains temporary"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::Temporary);
 	F.Sample(Window, 4.21);
-	TestTrue(TEXT("Routed semantic hold becomes sustained"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
-	F.Movement->EndSprintDesireWindow(Window);
+	TestTrue(TEXT("Routed semantic hold becomes sustained"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
 	F.Dispatch(F.SprintBinding, EWuwaInputPhase::Released, 4.3);
 	F.Sample(Window, 4.4);
-	TestTrue(TEXT("Release after window End cannot demote committed sustained sprint"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	TestTrue(TEXT("Release after window End cannot demote committed sustained sprint"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	F.Move(FVector2D::ZeroVector, 4.5);
-	TestTrue(TEXT("Releasing movement clears sustained request despite residual velocity"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Releasing movement clears sustained request despite residual velocity"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	TestTrue(TEXT("Actual Sprint transitions to SprintStop"), F.State->GetStateData().MoveState == M::SprintStop);
 	const FWuwaLocomotionAnimData Stop = F.Snapshot(*this);
 	TestTrue(TEXT("Animation selects the last actual Sprint stop"), Stop.bWantsToStop && Stop.StopGait == EWuwaGait::Sprint);
@@ -309,10 +334,10 @@ bool FWuwaManagedSprintPipelineTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Zero speed does not change the stop clip's saved gait"), F.Snapshot(*this).StopGait == EWuwaGait::Sprint);
 	F.Move(FVector2D(0.f, 1.f), 5.0);
 	TestTrue(TEXT("The next movement uses Walk rather than reviving Sprint"), F.State->GetStateData().MoveState == M::Walk);
-	TestTrue(TEXT("The next actual gait updates StopGait"), F.Movement->GetStopGait() == EWuwaGait::Walk);
+	TestTrue(TEXT("The next actual gait updates StopGait"), WuwaTestGait::Of(F.Movement)->StopGait == EWuwaGait::Walk);
 	F.Sample(Window, 5.3);
-	F.Movement->EndSprintDesireWindow(Window);
-	TestTrue(TEXT("Late window callbacks cannot revive a consumed request"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
+	TestTrue(TEXT("Late window callbacks cannot revive a consumed request"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	return true;
 }
 
@@ -328,24 +353,25 @@ bool FWuwaManagedGaitRestrictionTest::RunTest(const FString& Parameters)
 	using P = EWuwaPositionState;
 	TestTrue(TEXT("Restriction fixture receives the routed movement command"), F.Move(FVector2D(0.f, 1.f), 1.0));
 	TestTrue(TEXT("Restriction policy starts with real movement input"), F.Gait->ReadMovementContext().bHasMoveInput);
-	F.Gait->RequestDesiredGait(EWuwaGait::Walk);
+	WuwaTestGait::SetDesiredGait(F.Movement, EWuwaGait::Walk);
+	TestTrue(TEXT("The Walk preference is stored by the movement state component"), F.State->IsWalkPreferred());
 	UObject* ReasonA = NewObject<UInputAction>(F.Character);
 	UObject* ReasonB = NewObject<UInputAction>(F.Character);
 	UObject* Window = NewObject<UInputAction>(F.Character);
 	F.Gait->SetGaitBlocked(ReasonA, EWuwaGait::Sprint, true);
 	F.Gait->SetGaitBlocked(ReasonA, EWuwaGait::Sprint, true);
 	F.Gait->SetGaitBlocked(ReasonB, EWuwaGait::Sprint, true);
-	F.Gait->RequestDesiredGait(EWuwaGait::Sprint);
+	WuwaTestGait::SetDesiredGait(F.Movement, EWuwaGait::Sprint);
 	TestTrue(TEXT("A legacy Sprint request preserves Walk preference"), F.Movement->GetDesiredGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("Blocked Sprint falls back to the preferred Walk"), F.State->GetStateData().MoveState == M::Walk);
-	TestTrue(TEXT("Blocking execution does not erase the sprint request"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	TestTrue(TEXT("Blocking execution does not erase the sprint request"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	F.Gait->SetGaitBlocked(ReasonA, EWuwaGait::Sprint, false);
-	F.Movement->SetSprintAllowed(true);
+	WuwaTestGait::SetSprintAllowed(F.Movement, true);
 	TestFalse(TEXT("Removing one source, or the CMC compatibility source, cannot release another source"), F.Gait->IsGaitAllowed(EWuwaGait::Sprint));
 	F.Gait->SetGaitBlocked(ReasonB, EWuwaGait::Sprint, false);
 	TestTrue(TEXT("Each blocking source releases only its own contribution"), F.Gait->IsGaitAllowed(EWuwaGait::Sprint));
 	TestTrue(TEXT("Once every source releases, the pending request can resolve to Sprint"), F.State->GetStateData().MoveState == M::Sprint);
-	F.Movement->ClearSprintDesire();
+	WuwaTestGait::Of(F.Movement)->ResetSprintRequest();
 	F.Gait->SetGaitBlocked(ReasonA, EWuwaGait::Walk, true);
 	TestTrue(TEXT("A blocked preference falls back to allowed Run"), F.State->GetStateData().MoveState == M::Run);
 	TestTrue(TEXT("Fallback does not overwrite preference"), F.Movement->GetDesiredGait() == EWuwaGait::Walk);
@@ -363,64 +389,61 @@ bool FWuwaManagedGaitRestrictionTest::RunTest(const FString& Parameters)
 	F.Gait->RefreshPolicy();
 	TestTrue(TEXT("A destroyed restriction source cannot leave the gait permanently blocked"), F.Gait->IsGaitAllowed(EWuwaGait::Sprint));
 
-	F.Movement->BeginSprintDesireWindow(Window);
-	F.Movement->EndSprintDesireWindow(Window);
-	F.Movement->BeginSprintDesireWindow(Window);
-	const int32 Dash = F.State->AcquireMoveState(ReasonA, M::Dodge, 100);
+	WuwaTestGait::Of(F.Movement)->OpenSprintWindow(Window);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
+	WuwaTestGait::Of(F.Movement)->OpenSprintWindow(Window);
+	TestTrue(TEXT("A Dash-like action writes Dodge on the ground"), F.State->SetMoveState(M::Dodge, EWuwaGait::Walk));
 	F.Movement->Velocity = FVector(170.f, 0.f, 210.f);
-	F.Movement->MovementMode = MOVE_Falling;
-	F.Gait->RefreshPolicy();
-	TestTrue(TEXT("Ground to Air follows the physical movement mode"), F.State->GetStateData().PositionState == P::Air);
-	TestTrue(TEXT("An action legal in Air retains its handle across the position change"), F.State->GetStateData().bHasActionOverride);
-	TestTrue(TEXT("Leaving Ground clears active and retained sprint requests"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
-	TestTrue(TEXT("The retained airborne action can still release"), F.State->ReleaseMoveState(Dash));
-	TestTrue(TEXT("Positive vertical velocity resolves to Jump"), F.State->GetStateData().MoveState == M::Jump);
+	F.Movement->SetMovementMode(MOVE_Falling);
+	TestTrue(TEXT("Ground to Air follows the physical movement mode event"), F.State->GetStateData().PositionState == P::Air);
+	TestTrue(TEXT("Leaving Ground clears active and retained sprint requests"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Original falling handler replaces Dodge; positive vertical velocity then resolves to Jump"),
+		F.State->GetStateData().MoveState == M::Jump);
 	F.Movement->Velocity.Z = -10.f;
 	F.Gait->RefreshPolicy();
 	TestTrue(TEXT("Negative vertical velocity resolves to Fall"), F.State->GetStateData().MoveState == M::Fall);
-	F.Movement->MovementMode = MOVE_Flying;
+	TestTrue(TEXT("Dodge is legal in Air"), F.State->SetMoveState(M::Dodge, EWuwaGait::Walk));
 	F.Gait->RefreshPolicy();
-	TestTrue(TEXT("Physical flying resolves to Flying"), F.State->GetStateData().MoveState == M::Flying);
-	const int32 AirDash = F.State->AcquireMoveState(ReasonA, M::Dodge, 100);
-	F.Movement->MovementMode = MOVE_Swimming;
-	F.Gait->RefreshPolicy();
-	TestTrue(TEXT("Swimming resolves to Water / NormalSwim"), F.State->GetStateData().PositionState == P::Water
+	TestTrue(TEXT("Jump/Fall resolution does not overwrite an airborne action state"), F.State->GetStateData().MoveState == M::Dodge);
+	F.Movement->SetMovementMode(MOVE_Flying);
+	TestTrue(TEXT("Physical flying resolves to Flying"), F.State->GetStateData().PositionState == P::Air
+		&& F.State->GetStateData().MoveState == M::Flying);
+	F.Movement->SetMovementMode(MOVE_Swimming);
+	TestTrue(TEXT("Swimming with movement input resolves to Water / NormalSwim"), F.State->GetStateData().PositionState == P::Water
 		&& F.State->GetStateData().MoveState == M::NormalSwim);
-	TestFalse(TEXT("An action illegal in the new position loses its lease"), F.State->GetStateData().bHasActionOverride);
-	TestFalse(TEXT("The invalidated airborne handle cannot revive"), F.State->ReleaseMoveState(AirDash));
-	F.Movement->MovementMode = MOVE_Custom;
-	F.Movement->CustomMovementMode = ECustomMoveMode::MOVE_Climb;
-	F.Gait->RefreshPolicy();
-	TestTrue(TEXT("Climbing resolves to Climb / NormalClimb"), F.State->GetStateData().PositionState == P::Climb
+	F.Move(FVector2D::ZeroVector, 1.1);
+	TestTrue(TEXT("Original RoleGait: releasing movement in water resolves to Other"), F.State->GetStateData().MoveState == M::Other);
+	F.Move(FVector2D(0.f, 1.f), 1.2);
+	TestTrue(TEXT("Pressing again in water resolves to NormalSwim"), F.State->GetStateData().MoveState == M::NormalSwim);
+	F.Movement->SetMovementMode(MOVE_Custom, static_cast<uint8>(ECustomMoveMode::MOVE_Climb));
+	TestTrue(TEXT("Climbing with movement input resolves to Climb / NormalClimb"), F.State->GetStateData().PositionState == P::Climb
 		&& F.State->GetStateData().MoveState == M::NormalClimb);
-	F.Movement->MovementMode = MOVE_None;
-	F.Gait->RefreshPolicy();
+	F.Move(FVector2D::ZeroVector, 1.3);
+	TestTrue(TEXT("Original RoleGait: releasing movement while climbing resolves to Other"), F.State->GetStateData().MoveState == M::Other);
+	F.Move(FVector2D(0.f, 1.f), 1.4);
+	TestEqual(TEXT("Policy changes never reset horizontal speed"), F.Movement->Velocity.X, 170.0);
+	F.Movement->SetMovementMode(MOVE_None);
 	TestTrue(TEXT("No physical movement mode resolves to None / Other"), F.State->GetStateData().PositionState == P::None
 		&& F.State->GetStateData().MoveState == M::Other);
-	F.Movement->MovementMode = MOVE_Walking;
-	F.Gait->RefreshPolicy();
-	F.Movement->UpdateSprintDesireWindow(Window, 5.f, 0.2f);
-	F.Movement->EndSprintDesireWindow(Window);
+	F.Movement->SetMovementMode(MOVE_Walking);
+	WuwaTestGait::Of(F.Movement)->SampleSprintWindow(Window, 5.f, 0.2f);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
 	TestTrue(TEXT("Returning to Ground retains Walk but not the departed sprint window"), F.State->GetStateData().MoveState == M::Walk
-		&& F.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
-	TestEqual(TEXT("Policy changes never reset horizontal speed"), F.Movement->Velocity.X, 170.0);
+		&& WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 
 	F.Gait->SetGaitBlocked(ReasonA, EWuwaGait::Sprint, true);
-	F.Movement->BeginSprintDesireWindow(Window);
-	F.Movement->EndSprintDesireWindow(Window);
-	F.Movement->BeginSprintDesireWindow(Window);
-	const int32 ResetHandle = F.State->AcquireMoveState(ReasonA, M::Dodge, 100);
+	WuwaTestGait::Of(F.Movement)->OpenSprintWindow(Window);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
+	WuwaTestGait::Of(F.Movement)->OpenSprintWindow(Window);
 	F.Gait->ResetSprintRequest();
-	TestTrue(TEXT("Sprint-only reset preserves action ownership"), F.State->GetStateData().bHasActionOverride);
+	TestTrue(TEXT("Sprint-only reset clears the request"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	TestFalse(TEXT("Sprint-only reset preserves the restriction sources"), F.Gait->IsGaitAllowed(EWuwaGait::Sprint));
-	F.Movement->BeginSprintDesireWindow(Window);
+	WuwaTestGait::Of(F.Movement)->OpenSprintWindow(Window);
 	F.Gait->ResetRuntime();
-	TestFalse(TEXT("Runtime reset releases active actions"), F.State->GetStateData().bHasActionOverride);
-	TestFalse(TEXT("A reset action's delayed End cannot affect new state"), F.State->ReleaseMoveState(ResetHandle));
 	TestTrue(TEXT("Runtime reset clears all restriction sources"), F.Gait->IsGaitAllowed(EWuwaGait::Sprint));
-	F.Movement->UpdateSprintDesireWindow(Window, 5.f, 0.2f);
-	F.Movement->EndSprintDesireWindow(Window);
-	TestTrue(TEXT("Runtime reset clears unfinished and retained sprint without late resurrection"), F.Movement->GetSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(F.Movement)->SampleSprintWindow(Window, 5.f, 0.2f);
+	WuwaTestGait::Of(F.Movement)->CloseSprintWindow(Window);
+	TestTrue(TEXT("Runtime reset clears unfinished and retained sprint without late resurrection"), WuwaTestGait::Of(F.Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	TestTrue(TEXT("Runtime reset retains the player's Walk preference"), F.Movement->GetDesiredGait() == EWuwaGait::Walk);
 	return true;
 }

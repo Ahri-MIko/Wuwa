@@ -28,7 +28,7 @@ namespace WuwaInputCommandTests
 		TGuardValue<bool> MainGuard{Defaults->bIsMainSkill, true};
 		TGuardValue<int32> LevelGuard{Defaults->InterruptLevel, 100};
 		TGuardValue<EWuwaSkillOverrideType> OverrideGuard{Defaults->SkillOverrideType, EWuwaSkillOverrideType::None};
-		TGuardValue<bool> MovementGuard{Defaults->bOverridesMoveState, false};
+		TGuardValue<EWuwaMoveState> MovementGuard{Defaults->StartMoveState, EWuwaMoveState::Other};
 		int32 Activations = 0;
 		const FGameplayTag InputTag = FGameplayTag::RequestGameplayTag(TEXT("GAS.GA.Role.Attack1"));
 		const FGameplayTag Skill1 = FGameplayTag::RequestGameplayTag(TEXT("Abilities.Skill.Attack01"));
@@ -204,7 +204,7 @@ bool FWuwaInputCommandCurrentSkillTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Current skill matching does not widen to a parent tag"),
 		F.ASC->HasActiveSkillAbilityTag(Old, FGameplayTag::RequestGameplayTag(TEXT("Abilities.Skill"))));
 	TestTrue(TEXT("Attack before the first stage's window is buffered"), F.Press() == EWuwaCombatInputResult::Buffered);
-	Old->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), true);
 	TestTrue(TEXT("The first stage's breakpoint selects the second stage"),
 		F.Runtime->ProcessPendingInput(F.ASC) == EWuwaCombatInputResult::ActivationRequested);
 	UWuwaGameplayAbilityBase* Next = F.Active(Second);
@@ -243,7 +243,7 @@ bool FWuwaInputCommandBufferedReevaluationTest::RunTest(const FString& Parameter
 	F.ASC->AddLooseGameplayTag(F.OwnerTag);
 	F.Runtime->ProcessPendingInput(F.ASC);
 	TestEqual(TEXT("A condition change alone does not create an input opportunity"), F.Activations, 1);
-	Old->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), true);
 	TestTrue(TEXT("Breakpoint reevaluates the cached raw input against current owner tags"),
 		F.Runtime->ProcessPendingInput(F.ASC) == EWuwaCombatInputResult::ActivationRequested);
 	TestNotNull(TEXT("The command chooses the newly eligible derived attack"), F.Active(Second));
@@ -280,12 +280,12 @@ bool FWuwaInputCommandNoMatchBufferTest::RunTest(const FString& Parameters)
 	for (const auto Phase : {EWuwaInputPhase::Released, EWuwaInputPhase::Triggered, EWuwaInputPhase::Canceled})
 		TestTrue(TEXT("This stage ignores non-Pressed phases"),
 			F.Runtime->ProcessInput(F.ASC, F.Input(F.InputTag, Phase), 1.f) == EWuwaCombatInputResult::Ignored);
-	Old->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), true);
 	F.Runtime->ProcessPendingInput(F.ASC);
 	TestNull(TEXT("An open skill window cannot bypass unmatched configured conditions by direct-tag lookup"), F.Active(Direct));
 	TestEqual(TEXT("No-match remains pending while its lifetime is valid"), F.Runtime->GetBufferedInputCount(), 1);
 	F.ASC->AddLooseGameplayTag(F.OwnerTag);
-	Old->CallAnimBreakPoint();
+	F.Skills->CallAnimBreakPoint(Old->GetSkillHandle());
 	TestTrue(TEXT("A later explicit breakpoint can resolve the previously unmatched raw input"),
 		F.Runtime->ProcessPendingInput(F.ASC) == EWuwaCombatInputResult::ActivationRequested);
 	TestNotNull(TEXT("The newly eligible configured target activates"), F.Active(Derived));
@@ -415,7 +415,7 @@ bool FWuwaInputCommandConditionReentryTest::RunTest(const FString& Parameters)
 	if (!Old) return false;
 	Condition->CheckContext = nullptr;
 	TestTrue(TEXT("A valid pure condition may buffer behind a closed skill window"), F.Press() == EWuwaCombatInputResult::Buffered);
-	Old->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), true);
 	Condition->CheckContext = [&F](const FWuwaInputCommandContext&)
 	{
 		F.Runtime->ClearBufferedInput(F.InputTag);

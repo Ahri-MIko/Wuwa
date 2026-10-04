@@ -71,6 +71,9 @@ public:
 	
 	//InputHandler 注册所有模块的输入中转类
 	void  RegisterInputRouteHandlers();
+
+	/** 先把语义输入记录到当前控制 Pawn 的输入意图，再交给 InputRouter 分发；返回是否有系统处理了它。 */
+	bool RouteInputEvent(const FWuwaInputEvent& InputEvent);
 	UPROPERTY(VisibleAnywhere, Category = "Wuwa|Input")
 	TObjectPtr<UWuwaAbilityInputHandlerComponent>AbilityInputHandler;
 	UPROPERTY(VisibleAnywhere, Category = "Wuwa|Input")
@@ -84,5 +87,11 @@ protected:
 	
 private:
 	void HandleRoutedInput(const FInputActionInstance& Instance,FGameplayTag InputTag,FGameplayTag RouteTag,EWuwaInputPhase Phase);
+
+	/** 按键 IA 本身或它在 DefaultMappingContext 里的映射配了 Hold 触发器。 */
+	bool HasHoldTrigger(const UInputAction* Action) const;
+
+	// Hold 触发器到点后每帧都会 Triggered；记录本次按下已经发过 Held 的动作，按下/松开时清除。
+	TSet<TWeakObjectPtr<const UInputAction>> HeldDispatchedActions;
 	
 };

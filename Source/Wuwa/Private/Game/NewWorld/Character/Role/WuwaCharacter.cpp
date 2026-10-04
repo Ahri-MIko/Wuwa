@@ -1,34 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Camera/CameraComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
-#include "InputActionValue.h"            // ← 新增：需要 FInputActionValue
-#include "Game/NewWorld/Character/Common/Component/Input/WuwaMoveInputHandler.h"
-#include "GameFramework/Controller.h"    // ← 新增：需要 Controller
-#include "GameFramework/CharacterMovementComponent.h" 
-#include "Game/Controller/WuwaPlayerController.h"
-#include "Game/Input/WuwaInputRouterComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputIntentComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaGameplayAbilityBase.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
 #include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Combat/WuwaFightStateBridgeComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Skill/WuwaSkillBridgeComponent.h"
 
-
-class UWuwaWidgetController;
-
-namespace
-{
-    FVector2D CameraRelativeDirection(const FVector2D& InputAxis, const FRotator& ViewRotation)
-    {
-        const FRotator YawOnly(0.f, ViewRotation.Yaw, 0.f);
-        const FVector Direction = UKismetMathLibrary::GetForwardVector(YawOnly) * InputAxis.Y
-            + UKismetMathLibrary::GetRightVector(YawOnly) * InputAxis.X;
-        return FVector2D(Direction.X, Direction.Y).GetSafeNormal();
-    }
-}
 
 #pragma region LifeCycle
 
@@ -42,6 +22,7 @@ AWuwaCharacter::AWuwaCharacter(const FObjectInitializer& ObjectInitializer) :
     RoleGaitClass = TSoftClassPtr<UWuwaRoleGaitBridgeComponent>(FSoftObjectPath(TEXT("/Script/UnrealSharp.WuwaRoleGaitComponent_C")));
     FightStateClass = TSoftClassPtr<UWuwaFightStateBridgeComponent>(FSoftObjectPath(TEXT("/Script/UnrealSharp.WuwaFightStateComponent_C")));
     SkillClass = TSoftClassPtr<UWuwaSkillBridgeComponent>(FSoftObjectPath(TEXT("/Script/UnrealSharp.WuwaSkillComponent_C")));
+    InputIntent = CreateDefaultSubobject<UWuwaInputIntentComponent>(TEXT("InputIntent"));
 
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
@@ -51,6 +32,11 @@ AWuwaCharacter::AWuwaCharacter(const FObjectInitializer& ObjectInitializer) :
 void AWuwaCharacter::PostInitializeComponents()
 {
     Super::PostInitializeComponents();
+    // 角色是组装者：把输入意图交给需要它的组件，组件之间互不查找，也不回头读角色。
+    if (WuwaMovementComponent)
+    {
+        WuwaMovementComponent->BindInputIntent(InputIntent);
+    }
     if (GetWorld() && GetWorld()->IsGameWorld())
     {
         EnsureMovementStateSystem();
@@ -66,12 +52,6 @@ void AWuwaCharacter::BeginPlay()
     Super::BeginPlay();
     EnsureMovementStateSystem();
     EnsureSkillSystem();
-    const AWuwaPlayerController* PC =Cast<AWuwaPlayerController>( GetController());
-    UWuwaMoveInputHandler* MovementInputHandler = PC ? PC->MoveInputHandler.Get() : nullptr;
-    if (MovementInputHandler)
-    {
-        MovementInputHandler->OnMove.AddDynamic(this, &AWuwaCharacter::HandleMoveInput);
-    }
 }
 
 
@@ -90,10 +70,16 @@ void AWuwaCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
     bMovementStateReady = false;
     if (IsValid(UnifiedStateComponent))
     {
-        UnifiedStateComponent->OnStateChanged.RemoveAll(WuwaMovementComponent);
-        UnifiedStateComponent->OnStateChanged.RemoveAll(RoleGaitComponent);
+        UnifiedStateComponent->OnMoveStateChanged.RemoveAll(WuwaMovementComponent);
+        UnifiedStateComponent->OnGaitChanged.RemoveAll(WuwaMovementComponent);
     }
-    if (IsValid(RoleGaitComponent)) RoleGaitComponent->ResetRuntime();
+    // 结束阶段：CMC 不再驱动步态，RoleGait 不再读取物理事实和输入（脚本据此不再推进状态）。
+    if (WuwaMovementComponent) WuwaMovementComponent->BindMovementState(UnifiedStateComponent, nullptr);
+    if (IsValid(RoleGaitComponent))
+    {
+        RoleGaitComponent->BindDependencies(UnifiedStateComponent, nullptr, nullptr);
+        RoleGaitComponent->ResetRuntime();
+    }
     Super::EndPlay(EndPlayReason);
 }
 
@@ -151,6 +137,7 @@ bool AWuwaCharacter::EnsureSkillSystem()
         AddInstanceComponent(SkillComponent);
     }
     if (!SkillComponent->IsRegistered()) SkillComponent->RegisterComponent();
+    BindSkillDependencies();
     return IsValid(SkillComponent) && SkillComponent->IsRegistered();
 }
 
@@ -191,15 +178,31 @@ bool AWuwaCharacter::EnsureMovementStateSystem()
     if (!UnifiedStateComponent->IsRegistered()) UnifiedStateComponent->RegisterComponent();
     if (!RoleGaitComponent->IsRegistered()) RoleGaitComponent->RegisterComponent();
     
+    // 角色是组装者：依赖都在这里注入，组件之间不互相查找，也不回头读角色。
+    // 依赖方向：CMC -> RoleGait -> UnifiedState；RoleGait 只通过引擎基类读物理事实。
+    RoleGaitComponent->BindDependencies(UnifiedStateComponent, WuwaMovementComponent, InputIntent);
+    WuwaMovementComponent->BindMovementState(UnifiedStateComponent, RoleGaitComponent);
+    BindSkillDependencies();
+
     //初始化各种组件,包括Unified组件的默认值,RoleGait组件的默认值,以及CMC组件运动的默认值
-    UnifiedStateComponent->OnStateChanged.AddUniqueDynamic(WuwaMovementComponent, &UWuwaMovementComponent::HandleUnifiedStateChanged);
-    UnifiedStateComponent->InitializeState();
+    // 与原作相同：CMC 监听运动状态的变化更新速度配置；RoleGait 不订阅状态事件，由 CMC 每次物理更新前驱动。
+    UnifiedStateComponent->OnMoveStateChanged.AddUniqueDynamic(WuwaMovementComponent, &UWuwaMovementComponent::HandleMoveStateChanged);
+    UnifiedStateComponent->OnGaitChanged.AddUniqueDynamic(WuwaMovementComponent, &UWuwaMovementComponent::HandleGaitChanged);
+    UnifiedStateComponent->InitializeState(WuwaMovementComponent->ReadPositionState(), WuwaMovementComponent->GetInitialDesiredGait());
     RoleGaitComponent->InitializePolicy();
-    UnifiedStateComponent->OnStateChanged.AddUniqueDynamic(RoleGaitComponent, &UWuwaRoleGaitBridgeComponent::HandleUnifiedStateChanged);
     bMovementStateReady = true;
     RoleGaitComponent->RefreshPolicy();
     WuwaMovementComponent->RefreshMovementSettings();
     return true;
+}
+
+// 技能组件与运动状态可能先后装配，任一方就绪时都重新注入一次。
+void AWuwaCharacter::BindSkillDependencies()
+{
+    if (IsValid(SkillComponent))
+    {
+        SkillComponent->BindDependencies(FightStateComponent, UnifiedStateComponent, RoleGaitComponent);
+    }
 }
 
 #pragma endregion
@@ -208,103 +211,21 @@ bool AWuwaCharacter::EnsureMovementStateSystem()
 
 FWuwaPlayerInputState AWuwaCharacter::GetPlayerInputState() const
 {
-    FWuwaPlayerInputState State;
-    const AWuwaPlayerController* PC = Cast<AWuwaPlayerController>(GetController());
-    if (!PC || !(PC->GetPawn() == this)) return State;//如果PC为空或者当前的Pawn不是这个直接返回空
-    
-    
-    const FWuwaInputActionState SprintInput = PC->GetInputRouter()->GetInputActionState(FWuwaGameTags::Get().Abilities_Movement_Dash);
-    State.bSprintHeld = SprintInput.bHeld;
-    State.SprintHeldSeconds = SprintInput.HeldSeconds;
-    State.MoveAxis = MoveInput;
-    const float Threshold = FMath::Clamp(MoveInputThreshold, 0.f, 1.f);
-    State.bHasMoveInput = State.MoveAxis.SizeSquared() > FMath::Square(Threshold);
-    if (State.bHasMoveInput)
-    {
-        const FVector2D Direction = GetCameraRelativeMoveDirection(State.MoveAxis);
-        State.MoveWorldDirection = FVector(Direction.X, Direction.Y, 0.f);
-    }
-    return State;
+    return IsValid(InputIntent) ? InputIntent->GetPlayerInputState() : FWuwaPlayerInputState{};
 }
 
 void AWuwaCharacter::ResetPlayerInputState()
 {
-    MoveInput = FVector2D::ZeroVector;
-    MoveInputDir = FVector2D::ZeroVector;
     ConsumeMovementInputVector();
-    if (WuwaMovementComponent)
+    if (IsValid(InputIntent))
     {
-        WuwaMovementComponent->ClearSprintDesire();
+        InputIntent->ResetInputs();
     }
-}
-
-void AWuwaCharacter::HandleMoveInput(const FInputActionValue& Value)
-{
-    // 先记录意图，再判断能否移动：Dash 限制移动时，GA 仍能查询玩家是否按着方向。
-    MoveInput = Value.Get<FVector2D>();
-    MoveInputDir = GetCameraRelativeMoveDirection(MoveInput);
-    if (WuwaMovementComponent)
+    // 冲刺需求由 RoleGait 保存；角色结束阶段不再驱动它（与原来经 CMC 转发时一致）。
+    if (!bMovementStateEnding && IsValid(RoleGaitComponent))
     {
-        WuwaMovementComponent->NotifyMoveInputChanged(GetPlayerInputState().bHasMoveInput);
+        RoleGaitComponent->ResetSprintRequest();
     }
-    if (CanApplyMove())
-    {
-        Move(Value);
-    }
-}
-
-
-void AWuwaCharacter::Move(const FInputActionValue& Value)
-{
-    if (!WuwaMovementComponent) return;
-
-    if (WuwaMovementComponent->IsClimbing())
-    {
-        HabdleClimbInput(Value);
-    }
-    else
-    {
-        MoveInputDir = GetCameraRelativeMoveDirection(MoveInput);
-        AddMovementInput(FVector(MoveInputDir.X, MoveInputDir.Y, 0.f), 1.f);
-    }
-
-}
-
-bool AWuwaCharacter::CanApplyMove()
-{
-    //TODO:需要根据当前的情况判断是否能够接收输入
-    return  true;
-}
-
-
-void AWuwaCharacter::HabdleClimbInput(const FInputActionValue& Value)
-{
-    const FVector2D MovementVector = Value.Get<FVector2D>();
-    const FVector ForwardDirection = FVector::CrossProduct(
-        -WuwaMovementComponent->ProcessedSurfaceNomal,
-        GetActorRightVector()
-    );
-    const FVector RightDirection = FVector::CrossProduct(
-        -WuwaMovementComponent->ProcessedSurfaceNomal,
-        -GetActorUpVector()
-    );
-
-    AddMovementInput(ForwardDirection, MovementVector.Y);
-    AddMovementInput(RightDirection, MovementVector.X);
-}
-
-
-FVector2D AWuwaCharacter::GetCameraRelativeMoveDirection(FVector2D InputAxis) const
-{
-    // ControlRotation 是游戏操作朝向，镜头震动和演出偏移不会改变移动意图。
-    return CameraRelativeDirection(InputAxis, GetControlRotation());
-}
-
-FVector2D AWuwaCharacter::Vector2ToCameraDirNormalized(const FVector2D InSource2D, const UCameraComponent* InCameraComp) const
-{
-    return InCameraComp
-        ? CameraRelativeDirection(InSource2D, InCameraComp->GetComponentRotation())
-        : GetCameraRelativeMoveDirection(InSource2D);
 }
 
 #pragma endregion

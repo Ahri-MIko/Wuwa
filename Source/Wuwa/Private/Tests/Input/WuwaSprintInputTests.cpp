@@ -1,6 +1,8 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Movement/WuwaTestGait.h"
+#include "Tests/Input/WuwaTestMoveInput.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 #include "Engine/World.h"
@@ -8,6 +10,7 @@
 #include "Game/Input/WuwaInputRouterComponent.h"
 #include "Game/Input/WuwaInputTypes.h"
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaPlayerInputState.h"
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputIntentComponent.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "Game/Controller/WuwaPlayerController.h"
@@ -63,10 +66,15 @@ namespace
 		bool Dispatch(const FInputDataAsset& Binding, EWuwaInputPhase Phase, double Time) const
 		{
 			World->TimeSeconds = Time;
+			// Match PlayerController::HandleRoutedInput: build the complete event, then let the controller
+			// record it on the controlled Pawn's input intent and dispatch it through the router.
 			FWuwaInputEvent Event;
+			Event.InputTag = Binding.InputTag;
+			Event.RouteTag = Binding.RouteTag;
+			Event.SourceAction = Binding.InputAction;
 			Event.Phase = Phase;
 			Event.Timestamp = Time;
-			return Router()->DispatchInput(Event);
+			return Controller->RouteInputEvent(Event);
 		}
 	};
 
@@ -86,11 +94,17 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaSprintInputSourcesTest, "Wuwa.Input.Sprint
 bool FWuwaSprintInputSourcesTest::RunTest(const FString& Parameters)
 {
 	FScopedSprintInputWorld Fixture;
-	UWuwaInputRouterComponent* Router = Fixture.Router();
-	if (!TestNotNull(TEXT("The controller owns a router"), Router))
+	AWuwaCharacter* Character = Fixture.SpawnCharacter();
+	if (!TestNotNull(TEXT("The controller owns a router"), Fixture.Router())
+		|| !TestNotNull(TEXT("A character receives the semantic input"), Character)
+		|| !TestNotNull(TEXT("The character owns an input intent component"), Character->InputIntent.Get()))
 	{
 		return false;
 	}
+	// Held state belongs to the controlled character, not to the controller's router.
+	Fixture.Controller->SetPawn(Character);
+	Character->Controller = Fixture.Controller;
+	UWuwaInputIntentComponent* Intent = Character->InputIntent;
 	const FWuwaGameTags Tags = FWuwaGameTags::Get();
 	const FInputDataAsset First = MakeSprintBinding(Fixture.Controller, Tags.Abilities_Movement_Dash, Tags.Input_Route_Ability);
 	const FInputDataAsset Second = MakeSprintBinding(Fixture.Controller, Tags.Abilities_Movement_Dash, Tags.Input_Route_Ability);
@@ -101,45 +115,49 @@ bool FWuwaSprintInputSourcesTest::RunTest(const FString& Parameters)
 
 	// State must be recorded independently of whether a gameplay handler accepts the command.
 	TestFalse(TEXT("Without a handler, dispatch still reports unhandled"), Fixture.Dispatch(First, EWuwaInputPhase::Pressed, 1.0));
-	TestTrue(TEXT("An unhandled action still has a held input state"), Router->GetInputActionState(First.InputTag).bHeld);
+	TestTrue(TEXT("An unhandled action still has a held input state"), Intent->GetActionState(First.InputTag).bHeld);
 	Fixture.Dispatch(First, EWuwaInputPhase::Pressed, 1.1);
 	Fixture.Dispatch(First, EWuwaInputPhase::Triggered, 1.12);
 	Fixture.Dispatch(Second, EWuwaInputPhase::Pressed, 1.15);
 	Fixture.Dispatch(First, EWuwaInputPhase::Released, 1.2);
 	Fixture.World->TimeSeconds = 1.3;
-	const FWuwaInputActionState Overlapping = Router->GetInputActionState(First.InputTag);
+	const FWuwaInputActionState Overlapping = Intent->GetActionState(First.InputTag);
 	TestTrue(TEXT("Releasing one action leaves the other source held"), Overlapping.bHeld);
 	TestTrue(TEXT("Duplicate presses, triggers and overlapping sources preserve continuous semantic hold time"),
 		FMath::IsNearlyEqual(Overlapping.HeldSeconds, 0.3f, 0.0001f));
 
 	Fixture.Dispatch(Second, EWuwaInputPhase::Released, 1.4);
-	TestFalse(TEXT("Releasing the final source clears the semantic hold"), Router->GetInputActionState(First.InputTag).bHeld);
-	TestEqual(TEXT("A released action reports zero held time"), Router->GetInputActionState(First.InputTag).HeldSeconds, 0.f);
+	TestFalse(TEXT("Releasing the final source clears the semantic hold"), Intent->GetActionState(First.InputTag).bHeld);
+	TestEqual(TEXT("A released action reports zero held time"), Intent->GetActionState(First.InputTag).HeldSeconds, 0.f);
 	Fixture.Dispatch(Second, EWuwaInputPhase::Triggered, 1.5);
-	TestFalse(TEXT("A late Triggered event cannot resurrect a released action"), Router->GetInputActionState(First.InputTag).bHeld);
+	TestFalse(TEXT("A late Triggered event cannot resurrect a released action"), Intent->GetActionState(First.InputTag).bHeld);
 	Fixture.Dispatch(Second, EWuwaInputPhase::Pressed, 1.6);
 	Fixture.Dispatch(Second, EWuwaInputPhase::Canceled, 1.7);
-	TestFalse(TEXT("Canceled clears the source just like release"), Router->GetInputActionState(First.InputTag).bHeld);
+	TestFalse(TEXT("Canceled clears the source just like release"), Intent->GetActionState(First.InputTag).bHeld);
 
-	// Dispatch must use the configured binding, not an event's unrelated tag or source object.
+	// The intent records the complete event it receives, keyed by the event's tag and source action.
 	Fixture.World->TimeSeconds = 2.0;
-	FWuwaInputEvent ForgedEvent;
-	ForgedEvent.InputTag = Tags.Player_Common_Movement_WalkRun;
-	ForgedEvent.SourceAction = NewObject<UInputAction>(Fixture.Controller);
-	ForgedEvent.Phase = EWuwaInputPhase::Pressed;
-	ForgedEvent.Timestamp = 2.0;
-	Router->DispatchInput(ForgedEvent);
-	TestTrue(TEXT("The binding's tag receives the held state"), Router->GetInputActionState(First.InputTag).bHeld);
-	TestFalse(TEXT("The caller's mismatched tag is not recorded"), Router->GetInputActionState(ForgedEvent.InputTag).bHeld);
+	FWuwaInputEvent OtherEvent;
+	OtherEvent.InputTag = Tags.Player_Common_Movement_WalkRun;
+	OtherEvent.SourceAction = NewObject<UInputAction>(Fixture.Controller);
+	OtherEvent.Phase = EWuwaInputPhase::Pressed;
+	OtherEvent.Timestamp = 2.0;
+	Fixture.Controller->RouteInputEvent(OtherEvent);
+	TestTrue(TEXT("An event is recorded under the tag it carries"), Intent->GetActionState(OtherEvent.InputTag).bHeld);
+	TestFalse(TEXT("Another semantic action is not affected"), Intent->GetActionState(First.InputTag).bHeld);
 	Fixture.Dispatch(First, EWuwaInputPhase::Released, 2.1);
-	TestFalse(TEXT("Release matches the binding source rather than the caller's mismatched source"), Router->GetInputActionState(First.InputTag).bHeld);
+	TestTrue(TEXT("Releasing a different action cannot clear this hold"), Intent->GetActionState(OtherEvent.InputTag).bHeld);
+	OtherEvent.Phase = EWuwaInputPhase::Released;
+	OtherEvent.Timestamp = 2.2;
+	Fixture.Controller->RouteInputEvent(OtherEvent);
+	TestFalse(TEXT("Releasing the recorded source clears the hold"), Intent->GetActionState(OtherEvent.InputTag).bHeld);
 
 	Fixture.Dispatch(First, EWuwaInputPhase::Pressed, 3.0);
-	Router->ResetInputStates();
-	TestFalse(TEXT("Reset clears all action states"), Router->GetInputActionState(First.InputTag).bHeld);
+	Intent->ResetInputs();
+	TestFalse(TEXT("Reset clears all action states"), Intent->GetActionState(First.InputTag).bHeld);
 	Fixture.Dispatch(First, EWuwaInputPhase::Triggered, 3.1);
-	TestFalse(TEXT("Triggered cannot recreate an input cleared by reset"), Router->GetInputActionState(First.InputTag).bHeld);
-	TestFalse(TEXT("An invalid tag has no held input"), Router->GetInputActionState(FGameplayTag()).bHeld);
+	TestFalse(TEXT("Triggered cannot recreate an input cleared by reset"), Intent->GetActionState(First.InputTag).bHeld);
+	TestFalse(TEXT("An invalid tag has no held input"), Intent->GetActionState(FGameplayTag()).bHeld);
 	return true;
 }
 
@@ -158,15 +176,11 @@ bool FWuwaSprintInputLifecycleTest::RunTest(const FString& Parameters)
 	const FInputDataAsset Dash = MakeSprintBinding(Fixture.Controller, Tags.Abilities_Movement_Dash, Tags.Input_Route_Ability);
 	Fixture.Controller->RegisterInputRouteHandlers();
 
-	// A controller with no Pawn/ASC must still receive semantic input safely.
+	// Without a controlled Pawn there is nowhere to record semantic input; routing must still be safe.
 	TestNull(TEXT("The fixture starts without an ASC"), Fixture.Controller->GetASC());
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Pressed, 1.0);
 	Fixture.World->TimeSeconds = 1.3;
-	TestTrue(TEXT("The router records input even without a Pawn or ASC"), Fixture.Router()->GetInputActionState(Dash.InputTag).bHeld);
-	TestTrue(TEXT("The router reports elapsed game time without requiring an ability handler to accept input"),
-		FMath::IsNearlyEqual(Fixture.Router()->GetInputActionState(Dash.InputTag).HeldSeconds, 0.3f, 0.0001f));
 	Fixture.Controller->FlushPressedKeys();
-	TestFalse(TEXT("Flushing player input clears the router's held state"), Fixture.Router()->GetInputActionState(Dash.InputTag).bHeld);
 
 	AWuwaCharacter* FirstCharacter = Fixture.SpawnCharacter();
 	AWuwaCharacter* SecondCharacter = Fixture.SpawnCharacter();
@@ -195,24 +209,26 @@ bool FWuwaSprintInputLifecycleTest::RunTest(const FString& Parameters)
 		return false;
 	}
 	Movement->MovementMode = MOVE_Walking;
+	// 未初始化 Actor 的测试世界不会调用 PostInitializeComponents：设好移动模式后显式装配运动状态。
+	if (!TestTrue(TEXT("The character assembles its movement state"), FirstCharacter->EnsureMovementStateSystem())) return false;
 	UObject* WindowSource = NewObject<UInputAction>(FirstCharacter);
-	Movement->BeginSprintDesireWindow(WindowSource);
+	WuwaTestGait::Of(Movement)->OpenSprintWindow(WindowSource);
 	Fixture.World->TimeSeconds = 1.7;
 	Snapshot = FirstCharacter->GetPlayerInputState();
-	Movement->UpdateSprintDesireWindow(WindowSource, Snapshot.bSprintHeld ? Snapshot.SprintHeldSeconds : 0.f, 0.2f);
-	TestTrue(TEXT("The snapshot's pre-window hold cannot skip the 0.2 second window requirement"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	WuwaTestGait::Of(Movement)->SampleSprintWindow(WindowSource, Snapshot.bSprintHeld ? Snapshot.SprintHeldSeconds : 0.f, 0.2f);
+	TestTrue(TEXT("The snapshot's pre-window hold cannot skip the 0.2 second window requirement"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::Temporary);
 	Fixture.World->TimeSeconds = 1.81;
 	Snapshot = FirstCharacter->GetPlayerInputState();
-	Movement->UpdateSprintDesireWindow(WindowSource, Snapshot.bSprintHeld ? Snapshot.SprintHeldSeconds : 0.f, 0.2f);
-	TestTrue(TEXT("More than 0.2 seconds of window hold reaches sustained desire through the snapshot"), Movement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	WuwaTestGait::Of(Movement)->SampleSprintWindow(WindowSource, Snapshot.bSprintHeld ? Snapshot.SprintHeldSeconds : 0.f, 0.2f);
+	TestTrue(TEXT("More than 0.2 seconds of window hold reaches sustained desire through the snapshot"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Released, 1.82);
 	Snapshot = FirstCharacter->GetPlayerInputState();
 	TestFalse(TEXT("Release propagates to the character snapshot"), Snapshot.bSprintHeld);
 	TestEqual(TEXT("The released snapshot clears held duration"), Snapshot.SprintHeldSeconds, 0.f);
-	Movement->UpdateSprintDesireWindow(WindowSource, Snapshot.bSprintHeld ? Snapshot.SprintHeldSeconds : 0.f, 0.2f);
-	TestTrue(TEXT("A released semantic action demotes an open window to temporary desire"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
-	Movement->EndSprintDesireWindow(WindowSource);
-	TestTrue(TEXT("The completed temporary window retains its sprint request"), Movement->GetSprintDesire() == EWuwaSprintDesire::Temporary);
+	WuwaTestGait::Of(Movement)->SampleSprintWindow(WindowSource, Snapshot.bSprintHeld ? Snapshot.SprintHeldSeconds : 0.f, 0.2f);
+	TestTrue(TEXT("A released semantic action demotes an open window to temporary desire"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::Temporary);
+	WuwaTestGait::Of(Movement)->CloseSprintWindow(WindowSource);
+	TestTrue(TEXT("The completed temporary window retains its sprint request"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::Temporary);
 
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Pressed, 3.0);
 	Fixture.Controller->SetPawn(SecondCharacter);
@@ -225,6 +241,8 @@ bool FWuwaSprintInputLifecycleTest::RunTest(const FString& Parameters)
 	// Existing semantic commands continue through the same router and affect only the current Pawn.
 	FirstCharacter->GetWuwaMovementComponent()->MovementMode = MOVE_Walking;
 	SecondCharacter->GetWuwaMovementComponent()->MovementMode = MOVE_Walking;
+	if (!TestTrue(TEXT("The second character assembles its movement state"), SecondCharacter->EnsureMovementStateSystem())) return false;
+	WuwaTestInput::UseTestMoveInputConfig(Fixture.Controller);
 	const FInputDataAsset WalkRun = MakeSprintBinding(Fixture.Controller, Tags.Player_Common_Movement_WalkRun, Tags.Input_Route_Movement);
 	TestTrue(TEXT("Walk/run is still handled by the existing movement command route"), Fixture.Dispatch(WalkRun, EWuwaInputPhase::Pressed, 4.0));
 	TestTrue(TEXT("The controlled character switches to Walk"), SecondCharacter->GetWuwaMovementComponent()->GetDesiredGait() == EWuwaGait::Walk);
@@ -268,6 +286,9 @@ bool FWuwaSprintRetainedInputLifecycleTest::RunTest(const FString& Parameters)
 	}
 	FirstMovement->MovementMode = MOVE_Walking;
 	SecondMovement->MovementMode = MOVE_Walking;
+	// 未初始化 Actor 的测试世界不会调用 PostInitializeComponents：设好移动模式后显式装配运动状态。
+	if (!TestTrue(TEXT("The first character assembles its movement state"), FirstCharacter->EnsureMovementStateSystem())) return false;
+	if (!TestTrue(TEXT("The second character assembles its movement state"), SecondCharacter->EnsureMovementStateSystem())) return false;
 	Fixture.Controller->RegisterInputRouteHandlers();
 	Fixture.Controller->SetPawn(FirstCharacter);
 	FirstCharacter->Controller = Fixture.Controller;
@@ -280,82 +301,82 @@ bool FWuwaSprintRetainedInputLifecycleTest::RunTest(const FString& Parameters)
 	const auto SampleWindow = [](AWuwaCharacter* Character, UObject* Source)
 	{
 		const FWuwaPlayerInputState Snapshot = Character->GetPlayerInputState();
-		Character->GetWuwaMovementComponent()->UpdateSprintDesireWindow(
+		WuwaTestGait::Of(Character->GetWuwaMovementComponent())->SampleSprintWindow(
 			Source, Snapshot.bSprintHeld ? Snapshot.SprintHeldSeconds : 0.f, 0.2f);
 	};
 
 	// The notify's animation branch may stop updating after End; committed desire belongs to movement.
-	FirstCharacter->HandleMoveInput(MovingInput);
+	WuwaTestInput::SetMoveAxis(FirstCharacter, MovingInput.Get<FVector2D>());
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Pressed, 10.0);
-	FirstMovement->BeginSprintDesireWindow(CompletedWindow);
+	WuwaTestGait::Of(FirstMovement)->OpenSprintWindow(CompletedWindow);
 	Fixture.World->TimeSeconds = 10.3;
 	SampleWindow(FirstCharacter, CompletedWindow);
-	FirstMovement->EndSprintDesireWindow(CompletedWindow);
-	TestTrue(TEXT("Ending a held window commits sustained desire"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(CompletedWindow);
+	TestTrue(TEXT("Ending a held window commits sustained desire"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Released, 10.4);
 	TestFalse(TEXT("The sprint input snapshot reflects the subsequent release"), FirstCharacter->GetPlayerInputState().bSprintHeld);
-	TestTrue(TEXT("Releasing sprint after the window does not demote the committed desire"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	TestTrue(TEXT("Releasing sprint after the window does not demote the committed desire"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	FirstMovement->Velocity = FVector(450.f, 0.f, 0.f);
-	FirstCharacter->HandleMoveInput(StoppedInput);
-	TestTrue(TEXT("Releasing movement clears sustained desire despite residual character velocity"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestInput::SetMoveAxis(FirstCharacter, StoppedInput.Get<FVector2D>());
+	TestTrue(TEXT("Releasing movement clears sustained desire despite residual character velocity"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Pressed, 10.5);
-	FirstMovement->BeginSprintDesireWindow(OpenWindow);
+	WuwaTestGait::Of(FirstMovement)->OpenSprintWindow(OpenWindow);
 	Fixture.World->TimeSeconds = 10.8;
 	SampleWindow(FirstCharacter, OpenWindow);
-	FirstMovement->EndSprintDesireWindow(OpenWindow);
-	TestTrue(TEXT("A later window End cannot commit sustained desire while movement remains released"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(OpenWindow);
+	TestTrue(TEXT("A later window End cannot commit sustained desire while movement remains released"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Released, 10.9);
 
 	// Flush must discard both a committed request and an unrelated still-open sampling window.
-	FirstCharacter->HandleMoveInput(MovingInput);
+	WuwaTestInput::SetMoveAxis(FirstCharacter, MovingInput.Get<FVector2D>());
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Pressed, 11.0);
-	FirstMovement->BeginSprintDesireWindow(CompletedWindow);
+	WuwaTestGait::Of(FirstMovement)->OpenSprintWindow(CompletedWindow);
 	Fixture.World->TimeSeconds = 11.3;
 	SampleWindow(FirstCharacter, CompletedWindow);
-	FirstMovement->EndSprintDesireWindow(CompletedWindow);
-	FirstMovement->BeginSprintDesireWindow(OpenWindow);
-	TestTrue(TEXT("A weaker open window does not replace retained sustained desire"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(CompletedWindow);
+	WuwaTestGait::Of(FirstMovement)->OpenSprintWindow(OpenWindow);
+	TestTrue(TEXT("A weaker open window does not replace retained sustained desire"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	Fixture.Controller->FlushPressedKeys();
 	TestFalse(TEXT("Flush clears cached movement intent"), FirstCharacter->GetPlayerInputState().bHasMoveInput);
-	TestTrue(TEXT("Flush clears both open and retained sprint desire"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Flush clears both open and retained sprint desire"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	Fixture.World->TimeSeconds = 11.6;
-	FirstMovement->UpdateSprintDesireWindow(OpenWindow, 1.f, 0.2f);
-	FirstMovement->EndSprintDesireWindow(OpenWindow);
-	FirstMovement->EndSprintDesireWindow(CompletedWindow);
-	TestTrue(TEXT("Late notify callbacks cannot restore desire after flush"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(FirstMovement)->SampleSprintWindow(OpenWindow, 1.f, 0.2f);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(OpenWindow);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(CompletedWindow);
+	TestTrue(TEXT("Late notify callbacks cannot restore desire after flush"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 
 	// Changing Pawn resets the previous character even when its animation never sends another End.
-	FirstCharacter->HandleMoveInput(MovingInput);
+	WuwaTestInput::SetMoveAxis(FirstCharacter, MovingInput.Get<FVector2D>());
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Pressed, 12.0);
-	FirstMovement->BeginSprintDesireWindow(CompletedWindow);
+	WuwaTestGait::Of(FirstMovement)->OpenSprintWindow(CompletedWindow);
 	Fixture.World->TimeSeconds = 12.3;
 	SampleWindow(FirstCharacter, CompletedWindow);
-	FirstMovement->EndSprintDesireWindow(CompletedWindow);
-	FirstMovement->BeginSprintDesireWindow(OpenWindow);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(CompletedWindow);
+	WuwaTestGait::Of(FirstMovement)->OpenSprintWindow(OpenWindow);
 	Fixture.Controller->SetPawn(SecondCharacter);
 	SecondCharacter->Controller = Fixture.Controller;
 	TestFalse(TEXT("Pawn change clears the previous character's cached move intent"), FirstCharacter->GetPlayerInputState().bHasMoveInput);
-	TestTrue(TEXT("Pawn change clears open and retained desire on the previous character"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::None);
-	TestTrue(TEXT("The new character does not inherit sprint desire"), SecondMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Pawn change clears open and retained desire on the previous character"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("The new character does not inherit sprint desire"), WuwaTestGait::Of(SecondMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	Fixture.World->TimeSeconds = 12.6;
-	FirstMovement->UpdateSprintDesireWindow(OpenWindow, 1.f, 0.2f);
-	FirstMovement->EndSprintDesireWindow(OpenWindow);
-	FirstMovement->EndSprintDesireWindow(CompletedWindow);
-	TestTrue(TEXT("Late callbacks on the old Pawn cannot recreate desire"), FirstMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(FirstMovement)->SampleSprintWindow(OpenWindow, 1.f, 0.2f);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(OpenWindow);
+	WuwaTestGait::Of(FirstMovement)->CloseSprintWindow(CompletedWindow);
+	TestTrue(TEXT("Late callbacks on the old Pawn cannot recreate desire"), WuwaTestGait::Of(FirstMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 
-	SecondCharacter->HandleMoveInput(MovingInput);
+	WuwaTestInput::SetMoveAxis(SecondCharacter, MovingInput.Get<FVector2D>());
 	Fixture.Dispatch(Dash, EWuwaInputPhase::Pressed, 13.0);
-	SecondMovement->BeginSprintDesireWindow(CompletedWindow);
+	WuwaTestGait::Of(SecondMovement)->OpenSprintWindow(CompletedWindow);
 	Fixture.World->TimeSeconds = 13.3;
 	SampleWindow(SecondCharacter, CompletedWindow);
-	SecondMovement->EndSprintDesireWindow(CompletedWindow);
-	SecondMovement->BeginSprintDesireWindow(OpenWindow);
-	TestTrue(TEXT("The second character can commit its own sustained desire"), SecondMovement->GetSprintDesire() == EWuwaSprintDesire::Sustained);
+	WuwaTestGait::Of(SecondMovement)->CloseSprintWindow(CompletedWindow);
+	WuwaTestGait::Of(SecondMovement)->OpenSprintWindow(OpenWindow);
+	TestTrue(TEXT("The second character can commit its own sustained desire"), WuwaTestGait::Of(SecondMovement)->ReadSprintDesire() == EWuwaSprintDesire::Sustained);
 	Fixture.Controller->SetPawn(nullptr);
 	TestFalse(TEXT("Unpossessing clears movement intent on the former Pawn"), SecondCharacter->GetPlayerInputState().bHasMoveInput);
-	TestTrue(TEXT("Unpossessing clears its retained and open sprint state"), SecondMovement->GetSprintDesire() == EWuwaSprintDesire::None);
-	SecondMovement->EndSprintDesireWindow(OpenWindow);
-	TestTrue(TEXT("Late End after unpossession cannot commit a request"), SecondMovement->GetSprintDesire() == EWuwaSprintDesire::None);
+	TestTrue(TEXT("Unpossessing clears its retained and open sprint state"), WuwaTestGait::Of(SecondMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(SecondMovement)->CloseSprintWindow(OpenWindow);
+	TestTrue(TEXT("Late End after unpossession cannot commit a request"), WuwaTestGait::Of(SecondMovement)->ReadSprintDesire() == EWuwaSprintDesire::None);
 	return true;
 }
 

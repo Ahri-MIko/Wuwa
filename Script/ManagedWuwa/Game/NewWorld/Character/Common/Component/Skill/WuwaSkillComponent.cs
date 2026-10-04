@@ -10,7 +10,7 @@ namespace ManagedWuwa.Game.NewWorld.Character.Common.Component.Skill;
 
 /// <summary>
 /// 轻量主技能管理：判断能否让位、结束旧 GA、申请 FightState、维护当前 Skill。
-/// GA 执行任务，FightState 判断战斗类别；本组件不直接修改移动状态或播放动画。
+/// GA 执行任务，FightState 判断战斗类别；本组件只在主技能开始时按原作处理一次移动状态，不播放动画。
 /// </summary>
 [UClass]
 public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
@@ -25,27 +25,35 @@ public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
     private long _skillStartSerial;
     private bool AcceptsSkillInput => _skillAcceptInput || _acceptInputWindows.Count > 0;
 
-    /*获取玩家身上的Fight组件*/
+    /*获取玩家身上的Fight组件：由角色组装时注入，不从角色身上查找*/
     private UWuwaFightStateBridgeComponent? GetFightState()
     {
-        if (Owner is AWuwaCharacter character && character.IsValid())
-            return character.FightStateComponent;
-        else
-        {
-            return null;
-        }
+        var fight = FightState;
+        return fight is not null && fight.IsValid() ? fight : null;
     }
     
+    //逻辑判断当前的是不是能结束掉,即将启用打断逻辑是否
     protected override bool CanBeginSkill_Implementation(UWuwaGameplayAbilityBase ability)
     {
         var fight = GetFightState();
+        
         if (_endingPlay || _switching || !ability.IsValid() || !ability.IsMainSkill || ability.InterruptLevel is < 0 or > 255 || fight is null || !fight.IsValid() || !TryGetFightCategory(ability.SkillOverrideType, out var category))
         {
+            /*组件正在 EndPlay，或者正处于"切换技能"的过程中（_switching：上一次 TryBeginSkill 还没跑完，防止重入）。
+            GA 无效，或者不是主技能。
+            InterruptLevel 超出 0–255，或者 SkillOverrideType 映射不出战斗类别（配置错误时直接拒绝）。
+            没有 FightState 组件。*/
             return false;
         }
 
         if (_currentSkill is { } current)
         {
+            /*旧 GA 必须"现在能结束"：有效、仍在执行、不在 GAS 的 ScopeLock 里。否则就算权限够也接替不了，只能等。
+            然后满足下面任意一条：
+            新等级 大于 旧等级：随时打断。
+            新等级 等于 旧等级，并且旧技能正处在接招窗口里（AcceptsSkillInput）。
+            旧技能已经到了 ReadyEnd：谁都能接。*/
+            
             var active = current.ActiveAbility.Object;
             if (active is null || !active.IsValid() || !active.CanEndSkillExecutionNow() || !(ability.InterruptLevel > current.InterruptLevel || ability.InterruptLevel == current.InterruptLevel && AcceptsSkillInput || _mainSkillReadyEnd))
             {
@@ -53,7 +61,7 @@ public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
             }
 
             // 旧主技能会先结束并释放自己的 FightState，不能让其等级再次否决 ReadyEnd。
-            // 外部受击/覆盖已换成另一个句柄时，仍必须接受那个新状态的裁决。
+            // 外部受击/覆盖已将FightState的Handle换成另一个句柄时，仍必须接受那个新状态的裁决。
             if (fight.StateData.Handle == current.FightStateHandle)
             {
                 return true;
@@ -103,6 +111,7 @@ public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
             _skillAcceptInput = false;
             _mainSkillReadyEnd = false;
             _acceptInputWindows.Clear();
+            DoSkillBeginMoveAction();
             return handle;
         }
         finally
@@ -114,7 +123,6 @@ public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
     protected override bool EndSkill_Implementation(int fightStateHandle)
     {
         if (!OwnsSkill(fightStateHandle)) return false;
-        string before = CombatInputTrace.Enabled ? CombatInputTrace.Context(this) : string.Empty;
 
         // InstancedPerExecution 的 GA 在 Super.EndAbility 后可能已经无效；按句柄清理。
         _currentSkill = null;
@@ -125,9 +133,6 @@ public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
         if (fight is not null && fight.IsValid()) fight.ExitState(fightStateHandle);
         // 输入层在安全的帧边界消费，不在 EndAbility 清理调用栈中再次激活。
         ++_inputOpportunitySerial;
-        if (CombatInputTrace.Enabled)
-            CombatInputTrace.Write("SKILL_END",
-                $"endedHandle={fightStateHandle} before=[{before}] after=[{CombatInputTrace.Context(this)}]");
         return true;
     }
 
@@ -185,40 +190,14 @@ public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
 
     protected override bool CallAnimBreakPoint_Implementation(int fightStateHandle)
     {
-        if (CombatInputTrace.Enabled)
-            CombatInputTrace.Write("BREAKPOINT_ENTER",
-                $"requestedHandle={fightStateHandle} {CombatInputTrace.Context(this)}");
-        if (_endingPlay || _switching || !OwnsSkill(fightStateHandle))
-        {
-            if (CombatInputTrace.Enabled)
-                CombatInputTrace.Write("BREAKPOINT_REJECT",
-                    $"requestedHandle={fightStateHandle} reason=component-or-owner endingPlay={_endingPlay} switching={_switching} ownsHandle={OwnsSkill(fightStateHandle)} {CombatInputTrace.Context(this)}");
-            return false;
-        }
+        if (_endingPlay || _switching || !OwnsSkill(fightStateHandle)) return false;
         var ability = _currentSkill!.ActiveAbility.Object;
-        if (ability is null || !ability.IsValid() || !ability.IsSkillExecutionFor(Owner))
-        {
-            if (CombatInputTrace.Enabled)
-                CombatInputTrace.Write("BREAKPOINT_REJECT",
-                    $"requestedHandle={fightStateHandle} reason=invalid-or-inactive-ability-or-avatar {CombatInputTrace.Context(this)}");
-            return false;
-        }
+        if (ability is null || !ability.IsValid() || !ability.IsSkillExecutionFor(Owner)) return false;
 
         ++_inputOpportunitySerial;
         // 通知处同步检查，短窗口不会等到关闭后才消费。GAS ScopeLock 中只记录机会，帧末再处理。
         // 广播可以同步结束本技能：所有状态写入必须在广播之前完成。
-        if (ability.CanEndSkillExecutionNow())
-        {
-            if (CombatInputTrace.Enabled)
-                CombatInputTrace.Write("BREAKPOINT_BROADCAST",
-                    $"requestedHandle={fightStateHandle} {CombatInputTrace.Context(this)}");
-            BroadcastAnimBreakPoint(fightStateHandle);
-        }
-        else if (CombatInputTrace.Enabled)
-        {
-            CombatInputTrace.Write("BREAKPOINT_DEFER",
-                $"requestedHandle={fightStateHandle} reason=scope-lock wait=post-update-tick {CombatInputTrace.Context(this)}");
-        }
+        if (ability.CanEndSkillExecutionNow()) BroadcastAnimBreakPoint(fightStateHandle);
         return true;
     }
 
@@ -241,6 +220,29 @@ public partial class UWuwaSkillComponent : UWuwaSkillBridgeComponent
             EndSkill(current.FightStateHandle);
         }
         base.EndPlay(endPlayReason);
+    }
+
+    /// <summary>
+    /// 原作 CharacterSkillComponent 主技能开始时的移动处理：Sprint 结束冲刺请求并切到 Run，各 Stop 切到 Stand。
+    /// 原作的 Sprint 分支另有一个“保留冲刺”的标签条件，导出代码只有标签 ID、读不出含义，本项目没有接入。
+    /// </summary>
+    private void DoSkillBeginMoveAction()
+    {
+        var state = UnifiedState;
+        if (state is null || !state.IsValid()) return;
+        switch (state.StateData.MoveState)
+        {
+            case EWuwaMoveState.Sprint:
+                var gait = RoleGait;
+                if (gait is not null && gait.IsValid()) gait.ResetSprintRequest();
+                state.SetMoveState(EWuwaMoveState.Run, EWuwaGait.Run);
+                break;
+            case EWuwaMoveState.WalkStop:
+            case EWuwaMoveState.RunStop:
+            case EWuwaMoveState.SprintStop:
+                state.SetMoveState(EWuwaMoveState.Stand, state.IsWalkPreferred() ? EWuwaGait.Walk : EWuwaGait.Run);
+                break;
+        }
     }
 
     private bool OwnsSkill(int handle) => handle > 0 && _currentSkill?.FightStateHandle == handle;

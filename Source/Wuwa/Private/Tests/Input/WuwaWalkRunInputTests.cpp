@@ -1,6 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Movement/WuwaTestGait.h"
 #include "Misc/ScopeExit.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
@@ -8,7 +9,7 @@
 #include "Engine/World.h"
 #include "GameFramework/GameModeBase.h"
 #include "Game/Input/DataAsset/WuwaInputDataAsset.h"
-#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputCommand.h"
+#include "Tests/Input/WuwaTestMoveInput.h"
 #include "Game/Input/WuwaInputRouterComponent.h"
 #include "Game/Input/WuwaInputTypes.h"
 #include "InputAction.h"
@@ -47,68 +48,33 @@ namespace
 	};
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaWalkRunResolveTest, "Wuwa.Input.WalkRun.ResolveCommand",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaWalkRunConfigLookupTest, "Wuwa.Input.WalkRun.ConfigLookup",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FWuwaWalkRunResolveTest::RunTest(const FString& Parameters)
+bool FWuwaWalkRunConfigLookupTest::RunTest(const FString& Parameters)
 {
 	const FWuwaGameTags Tags = FWuwaGameTags::Get();
 	if (!TestTrue(TEXT("Walk/run input tag is registered"), Tags.Player_Common_Movement_WalkRun.IsValid()))
 	{
 		return false;
 	}
-
-	FScopedWalkRunTestWorld TestWorld;
-	AWuwaCharacter* Character = TestWorld.SpawnCharacter();
-	UWuwaMovementComponent* Movement = Character ? Character->GetWuwaMovementComponent() : nullptr;
-	if (!TestNotNull(TEXT("Resolve test has a character-owned movement component"), Movement))
-	{
-		return false;
-	}
-	// 不运行 BeginPlay/物理 Tick，但保留真实 Character、Capsule 和 UpdatedComponent。
-	Movement->MovementMode = MOVE_Walking;
-
-	FWuwaInputEvent Event;
-	Event.InputTag = Tags.Player_Common_Movement_WalkRun;
-	Event.Phase = EWuwaInputPhase::Pressed;
-	const FWuwaInputCommand PressCommand = UWuwaMoveInputHandler::ResolveCommand(Event, Movement);
-	TestTrue(TEXT("A ground press resolves to SwitchWalk"), PressCommand.Type == EWuwaInputCommandType::SwitchWalk);
-	TestTrue(TEXT("Resolving a command does not change gait"), Movement->GetDesiredGait() == EWuwaGait::Run);
+	const UWuwaMoveInputConfig* Config = WuwaTestInput::MakeMoveInputConfig(GetTransientPackage());
+	const FWuwaMoveInputBinding* Press = Config->FindBinding(Tags.Player_Common_Movement_WalkRun, EWuwaInputPhase::Pressed);
+	TestTrue(TEXT("A walk/run press maps to the toggle action"),
+		Press && Press->Action && Press->Action->IsA<UWuwaMoveInputAction_ToggleWalkPreference>());
 
 	for (const EWuwaInputPhase Phase : { EWuwaInputPhase::Triggered, EWuwaInputPhase::Released, EWuwaInputPhase::Canceled })
 	{
-		Event.Phase = Phase;
-		TestTrue(FString::Printf(TEXT("Phase %d does not toggle walk/run"), static_cast<int32>(Phase)),
-			UWuwaMoveInputHandler::ResolveCommand(Event, Movement).Type == EWuwaInputCommandType::None);
+		TestNull(FString::Printf(TEXT("Phase %d has no walk/run action"), static_cast<int32>(Phase)),
+			Config->FindBinding(Tags.Player_Common_Movement_WalkRun, Phase));
 	}
-
-	Event.Phase = EWuwaInputPhase::Pressed;
-	Event.InputTag = Tags.Player_Common_Movement_Move;
-	TestTrue(TEXT("Move axis input is not a walk/run command"),
-		UWuwaMoveInputHandler::ResolveCommand(Event, Movement).Type == EWuwaInputCommandType::None);
-	Event.InputTag = FGameplayTag();
-	TestTrue(TEXT("An empty input tag produces no command"),
-		UWuwaMoveInputHandler::ResolveCommand(Event, Movement).Type == EWuwaInputCommandType::None);
-	Event.InputTag = Tags.Player_Common_Movement_WalkRun;
-	TestTrue(TEXT("No movement component produces no command"),
-		UWuwaMoveInputHandler::ResolveCommand(Event, nullptr).Type == EWuwaInputCommandType::None);
-	Character->bIsCrouched = true;
-	TestTrue(TEXT("Crouching cannot resolve SwitchWalk"),
-		UWuwaMoveInputHandler::ResolveCommand(Event, Movement).Type == EWuwaInputCommandType::None);
-	Character->bIsCrouched = false;
-
-	for (const EMovementMode Mode : { MOVE_Falling, MOVE_Custom, MOVE_Swimming, MOVE_Flying, MOVE_None })
-	{
-		Movement->MovementMode = Mode;
-		Movement->CustomMovementMode = ECustomMoveMode::MOVE_Climb;
-		TestTrue(FString::Printf(TEXT("Movement mode %d cannot resolve SwitchWalk"), static_cast<int32>(Mode)),
-			UWuwaMoveInputHandler::ResolveCommand(Event, Movement).Type == EWuwaInputCommandType::None);
-	}
-
+	TestNull(TEXT("Move axis input is not a configured movement action"),
+		Config->FindBinding(Tags.Player_Common_Movement_Move, EWuwaInputPhase::Pressed));
+	TestNull(TEXT("An empty input tag has no action"), Config->FindBinding(FGameplayTag(), EWuwaInputPhase::Pressed));
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaWalkRunExecuteTest, "Wuwa.Input.WalkRun.ExecuteCommand",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaWalkRunExecuteTest, "Wuwa.Input.WalkRun.ToggleAction",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
 bool FWuwaWalkRunExecuteTest::RunTest(const FString& Parameters)
@@ -123,60 +89,51 @@ bool FWuwaWalkRunExecuteTest::RunTest(const FString& Parameters)
 	Movement->MovementMode = MOVE_Walking;
 	Movement->MovementSettings = NewObject<UWuwaMovementSettings>(Character);
 	Movement->MovementSettings->Run.MaxSpeed = 650.f;
+	// 未初始化 Actor 的测试世界不会调用 PostInitializeComponents：设好移动模式后显式装配运动状态。
+	if (!TestTrue(TEXT("Execution test assembles its movement state"), Character->EnsureMovementStateSystem())) return false;
 	Movement->RefreshMovementSettings();
 	const FVector OriginalVelocity(123.f, 45.f, 67.f);
 	Movement->Velocity = OriginalVelocity;
 
-	FWuwaInputCommand Command;
-	Command.Type = EWuwaInputCommandType::SwitchWalk;
-	TestTrue(TEXT("Ground movement permits walk/run switching"), Movement->CanSwitchWalk());
-	TestTrue(TEXT("Ground SwitchWalk command is accepted"), Movement->ExecuteInputCommand(Command));
+	const UWuwaMoveInputAction_ToggleWalkPreference* Toggle = NewObject<UWuwaMoveInputAction_ToggleWalkPreference>(Character);
+	TestTrue(TEXT("Ground movement permits walk/run switching"), Movement->CanToggleWalkPreference());
+	TestTrue(TEXT("Ground toggle action is accepted"), WuwaTestInput::ExecuteMoveAction(*Toggle, Character));
+	// 走跑键只改偏好；真实游戏里本帧 CMC Tick 开头 RoleGait 才按新偏好决定状态，测试不跑 Tick，手动刷新一次。
+	Character->RoleGaitComponent->RefreshPolicy();
 	TestTrue(TEXT("Run switches to Walk"), Movement->GetDesiredGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("Walk has a lower speed cap"), Movement->GetMaxSpeed() < Movement->MovementSettings->Run.MaxSpeed);
 	TestEqual(TEXT("Switching preserves Run configuration"), Movement->MovementSettings->Run.MaxSpeed, 650.f);
 	TestEqual(TEXT("State event applies Walk speed to CMC"), Movement->MaxWalkSpeed, Movement->MovementSettings->Walk.MaxSpeed);
 	TestEqual(TEXT("Switching does not overwrite actual velocity"), Movement->Velocity, OriginalVelocity);
-	TestTrue(TEXT("A second SwitchWalk command is accepted"), Movement->ExecuteInputCommand(Command));
+	TestTrue(TEXT("A second toggle action is accepted"), WuwaTestInput::ExecuteMoveAction(*Toggle, Character));
+	// 同上：本帧 Tick 开头 RoleGait 才读到新偏好。
+	Character->RoleGaitComponent->RefreshPolicy();
 	TestTrue(TEXT("Walk switches back to Run"), Movement->GetDesiredGait() == EWuwaGait::Run);
 	TestEqual(TEXT("Run retains its configured speed"), Movement->GetMaxSpeed(), 650.f);
 
-	const FWuwaInputCommand NoCommand;
-	TestFalse(TEXT("None is not an executable movement command"), Movement->ExecuteInputCommand(NoCommand));
-	TestTrue(TEXT("None does not change gait"), Movement->GetDesiredGait() == EWuwaGait::Run);
+	TestFalse(TEXT("An action without a character is rejected"), WuwaTestInput::ExecuteMoveAction(*Toggle, nullptr));
+	TestTrue(TEXT("A rejected action does not change gait"), Movement->GetDesiredGait() == EWuwaGait::Run);
 	Character->bIsCrouched = true;
-	TestFalse(TEXT("Crouching rejects switching"), Movement->CanSwitchWalk());
-	TestFalse(TEXT("Crouching rejects the command"), Movement->ExecuteInputCommand(Command));
+	TestFalse(TEXT("Crouching rejects switching"), Movement->CanToggleWalkPreference());
+	TestFalse(TEXT("Crouching rejects the action"), WuwaTestInput::ExecuteMoveAction(*Toggle, Character));
 	TestTrue(TEXT("A rejected crouching command preserves gait"), Movement->GetDesiredGait() == EWuwaGait::Run);
 	Character->bIsCrouched = false;
 
 	for (const EMovementMode Mode : { MOVE_Falling, MOVE_Custom, MOVE_Swimming, MOVE_Flying, MOVE_None })
 	{
-		Movement->MovementMode = Mode;
-		Movement->CustomMovementMode = ECustomMoveMode::MOVE_Climb;
-		TestFalse(FString::Printf(TEXT("Movement mode %d rejects switching"), static_cast<int32>(Mode)), Movement->CanSwitchWalk());
-		TestFalse(FString::Printf(TEXT("Movement mode %d rejects the command"), static_cast<int32>(Mode)), Movement->ExecuteInputCommand(Command));
-		TestTrue(TEXT("Rejected commands preserve gait"), Movement->GetDesiredGait() == EWuwaGait::Run);
-		Movement->ToggleWalkRun();
-		TestTrue(TEXT("The legacy toggle API cannot bypass permission"), Movement->GetDesiredGait() == EWuwaGait::Run);
+		Movement->SetMovementMode(Mode, static_cast<uint8>(ECustomMoveMode::MOVE_Climb));
+		TestFalse(FString::Printf(TEXT("Movement mode %d rejects switching"), static_cast<int32>(Mode)), Movement->CanToggleWalkPreference());
+		TestFalse(FString::Printf(TEXT("Movement mode %d rejects the action"), static_cast<int32>(Mode)), WuwaTestInput::ExecuteMoveAction(*Toggle, Character));
+		TestTrue(TEXT("Rejected actions preserve gait"), Movement->GetDesiredGait() == EWuwaGait::Run);
 	}
 
-	Movement->MovementMode = MOVE_Walking;
-	FWuwaInputEvent Event;
-	Event.InputTag = FWuwaGameTags::Get().Player_Common_Movement_WalkRun;
-	Event.Phase = EWuwaInputPhase::Pressed;
-	const FWuwaInputCommand PendingCommand = UWuwaMoveInputHandler::ResolveCommand(Event, Movement);
-	TestTrue(TEXT("A valid command was resolved before leaving the ground"), PendingCommand.Type == EWuwaInputCommandType::SwitchWalk);
-	Movement->MovementMode = MOVE_Falling;
-	TestFalse(TEXT("Execution rechecks permission after context changes"), Movement->ExecuteInputCommand(PendingCommand));
-	TestTrue(TEXT("A stale command preserves gait"), Movement->GetDesiredGait() == EWuwaGait::Run);
 
-	Movement->MovementMode = MOVE_Walking;
+	Movement->SetMovementMode(MOVE_Walking);
 	Movement->Velocity = FVector::ZeroVector;
-	TestTrue(TEXT("Idle also permits switching the desired gait"), Movement->ExecuteInputCommand(Command));
+	TestTrue(TEXT("Idle also permits switching the desired gait"), WuwaTestInput::ExecuteMoveAction(*Toggle, Character));
 	TestTrue(TEXT("Idle switching records Walk"), Movement->GetDesiredGait() == EWuwaGait::Walk);
 	TestEqual(TEXT("Idle switching does not create movement"), Movement->Velocity, FVector::ZeroVector);
-	Movement->MovementMode = MOVE_Custom;
-	Movement->CustomMovementMode = ECustomMoveMode::MOVE_Climb;
+	Movement->SetMovementMode(MOVE_Custom, static_cast<uint8>(ECustomMoveMode::MOVE_Climb));
 	TestEqual(TEXT("Walk preference does not change existing climbing speed"), Movement->GetMaxSpeed(), 100.f);
 	return true;
 }
@@ -229,7 +186,11 @@ bool FWuwaWalkRunRouterIntegrationTest::RunTest(const FString& Parameters)
 	}
 	FirstMovement->MovementMode = MOVE_Walking;
 	SecondMovement->MovementMode = MOVE_Walking;
+	// 未初始化 Actor 的测试世界不会调用 PostInitializeComponents：设好移动模式后显式装配运动状态。
+	if (!TestTrue(TEXT("The first character assembles its movement state"), FirstCharacter->EnsureMovementStateSystem())) return false;
+	if (!TestTrue(TEXT("The second character assembles its movement state"), SecondCharacter->EnsureMovementStateSystem())) return false;
 	Controller->RegisterInputRouteHandlers();
+	WuwaTestInput::UseTestMoveInputConfig(Controller);
 	Controller->SetPawn(FirstCharacter);
 
 	const FWuwaGameTags Tags = FWuwaGameTags::Get();
@@ -243,16 +204,19 @@ bool FWuwaWalkRunRouterIntegrationTest::RunTest(const FString& Parameters)
 	}
 
 	FWuwaInputEvent Event;
+	// 与 PlayerController::HandleRoutedInput 一样由调用方构造完整事件；Router 不再代为查找 Binding。
+	Event.InputTag = Binding.InputTag;
+	Event.RouteTag = Binding.RouteTag;
+	Event.SourceAction = Binding.InputAction;
 	Event.Phase = EWuwaInputPhase::Pressed;
 	Event.Value = FInputActionValue(true);
-	// 故意不手填 Event 的 Tag/SourceAction，验证 Router 使用 Binding 补齐后调用接口。
 	TestTrue(TEXT("Router dispatch reaches the handler and movement component"), Router->DispatchInput(Event));
 	TestTrue(TEXT("The current character switches to Walk"), FirstMovement->GetDesiredGait() == EWuwaGait::Walk);
 	TestTrue(TEXT("The other character remains Run"), SecondMovement->GetDesiredGait() == EWuwaGait::Run);
 
 	Event.Phase = EWuwaInputPhase::Released;
 	Event.Value.Reset();
-	TestFalse(TEXT("Release produces no executable movement command"), Router->DispatchInput(Event));
+	TestFalse(TEXT("Release has no configured movement action"), Router->DispatchInput(Event));
 	TestTrue(TEXT("Release does not toggle the current character again"), FirstMovement->GetDesiredGait() == EWuwaGait::Walk);
 
 	Controller->SetPawn(SecondCharacter);
@@ -333,6 +297,15 @@ bool FWuwaWalkRunAssetsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("GameMode uses the expected player controller"), GameModeDefaults->PlayerControllerClass.Get() == ControllerClass);
 	TestTrue(TEXT("GameMode uses the expected character"), GameModeDefaults->DefaultPawnClass.Get() == CharacterClass);
 	TestTrue(TEXT("The player controller uses the configured input tag map"), ControllerDefaults->InputTagMap == InputTagMap);
+	// 走跑键 -> 指令的配置表：控制器默认指向它，且其中配置了切换走跑偏好。
+	const UWuwaMoveInputConfig* MoveConfig = ControllerDefaults->MoveInputHandler
+		? ControllerDefaults->MoveInputHandler->Config.LoadSynchronous() : nullptr;
+	if (TestNotNull(TEXT("The player controller references the move input config"), MoveConfig))
+	{
+		const FWuwaMoveInputBinding* Toggle = MoveConfig->FindBinding(Tags.Player_Common_Movement_WalkRun, EWuwaInputPhase::Pressed);
+		TestTrue(TEXT("The move input config maps a WalkRun press to the toggle action"),
+			Toggle && Toggle->Action && Toggle->Action->IsA<UWuwaMoveInputAction_ToggleWalkPreference>());
+	}
 	// 映射上下文属于本地玩家，由控制器注册；角色不再持有输入组件。
 	TestTrue(TEXT("The player controller registers IMC_Character"), ControllerDefaults->DefaultMappingContext == MappingContext);
 	return true;

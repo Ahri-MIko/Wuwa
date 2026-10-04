@@ -22,9 +22,7 @@ protected:
 		bIsMainSkill = Defaults->bIsMainSkill;
 		InterruptLevel = Defaults->InterruptLevel;
 		SkillOverrideType = Defaults->SkillOverrideType;
-		bOverridesMoveState = Defaults->bOverridesMoveState;
-		ActionMoveState = Defaults->ActionMoveState;
-		ActionMoveStatePriority = Defaults->ActionMoveStatePriority;
+		StartMoveState = Defaults->StartMoveState;
 #endif
 		Super::PreActivate(Handle, ActorInfo, ActivationInfo, EndedDelegate, TriggerEventData);
 	}

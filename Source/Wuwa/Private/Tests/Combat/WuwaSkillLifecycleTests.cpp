@@ -1,6 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
+#include "Tests/Movement/WuwaTestGait.h"
 #include "Engine/World.h"
 #include "InputAction.h"
 #include "UObject/Script.h"
@@ -29,22 +30,16 @@ namespace WuwaSkillLifecycleTests
 		const bool OriginalMainSkill = Defaults->bIsMainSkill;
 		const int32 OriginalInterruptLevel = Defaults->InterruptLevel;
 		const EWuwaSkillOverrideType OriginalOverrideType = Defaults->SkillOverrideType;
-		const bool OriginalMoveOverride = Defaults->bOverridesMoveState;
-		const EWuwaMoveState OriginalMoveState = Defaults->ActionMoveState;
-		const int32 OriginalMovePriority = Defaults->ActionMoveStatePriority;
+		const EWuwaMoveState OriginalStartMoveState = Defaults->StartMoveState;
 		int32 ActivationNotifications = 0;
 		FGameplayAbilitySpecHandle ReentryCandidate;
 		bool bProbeOnNextEnd = false;
 		bool bReentryAttempted = false;
 		bool bReentryAccepted = false;
-		bool bAcquireMoveOnNextActivation = false;
-		TWeakObjectPtr<UObject> ActivationMoveSource;
-		int32 ActivationMoveHandle = 0;
 
 		~FFixture()
 		{
 			bProbeOnNextEnd = false;
-			bAcquireMoveOnNextActivation = false;
 			if (ASC)
 			{
 				ASC->CancelAllAbilities();
@@ -54,9 +49,7 @@ namespace WuwaSkillLifecycleTests
 			Defaults->bIsMainSkill = OriginalMainSkill;
 			Defaults->InterruptLevel = OriginalInterruptLevel;
 			Defaults->SkillOverrideType = OriginalOverrideType;
-			Defaults->bOverridesMoveState = OriginalMoveOverride;
-			Defaults->ActionMoveState = OriginalMoveState;
-			Defaults->ActionMoveStatePriority = OriginalMovePriority;
+			Defaults->StartMoveState = OriginalStartMoveState;
 		}
 
 		bool Initialize(FAutomationTestBase& Test)
@@ -80,16 +73,7 @@ namespace WuwaSkillLifecycleTests
 			ASC = NewObject<UWuwaAbilitySystemComponent>(Character);
 			ASC->RegisterComponent();
 			ASC->InitAbilityActorInfo(Character, Character);
-			ASC->AbilityActivatedCallbacks.AddLambda([this](UGameplayAbility*)
-			{
-				++ActivationNotifications;
-				if (!bAcquireMoveOnNextActivation) return;
-				bAcquireMoveOnNextActivation = false;
-				// Inject a competing movement owner after CanActivate passed, but before
-				// the native GA acquires its movement lease in PreActivate.
-				ActivationMoveHandle = Character->UnifiedStateComponent->AcquireMoveState(
-					ActivationMoveSource.Get(), EWuwaMoveState::Dodge, 1000);
-			});
+			ASC->AbilityActivatedCallbacks.AddLambda([this](UGameplayAbility*) { ++ActivationNotifications; });
 			ASC->AbilityEndedCallbacks.AddLambda([this](UGameplayAbility*)
 			{
 				if (!bProbeOnNextEnd) return;
@@ -102,16 +86,16 @@ namespace WuwaSkillLifecycleTests
 				Defaults->GetInstancingPolicy() == EGameplayAbilityInstancingPolicy::InstancedPerExecution);
 		}
 
-		void Configure(int32 InterruptLevel, bool bMoveOverride = false, int32 MovePriority = 100,
+		void Configure(int32 InterruptLevel, bool bStartDodge = false,
 			EWuwaSkillOverrideType OverrideType = EWuwaSkillOverrideType::None)
 		{
 			Defaults->bIsMainSkill = true;
 			Defaults->InterruptLevel = InterruptLevel;
 			Defaults->SkillOverrideType = OverrideType;
-			Defaults->bOverridesMoveState = bMoveOverride;
-			Defaults->ActionMoveState = EWuwaMoveState::Dodge;
-			Defaults->ActionMoveStatePriority = MovePriority;
+			Defaults->StartMoveState = bStartDodge ? EWuwaMoveState::Dodge : EWuwaMoveState::Other;
 		}
+
+		FWuwaUnifiedStateData MoveData() const { return Character->UnifiedStateComponent->GetStateData(); }
 
 		FGameplayAbilitySpecHandle Grant() const
 		{
@@ -132,9 +116,9 @@ namespace WuwaSkillLifecycleTests
 
 		UWuwaGameplayAbilityBase* Start(FAutomationTestBase& Test, FGameplayAbilitySpecHandle Handle) const
 		{
-			const FString Context = FString::Printf(TEXT("Skill %s (level=%d, main=%d, move=%d, override=%d): "),
+			const FString Context = FString::Printf(TEXT("Skill %s (level=%d, main=%d, startMove=%d, override=%d): "),
 				*Handle.ToString(), Defaults->InterruptLevel, Defaults->bIsMainSkill,
-				Defaults->bOverridesMoveState, static_cast<int32>(Defaults->SkillOverrideType));
+				static_cast<int32>(Defaults->StartMoveState), static_cast<int32>(Defaults->SkillOverrideType));
 			if (!Test.TestTrue(Context + TEXT("GAS accepts activation"), ASC->TryActivateAbility(Handle, false))) return nullptr;
 			UWuwaGameplayAbilityBase* Ability = GetActiveAbility(Handle);
 			return Test.TestNotNull(Context + TEXT("execution remains active after the native activation guard"), Ability) ? Ability : nullptr;
@@ -168,7 +152,7 @@ bool FWuwaSkillAssemblyLifecycleTest::RunTest(const FString& Parameters)
 	TestFalse(TEXT("Ready-end window starts closed"), Current.bMainSkillReadyEnd);
 	TestEqual(TEXT("A skill without move override leaves movement revision untouched"),
 		F.Character->UnifiedStateComponent->GetStateData().Revision, MovementBefore.Revision);
-	TestFalse(TEXT("Registering a skill does not implicitly acquire a movement lease"),
+	TestFalse(TEXT("Registering a skill does not write an action move state"),
 		F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
 	TestTrue(TEXT("Repeated assembly succeeds"), F.Character->EnsureSkillSystem());
 	TestEqual(TEXT("Repeated assembly preserves the component"), F.Character->SkillComponent.Get(), F.Skills);
@@ -221,7 +205,7 @@ bool FWuwaSkillInterruptWindowsTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Rejected skill leaves the old execution active"), F.GetActiveAbility(FirstSpec), First);
 	TestEqual(TEXT("Rejected skill preserves its fight handle"), F.Fight->GetStateData().Handle, FirstHandle);
 
-	First->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(First->GetSkillHandle(), true);
 	TestTrue(TEXT("Owning GA opens the input window"), F.Skills->GetCurrentSkillData().bSkillAcceptInput);
 	F.ReentryCandidate = F.Grant();
 	F.bProbeOnNextEnd = true;
@@ -265,113 +249,112 @@ bool FWuwaSkillReadyEndMovementTest::RunTest(const FString& Parameters)
 {
 	using namespace WuwaSkillLifecycleTests;
 	FEditorScriptExecutionGuard ScriptExecutionGuard;
-	{
-		// An external lease replaces the prior lease permanently, so keep this case
-		// separate from the real old-skill lease handoff tested below.
-		FFixture External;
-		if (!External.Initialize(*this)) return false;
-		External.Configure(200, true, 300);
-		const FGameplayAbilitySpecHandle OldSpec = External.Grant();
-		UWuwaGameplayAbilityBase* Old = External.Start(*this, OldSpec);
-		if (!Old) return false;
-		const int32 OldHandle = Old->GetSkillHandle();
-		Old->SetSkillReadyEnd(true);
-		External.Configure(20, true, 10);
-		const FGameplayAbilitySpecHandle NewSpec = External.Grant();
-		UObject* MoveSource = NewObject<UInputAction>(External.Character);
-		const int32 MoveHandle = External.Character->UnifiedStateComponent->AcquireMoveState(
-			MoveSource, EWuwaMoveState::Dodge, 1000);
-		if (!TestTrue(TEXT("Unrelated source acquires a higher-priority movement lease"), MoveHandle > 0)) return false;
-		const int32 BeforeRejected = External.ActivationNotifications;
-		const int32 MoveRevision = External.Character->UnifiedStateComponent->GetStateData().Revision;
-		TestFalse(TEXT("Ready-end cannot bypass an unrelated source's movement lease"), External.ASC->TryActivateAbility(NewSpec, false));
-		TestEqual(TEXT("Unrelated movement blocks activation before GAS notifications"), External.ActivationNotifications, BeforeRejected);
-		TestEqual(TEXT("Failed unrelated-source preflight keeps the old skill active"), External.GetActiveAbility(OldSpec), Old);
-		TestEqual(TEXT("Failed unrelated-source preflight preserves the old skill handle"), External.Skills->GetCurrentSkillData().FightStateHandle, OldHandle);
-		TestEqual(TEXT("Failed preflight does not mutate the unrelated movement state"),
-			External.Character->UnifiedStateComponent->GetStateData().Revision, MoveRevision);
-		TestTrue(TEXT("The unrelated movement owner can still release its original handle"),
-			External.Character->UnifiedStateComponent->ReleaseMoveState(MoveHandle));
-		if (!External.Start(*this, NewSpec)) return false;
-		TestNull(TEXT("Releasing the unrelated movement owner allows the pending transition"), External.GetActiveAbility(OldSpec));
-	}
 	FFixture F;
 	if (!F.Initialize(*this)) return false;
-	F.Configure(200, true, 300);
+	UWuwaUnifiedStateBridgeComponent* State = F.Character->UnifiedStateComponent;
+	UWuwaMovementComponent* Movement = F.Character->GetWuwaMovementComponent();
+	F.Configure(200, true);
 	const FGameplayAbilitySpecHandle FirstSpec = F.Grant();
 	UWuwaGameplayAbilityBase* First = F.Start(*this, FirstSpec);
 	if (!First) return false;
-	TestTrue(TEXT("First skill holds its configured movement lease"),
-		F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
+	TestTrue(TEXT("Activation writes the configured action state"),
+		F.MoveData().MoveState == EWuwaMoveState::Dodge && F.MoveData().bHasActionOverride);
 	const int32 FirstHandle = First->GetSkillHandle();
-	F.Configure(20, true, 10);
+	TestTrue(TEXT("There is no lease: an ordinary write replaces the action state"), State->SetMoveState(EWuwaMoveState::Stand, EWuwaGait::Run));
+	TestEqual(TEXT("Replacing the movement state does not end the skill"), F.GetActiveAbility(FirstSpec), First);
+	F.Configure(20, true);
 	const FGameplayAbilitySpecHandle LowerSpec = F.Grant();
-	TestFalse(TEXT("Lower-priority skill is rejected before ready-end"), F.ASC->TryActivateAbility(LowerSpec, false));
-	First->SetSkillAcceptInput(true);
-	TestFalse(TEXT("Accept-input alone does not allow a lower-priority skill"), F.ASC->TryActivateAbility(LowerSpec, false));
-	First->SetSkillReadyEnd(true);
+	TestFalse(TEXT("Lower-level skill is rejected before ready-end"), F.ASC->TryActivateAbility(LowerSpec, false));
+	F.Skills->SetSkillAcceptInput(First->GetSkillHandle(), true);
+	TestFalse(TEXT("Accept-input alone does not allow a lower-level skill"), F.ASC->TryActivateAbility(LowerSpec, false));
+	F.Skills->SetMainSkillReadyEnd(First->GetSkillHandle(), true);
 	TestTrue(TEXT("Owning GA opens ready-end"), F.Skills->GetCurrentSkillData().bMainSkillReadyEnd);
 	UWuwaGameplayAbilityBase* Lower = F.Start(*this, LowerSpec);
 	if (!Lower) return false;
 	TestNull(TEXT("Ready-end replacement finishes the old GAS execution"), F.GetActiveAbility(FirstSpec));
-	TestTrue(TEXT("Lower-priority skill receives a new fight handle"), Lower->GetSkillHandle() > FirstHandle);
+	TestTrue(TEXT("Lower-level skill receives a new fight handle"), Lower->GetSkillHandle() > FirstHandle);
 	TestEqual(TEXT("New interrupt level is recorded"), F.Skills->GetCurrentSkillData().InterruptLevel, 20);
-	TestTrue(TEXT("New skill acquires movement after the old higher-priority lease is released"),
-		F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
-	TestTrue(TEXT("Movement remains in the requested action state"),
-		F.Character->UnifiedStateComponent->GetStateData().MoveState == EWuwaMoveState::Dodge);
+	TestTrue(TEXT("The new skill writes its action state after the old one ended"), F.MoveData().MoveState == EWuwaMoveState::Dodge);
 	F.Skills->EndSkill(FirstHandle);
-	TestTrue(TEXT("Old skill cleanup leaves the new movement lease intact"),
-		F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
+	TestTrue(TEXT("Stale cleanup of the old skill leaves the new action state intact"), F.MoveData().MoveState == EWuwaMoveState::Dodge);
+
+	// Ending the action recomputes at once with the original RoleGait rules.
+	Movement->Velocity = FVector(300.f, 0.f, 0.f);
 	F.ASC->CancelAbilityHandle(LowerSpec);
 	TestEqual(TEXT("Finishing replacement clears skill state"), F.Skills->GetCurrentSkillData().FightStateHandle, 0);
 	TestEqual(TEXT("Finishing replacement clears fight state"), F.Fight->GetStateData().Handle, 0);
-	TestFalse(TEXT("Finishing replacement releases movement lease"),
-		F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
-	TestTrue(TEXT("No-input movement resumes standing"),
-		F.Character->UnifiedStateComponent->GetStateData().MoveState == EWuwaMoveState::Stand);
+	TestTrue(TEXT("Without input, Dodge is kept while the character still moves"), F.MoveData().MoveState == EWuwaMoveState::Dodge);
+	Movement->Velocity = FVector::ZeroVector;
+	F.Character->RoleGaitComponent->RefreshPolicy();
+	TestTrue(TEXT("No-input movement resumes standing once the character stops"), F.MoveData().MoveState == EWuwaMoveState::Stand);
+	TestFalse(TEXT("Standing is not an action state"), F.MoveData().bHasActionOverride);
+
+	F.Configure(100, true);
+	const FGameplayAbilitySpecHandle StationarySpec = F.Grant();
+	if (!F.Start(*this, StationarySpec)) return false;
+	TestTrue(TEXT("A stationary action writes Dodge"), F.MoveData().MoveState == EWuwaMoveState::Dodge);
+	F.ASC->CancelAbilityHandle(StationarySpec);
+	TestTrue(TEXT("Ending a stationary action recomputes Stand immediately, without a movement tick"),
+		F.MoveData().MoveState == EWuwaMoveState::Stand);
 	return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaSkillMovementRaceRollbackTest, "Wuwa.Combat.Skill.MovementRaceRollback",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaSkillBeginMoveActionTest, "Wuwa.Combat.Skill.BeginMoveAction",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FWuwaSkillMovementRaceRollbackTest::RunTest(const FString& Parameters)
+bool FWuwaSkillBeginMoveActionTest::RunTest(const FString& Parameters)
 {
 	using namespace WuwaSkillLifecycleTests;
 	FEditorScriptExecutionGuard ScriptExecutionGuard;
 	FFixture F;
 	if (!F.Initialize(*this)) return false;
-	F.Configure(100, true, 100);
-	const FGameplayAbilitySpecHandle SpecHandle = F.Grant();
-	F.ActivationMoveSource = NewObject<UInputAction>(F.Character);
-	F.bAcquireMoveOnNextActivation = true;
-	const int32 FightHandleBefore = F.Fight->GetStateData().Handle;
-	// GAS reports that it dispatched activation even when the ability ends itself
-	// during activation. Inspect the resulting execution and ownership as well.
-	TestTrue(TEXT("GAS dispatches a request that passed pure preflight"), F.ASC->TryActivateAbility(SpecHandle, false));
-	TestEqual(TEXT("The activation callback ran once"), F.ActivationNotifications, 1);
-	if (!TestTrue(TEXT("A competing movement lease was installed during activation"), F.ActivationMoveHandle > 0)) return false;
-	TestNull(TEXT("Failed movement acquisition ends the new GAS execution"), F.GetActiveAbility(SpecHandle));
-	const FGameplayAbilitySpec* Spec = F.ASC->FindAbilitySpecFromHandle(SpecHandle);
-	if (!TestNotNull(TEXT("The rejected execution leaves its granted spec present"), Spec)) return false;
-	TestFalse(TEXT("The failed execution has no active spec count"), Spec->IsActive());
-	TestEqual(TEXT("Failed movement acquisition rolls back the new skill record"), F.Skills->GetCurrentSkillData().FightStateHandle, 0);
-	TestEqual(TEXT("Failed movement acquisition releases the acquired fight state"), F.Fight->GetStateData().Handle, FightHandleBefore);
-	TestTrue(TEXT("Skill rollback preserves the competing movement lease"),
-		F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
-	TestTrue(TEXT("The competing movement owner still has its original valid handle"),
-		F.Character->UnifiedStateComponent->ReleaseMoveState(F.ActivationMoveHandle));
+	UWuwaUnifiedStateBridgeComponent* State = F.Character->UnifiedStateComponent;
+	UWuwaMovementComponent* Movement = F.Character->GetWuwaMovementComponent();
 
-	UWuwaGameplayAbilityBase* Retry = F.Start(*this, SpecHandle);
-	if (!Retry) return false;
-	TestTrue(TEXT("The rejected execution acquired and consumed a fight handle before rollback"), Retry->GetSkillHandle() > 1);
-	TestTrue(TEXT("Retry succeeds after the competing movement owner releases"),
-		F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
-	F.ASC->CancelAbilityHandle(SpecHandle);
-	TestEqual(TEXT("Retry ends with no current skill"), F.Skills->GetCurrentSkillData().FightStateHandle, 0);
-	TestEqual(TEXT("Retry ends with no fight state"), F.Fight->GetStateData().Handle, 0);
-	TestFalse(TEXT("Retry releases its own movement lease"), F.Character->UnifiedStateComponent->GetStateData().bHasActionOverride);
+	// Original CharacterSkillComponent: a main skill started from Sprint ends the sprint request and switches to Run.
+	UObject* Window = NewObject<UInputAction>(F.Character);
+	WuwaTestGait::Of(Movement)->OpenSprintWindow(Window);
+	if (!TestTrue(TEXT("A sprint request is open"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::Temporary)
+		|| !TestTrue(TEXT("The character is sprinting"), State->SetMoveState(EWuwaMoveState::Sprint, EWuwaGait::Sprint))) return false;
+	const FGameplayAbilitySpecHandle SprintSpec = F.Grant();
+	if (!F.Start(*this, SprintSpec)) return false;
+	TestTrue(TEXT("A main skill started from Sprint switches to Run"),
+		F.MoveData().MoveState == EWuwaMoveState::Run && F.MoveData().Gait == EWuwaGait::Run);
+	TestTrue(TEXT("A main skill started from Sprint ends the sprint request"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
+	WuwaTestGait::Of(Movement)->CloseSprintWindow(Window);
+	TestTrue(TEXT("A late window end cannot revive the ended request"), WuwaTestGait::Of(Movement)->ReadSprintDesire() == EWuwaSprintDesire::None);
+	F.ASC->CancelAbilityHandle(SprintSpec);
+
+	// A main skill started from any Stop switches to Stand.
+	for (const EWuwaMoveState Stop : { EWuwaMoveState::WalkStop, EWuwaMoveState::RunStop, EWuwaMoveState::SprintStop })
+	{
+		const FString Name = StaticEnum<EWuwaMoveState>()->GetNameStringByValue(static_cast<int64>(Stop));
+		if (!TestTrue(Name + TEXT(" is written"), State->SetMoveState(Stop, EWuwaGait::Run))) return false;
+		const FGameplayAbilitySpecHandle StopSpec = F.Grant();
+		if (!F.Start(*this, StopSpec)) return false;
+		TestTrue(TEXT("A main skill started from ") + Name + TEXT(" switches to Stand"), F.MoveData().MoveState == EWuwaMoveState::Stand);
+		F.ASC->CancelAbilityHandle(StopSpec);
+	}
+
+	State->SetMoveState(EWuwaMoveState::Walk, EWuwaGait::Walk);
+	const FGameplayAbilitySpecHandle WalkSpec = F.Grant();
+	if (!F.Start(*this, WalkSpec)) return false;
+	TestTrue(TEXT("Other movement states are left unchanged by a skill start"), F.MoveData().MoveState == EWuwaMoveState::Walk);
+	F.ASC->CancelAbilityHandle(WalkSpec);
+
+	F.Defaults->bIsMainSkill = false;
+	State->SetMoveState(EWuwaMoveState::Sprint, EWuwaGait::Sprint);
+	const FGameplayAbilitySpecHandle AuxiliarySpec = F.Grant();
+	if (!F.Start(*this, AuxiliarySpec)) return false;
+	TestTrue(TEXT("Only main skills apply the start move action"), F.MoveData().MoveState == EWuwaMoveState::Sprint);
+	F.ASC->CancelAbilityHandle(AuxiliarySpec);
+
+	F.Configure(100, true);
+	State->SetMoveState(EWuwaMoveState::RunStop, EWuwaGait::Run);
+	const FGameplayAbilitySpecHandle ActionSpec = F.Grant();
+	if (!F.Start(*this, ActionSpec)) return false;
+	TestTrue(TEXT("The GA writes its action state after the skill start move action"), F.MoveData().MoveState == EWuwaMoveState::Dodge);
+	F.ASC->CancelAbilityHandle(ActionSpec);
 	return true;
 }
 
@@ -402,7 +385,7 @@ bool FWuwaSkillFightOverrideTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Hit rejection happens before GAS activation notifications"), F.ActivationNotifications, NotificationsBeforeHitReject);
 	TestEqual(TEXT("Rejected normal skill preserves hit"), F.Fight->GetStateData().Handle, HitHandle);
 
-	F.Configure(100, false, 100, EWuwaSkillOverrideType::Hit);
+	F.Configure(100, false, EWuwaSkillOverrideType::Hit);
 	const FGameplayAbilitySpecHandle OverrideSpec = F.Grant();
 	UWuwaGameplayAbilityBase* Override = F.Start(*this, OverrideSpec);
 	if (!Override) return false;

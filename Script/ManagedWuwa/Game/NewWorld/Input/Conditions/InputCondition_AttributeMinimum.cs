@@ -18,7 +18,12 @@ public partial class UInputCondition_AttributeMinimum : UWuwaInputCondition
 
     protected override bool Evaluate_Implementation(FWuwaInputCommandContext context)
     {
-        return context.ASC.IsValid() && float.IsFinite(Minimum)
-            && context.ASC.TryGetAttributeValue(Attribute, out float value) && value >= Minimum;
+        if (!context.ASC.IsValid() || !float.IsFinite(Minimum))
+        {
+            return false;
+        }
+        // 引擎 ASC 自带的查询：属性无效或角色没有对应的 AttributeSet 时 found 为 false。
+        float value = context.ASC.GetGameplayAttributeValue(Attribute, out bool found);
+        return found && float.IsFinite(value) && value >= Minimum;
     }
 }

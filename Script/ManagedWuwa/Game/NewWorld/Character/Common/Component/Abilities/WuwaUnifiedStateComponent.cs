@@ -7,253 +7,206 @@ using UnrealSharp.Wuwa;
 namespace ManagedWuwa.Game.NewWorld.Character.Common.Component.Abilities;
 
 /// <summary>
-/// 角色的统一状态规则。已提交状态只保存在原生桥的 StateData 中；
-/// 本类只额外保留动作占用的所有权，不再缓存第二份位置、移动或朝向状态。
+/// 运动状态，对应原作 CharacterUnifiedStateComponent。
+/// 位置、移动、朝向三个维度分别设置、分别广播；SetMoveState 用合法组合表拒绝当前位置下不合法的移动状态。
+/// 本类不决定普通移动（由 RoleGait 每帧决定），也没有动作占用：与原作一样，后写入的状态直接覆盖之前的状态。
+/// 已提交状态只保存在原生桥的 StateData 中；本类额外只保存玩家的走跑偏好（原作 Okr）。
 /// </summary>
 [UClass]
 public partial class UWuwaUnifiedStateComponent : UWuwaUnifiedStateBridgeComponent
 {
-    private readonly record struct ActionLease(int Handle, int Priority, TWeakObjectPtr<UObject> Source);
-
-    private ActionLease? _activeAction;
-    private int _lastIssuedHandle;
+    private bool _prefersWalk;//原作 Okr：玩家保存的走/跑偏好，true 为走
+    private bool _walkPreferenceInitialized;
     private bool _endingPlay;//是否游戏结束
 
-    
-    
     #region LifeCycle Methods
-    
-    //初始化一些值将其保存为
-    protected override void InitializeState_Implementation()
+
+    //按当前物理位置初始化快照；走跑偏好只在第一次初始化时采用出生配置。两个值都由组装者从 CMC 读出后传入
+    protected override void InitializeState_Implementation(EWuwaPositionState initialPosition, EWuwaGait initialWalkPreference)
     {
         _endingPlay = false;
-        _activeAction = null;
-        // 初始化/换人时不重置句柄计数；上一轮动作的迟到 End 不能匹配新动作。
         var state = StateData;
-        state.PositionState = EWuwaPositionState.None;
-        state.Gait = EWuwaGait.Run;
-
-        if (Owner is AWuwaCharacter character && character.IsValid())
+        state.PositionState = initialPosition;
+        if (!_walkPreferenceInitialized)
         {
-            var gait = character.GetComponentByClass<UWuwaRoleGaitBridgeComponent>();
-            if (gait.IsValid())
-            {
-                var context = gait.ReadMovementContext();
-                state.PositionState = context.PositionState;
-                state.Gait = IsKnownGait(context.DefaultGait) ? context.DefaultGait : EWuwaGait.Run;
-            }
+            _prefersWalk = initialWalkPreference == EWuwaGait.Walk;
+            _walkPreferenceInitialized = true;
         }
 
         state.MoveState = DefaultMoveState(state.PositionState);
         state.DirectionState = EWuwaDirectionState.FaceDirection;
-        state.HasActionOverride = false;
-        PublishIfChanged(state);
+        state.Gait = PreferredGait;
+        state.HasActionOverride = IsActionMoveState(state.MoveState);
+        // 与原作 InitCharState 一样只写初始值、不广播；Character 装配完成后让 CMC 按快照应用一次配置。
+        CommitStateData(state);
     }
-    
-    
-    
+
     public override void EndPlay(EEndPlayReason endPlayReason)
     {
         _endingPlay = true;
-        ResetActionStates();
         base.EndPlay(endPlayReason);
     }
 
     #endregion
 
-    #region Core 
+    #region Core
 
-    //将自己的副本和真正的C++里面的权威内容做比较如果有变化就直接Publish
-    private bool PublishIfChanged(FWuwaUnifiedStateData state)
+    //原作 SetPositionState：只有主控端能修改；位置变化后执行 OnPositionStateChange
+    protected override bool SetPositionState_Implementation(EWuwaPositionState newPosition)
     {
-        var previous = StateData;
-        if (previous.PositionState == state.PositionState && previous.MoveState == state.MoveState
-                                                          && previous.DirectionState == state.DirectionState && previous.Gait == state.Gait
-                                                          && previous.HasActionOverride == state.HasActionOverride)
+        if (_endingPlay || !CanDriveState() || !IsKnownPosition(newPosition))
         {
             return false;
         }
 
-        // 所有本地所有权修改都在广播前完成；广播后不再写旧快照，避免覆盖重入提交。
-        // Revision 由原生提交出口递增，本类不另维护版本或已提交状态副本。
-        PublishState(state);
-        return true;
-    }
-
-    #endregion
-    
-    //尝试改变运动模式和步态
-    protected override bool TrySetMoveState_Implementation(EWuwaMoveState newState, EWuwaGait newGait)
-    {
-        if (_endingPlay || !IsKnownGait(newGait))
-        {
-            return false;
-        }
-
-        PruneStateOwners();
-        // Prune 的事件可能重入并取得新占用；必须在它之后重新查询。
         var state = StateData;
-        if (_endingPlay || _activeAction.HasValue || !IsMoveStateLegal(state.PositionState, newState))
-        {
-            return false;
-        }
-
-        state.MoveState = newState;
-        state.Gait = newGait;
-        state.HasActionOverride = false;
-        PublishIfChanged(state);
-        // 同值请求也是合法请求，但不会广播重复事件。
-        return true;
-    }
-
-    //把角色的物理位置同步到运动状态里,也就是地面、空中、攀爬、水中之间的切换
-    protected override bool ChangePositionState_Implementation(EWuwaPositionState newPosition)
-    {
-        if (_endingPlay || !IsKnownPosition(newPosition))
-        {
-            return false;
-        }
-
-        PruneStateOwners();
-        var state = StateData;
-        if (_endingPlay || state.PositionState == newPosition)
+        var oldPosition = state.PositionState;
+        if (oldPosition == newPosition)
         {
             return false;
         }
 
         state.PositionState = newPosition;
-        if (_activeAction.HasValue && !IsMoveStateLegal(newPosition, state.MoveState))
-        {
-            // 物理位置使占用失效；这里只归还表现权，不负责终止 GAS 能力。
-            _activeAction = null;
-        }
-
-        state.HasActionOverride = _activeAction.HasValue;
-        if (!state.HasActionOverride)
-        {
-            state.MoveState = DefaultMoveState(newPosition);
-        }
-
-        return PublishIfChanged(state);
+        CommitStateData(state);
+        OnPositionStateChange(oldPosition, newPosition);
+        return true;
     }
 
-    //改变朝向
-    protected override bool ChangeDirectionState_Implementation(EWuwaDirectionState newDirection)
+    //原作 OnPositionStateChange：进入 Ground 先执行 OnLand，再广播位置变化
+    private void OnPositionStateChange(EWuwaPositionState oldPosition, EWuwaPositionState newPosition)
     {
-        if (_endingPlay || newDirection is not (EWuwaDirectionState.FaceDirection
+        if (newPosition == EWuwaPositionState.Ground)
+        {
+            OnLand();
+        }
+
+        BroadcastPositionStateChanged(oldPosition, newPosition);
+    }
+
+    //原作 OnLand：KnockUp 转 StandUp、受击中保持不变，其余写 Other。本项目没有这两类状态，落地统一写 Other，之后由 RoleGait 决定
+    private void OnLand()
+    {
+        SetMoveState(EWuwaMoveState.Other, PreferredGait);
+    }
+
+    //原作 SetMoveState：当前位置下不合法的移动状态直接拒绝。Gait 是本项目额外保存的速度配置维度
+    protected override bool SetMoveState_Implementation(EWuwaMoveState newState, EWuwaGait newGait)
+    {
+        if (_endingPlay || !CanDriveState() || !IsKnownGait(newGait))
+        {
+            return false;
+        }
+
+        var state = StateData;
+        if (!IsMoveStateLegal(state.PositionState, newState))
+        {
+            return false;
+        }
+
+        var oldMove = state.MoveState;
+        var oldGait = state.Gait;
+        if (oldMove == newState && oldGait == newGait)
+        {
+            // 同值请求是合法请求，但不重复广播。
+            return true;
+        }
+
+        state.MoveState = newState;
+        state.Gait = newGait;
+        state.HasActionOverride = IsActionMoveState(newState);
+        CommitStateData(state);
+        // 先写入再广播；Revision 由原生提交出口递增。
+        if (oldMove != newState)
+        {
+            BroadcastMoveStateChanged(oldMove, newState);
+        }
+
+        if (oldGait != newGait)
+        {
+            BroadcastGaitChanged(oldGait, newGait);
+        }
+
+        return true;
+    }
+
+    //原作 SetDirectionState
+    protected override bool SetDirectionState_Implementation(EWuwaDirectionState newDirection)
+    {
+        if (_endingPlay || !CanDriveState() || newDirection is not (EWuwaDirectionState.FaceDirection
                 or EWuwaDirectionState.LockDirection or EWuwaDirectionState.AimDirection))
         {
             return false;
         }
 
         var state = StateData;
-        state.DirectionState = newDirection;
-        return PublishIfChanged(state);
-    }
-
-    //当前只有测试在用
-    protected override bool CanAcquireMoveState_Implementation(EWuwaMoveState newState, int priority)
-    {
-        // CanActivate 会在 CDO 上查询多个角色；这里不 Prune，也不分配句柄或广播。
-        return CanAcquireMoveStateNow(newState, priority);
-    }
-
-    
-    protected override bool CanAcquireMoveStateAfterRelease_Implementation(EWuwaMoveState newState, int priority, UObject releasingSource)
-    {
-        return CanAcquireMoveStateNow(newState, priority, releasingSource);
-    }
-
-    //检查是否可以替换动作,判断上一个是不是合法的并且,当前的动作切换姿态是不是合法的比如空中冲刺是没有这个组合的,然后再看Priority
-    private bool CanAcquireMoveStateNow(EWuwaMoveState newState, int priority, UObject? releasingSource = null)
-    {
-        return !_endingPlay && _lastIssuedHandle < int.MaxValue
-            && IsMoveStateLegal(StateData.PositionState, newState)
-            && (_activeAction is not { } current || !current.Source.IsValid || priority >= current.Priority
-                || releasingSource is not null && releasingSource.IsValid()
-                    && current.Source == new TWeakObjectPtr<UObject>(releasingSource));
-    }
-
-    //申请动作
-    protected override int AcquireMoveState_Implementation(UObject source, EWuwaMoveState newState, int priority)
-    {
-        if (!source.IsValid() || !CanAcquireMoveStateNow(newState, priority))
+        var oldDirection = state.DirectionState;
+        if (oldDirection == newDirection)
         {
-            return 0;
-        }
-
-        PruneStateOwners();
-        // 预检查与取得占用之间，以及 Prune 的广播期间，都可能出现新的更高优先级动作。
-        if (!source.IsValid() || !CanAcquireMoveStateNow(newState, priority))
-        {
-            return 0;
-        }
-
-        var state = StateData;
-        // 同优先级最新请求胜出，包括同一 Source 的重新激活。
-        // 占用不是栈：被替换的旧动作不会在新动作结束后重新出现。
-        int handle = ++_lastIssuedHandle;
-        _activeAction = new ActionLease(handle, priority, new TWeakObjectPtr<UObject>(source));
-        state.MoveState = newState;
-        state.HasActionOverride = true;
-        PublishIfChanged(state);
-
-        // 广播期间允许监听者释放/替换本次占用，不把已失效句柄作为成功返回。
-        return _activeAction is { } current && current.Handle == handle ? handle : 0;
-    }
-
-    //归还占用句柄
-    protected override bool ReleaseMoveState_Implementation(int handle)
-    {
-        if (handle <= 0 || _activeAction is not { } current || current.Handle != handle)
-        {
-            // 旧动作的 NotifyEnd / EndAbility 不能清除后来动作，也不产生状态事件。
             return false;
         }
 
-        _activeAction = null;
-        PublishDefaultMoveState();
+        state.DirectionState = newDirection;
+        CommitStateData(state);
+        BroadcastDirectionStateChanged(oldDirection, newDirection);
         return true;
     }
 
-    //如果没有动作在主位置就将其设置为null然后广播每个位置的默认移动状态
-    protected override void ResetActionStates_Implementation()
+    //原作监听 CharMovementModeChanged 的处理：物理移动模式决定位置，部分模式同时写入移动状态
+    protected override void HandleMovementModeChanged_Implementation(EWuwaPositionState newPosition, EMovementMode newMode)
     {
-        if (!_activeAction.HasValue && !StateData.HasActionOverride)
+        if (_endingPlay)
         {
             return;
         }
 
-        _activeAction = null;
-        PublishDefaultMoveState();
+        SetPositionState(newPosition);
+        switch (newMode)
+        {
+            case EMovementMode.MOVE_None:
+                SetMoveState(EWuwaMoveState.Other, PreferredGait);
+                break;
+            case EMovementMode.MOVE_Falling:
+                // 原作：KnockUp、Captured 以外写 Other；本项目没有这两个状态。
+                SetMoveState(EWuwaMoveState.Other, PreferredGait);
+                break;
+            case EMovementMode.MOVE_Flying:
+                SetMoveState(EWuwaMoveState.Flying, PreferredGait);
+                break;
+        }
     }
 
-    //如果占用的动作已经不在了就重置当前的动作,根据当前的Position状态决定当前的默认状态,并且清空当前占用动作
-    protected override void PruneStateOwners_Implementation()
+    #endregion
+
+    #region Walk / Run
+
+    //偏好是不是"走"（原作 IsWalkBaseMode）
+    protected override bool IsWalkPreferred_Implementation() => _prefersWalk;
+
+    //直接设定偏好（原作 MarkWalkOrRun）：只修改偏好并广播，不直接改移动状态；移动状态由 RoleGait 按偏好决定
+    protected override bool SetWalkPreference_Implementation(bool walk)
     {
-        if (_activeAction is not { } current || current.Source.IsValid)
+        if (_endingPlay || !CanDriveState() || walk == _prefersWalk)
         {
-            return;
+            return false;
         }
 
-        _activeAction = null;
-        PublishDefaultMoveState();
+        var wasWalk = _prefersWalk;
+        _prefersWalk = walk;
+        _walkPreferenceInitialized = true;
+        BroadcastWalkPreferenceChanged(wasWalk, walk);
+        return true;
     }
-    
-    //设置默认的移动状态
-    private void PublishDefaultMoveState()
-    {
-        var state = StateData;
-        state.MoveState = DefaultMoveState(state.PositionState);
-        state.HasActionOverride = false;
-        PublishIfChanged(state);
-    }
-    
-    
-    //按照组合维度查看是否合法
+
+    //在走/跑之间切换（原作 WalkPress）：原作在这里先问 CMC 的 CanWalkPress；本项目由调用方 CMC 先判断 CanToggleWalkPreference，本组件不依赖 CMC
+    protected override bool ToggleWalkPreference_Implementation() => SetWalkPreference(!_prefersWalk);
+
+    private EWuwaGait PreferredGait => _prefersWalk ? EWuwaGait.Walk : EWuwaGait.Run;
+
+    #endregion
+
+    //原作 legalMoveStates：按位置维度列出允许的移动状态，这里用本项目的枚举表达
     protected override bool IsMoveStateLegal_Implementation(EWuwaPositionState position, EWuwaMoveState move)
     {
-        // 原作的分维度合法组合表在此用本项目的枚举表达，不复用原作数值。
         return position switch
         {
             EWuwaPositionState.Ground => move is EWuwaMoveState.Other or EWuwaMoveState.Stand
@@ -271,7 +224,7 @@ public partial class UWuwaUnifiedStateComponent : UWuwaUnifiedStateBridgeCompone
         };
     }
 
-    //默认每种位置对应的模式
+    //初始化时每种位置对应的默认移动状态（本项目规则）
     private static EWuwaMoveState DefaultMoveState(EWuwaPositionState position) => position switch
     {
         EWuwaPositionState.Ground => EWuwaMoveState.Stand,
@@ -280,6 +233,9 @@ public partial class UWuwaUnifiedStateComponent : UWuwaUnifiedStateBridgeCompone
         EWuwaPositionState.Water => EWuwaMoveState.NormalSwim,
         _ => EWuwaMoveState.Other
     };
+
+    //由 GA 写入、不属于普通移动的动作状态；StateData.bHasActionOverride 只是它的兼容读数，不是占用
+    private static bool IsActionMoveState(EWuwaMoveState move) => move == EWuwaMoveState.Dodge;
 
     //是在表中记录过的位置状态
     private static bool IsKnownPosition(EWuwaPositionState position) => position is EWuwaPositionState.None

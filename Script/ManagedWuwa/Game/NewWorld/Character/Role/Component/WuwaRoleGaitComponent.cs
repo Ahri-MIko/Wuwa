@@ -6,11 +6,17 @@ using UnrealSharp.Wuwa;
 
 namespace ManagedWuwa.Game.NewWorld.Character.Role.Component;
 
-//主要计算三种步态
-/// <summary>Owns gait preference and sprint requests; UnifiedState owns the resolved movement state.</summary>
+/// <summary>
+/// 步态决策，对应原作 RoleGaitComponent。CMC 每次物理更新前调用 RefreshPolicy（原作 OnTick → $in），
+/// 按是否有移动输入分为 UpdateMovePressing / UpdateMoveReleasing，结果写入运动状态组件。
+/// 不订阅运动状态事件；位置与走跑偏好读自运动状态组件，冲刺需求和步态禁用来源由本组件保存。
+/// </summary>
 [UClass]
 public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
 {
+    // 地面速度不超过此值视为停稳。原作 STOP_SPEED 为 5，本项目沿用原有的 2。
+    private const float StopSpeed = 2f;
+
     private sealed class SprintWindow
     {
         public double BeganAt;
@@ -18,6 +24,7 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
     }
 
     private readonly Dictionary<TWeakObjectPtr<UObject>, SprintWindow> _windows = new();
+    //原作 RoleGaitUnEnableState：每个步态被哪些来源禁用
     private readonly Dictionary<EWuwaGait, HashSet<TWeakObjectPtr<UObject>>> _blocked = new()
     {
         [EWuwaGait.Walk] = new(),
@@ -25,10 +32,8 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
         [EWuwaGait.Sprint] = new()
     };
 
-    private bool _initialized;
     private bool _refreshing;
     private bool _endingPlay;
-    private EWuwaGait _desired = EWuwaGait.Run;
     private EWuwaGait _lastMovingGait = EWuwaGait.Run;
     private EWuwaPositionState _lastPosition = EWuwaPositionState.None;
     private EWuwaSprintDesire _retained = EWuwaSprintDesire.None;
@@ -37,10 +42,13 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
     protected override void InitializePolicy_Implementation()
     {
         _endingPlay = false;
-        InitializeFromContext(ReadMovementContext());
+        _lastPosition = ReadMovementContext().PositionState;
+        _lastMovingGait = PreferredGait(GetUnifiedState());
         RefreshPolicy();
     }
 
+    //原作 OnTick → $in()：只由主控端执行；有移动输入走 UpdateMovePressing，否则走 UpdateMoveReleasing
+    //读取引擎的信息,清算残留的Sprint和一些!valid的对象然后通过输入判断当前处于哪种状态
     protected override void RefreshPolicy_Implementation()
     {
         if (_refreshing || _endingPlay)
@@ -51,54 +59,34 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
         _refreshing = true;
         try
         {
-            var context = ReadMovementContext();
             var state = GetUnifiedState();
+            //以后一定要改,太刁钻了,基本不会出现这种情况的
             if (state is null)
             {
                 ClearSprintRuntime();
-                PublishGait(_desired, EWuwaSprintDesire.None, _lastMovingGait);
+                PublishGait(EWuwaSprintDesire.None, _lastMovingGait);
                 return;
             }
 
-            // Position legality is resolved before action ownership or gait selection.
-            state.ChangePositionState(context.PositionState);
-            state.PruneStateOwners();//如果当前没有占用就直接清理
+            var context = ReadMovementContext();
             PruneRuntime(context);
 
-            if (state.StateData.HasActionOverride)
-            {
-                PublishGait(_desired, EvaluateSprintDesire(context), _lastMovingGait);
-                return;
-            }
-
-            var move = EWuwaMoveState.Other;
-            var gait = _desired;
+            (EWuwaMoveState Move, EWuwaGait Gait)? next = null;
             if (context.CanDriveState)
             {
-                switch (context.PositionState)
-                {
-                    case EWuwaPositionState.Ground:
-                        if (!context.IsCrouching)
-                        {
-                            ResolveGroundState(context, state.StateData.MoveState, out move, out gait);
-                        }
-                        break;
-                    case EWuwaPositionState.Air:
-                        move = context.IsFlying ? EWuwaMoveState.Flying
-                            : context.VerticalSpeed > 0f ? EWuwaMoveState.Jump : EWuwaMoveState.Fall;
-                        break;
-                    case EWuwaPositionState.Climb:
-                        move = EWuwaMoveState.NormalClimb;
-                        break;
-                    case EWuwaPositionState.Water:
-                        move = EWuwaMoveState.NormalSwim;
-                        break;
-                }
+                var current = state.StateData;
+                var preferred = PreferredGait(state);
+                next = context.HasMoveInput
+                    ? UpdateMovePressing(context, current, preferred)
+                    : UpdateMoveReleasing(context, current, preferred);
             }
 
-            // The native movement/animation consumers observe this publication with the state event.
-            PublishGait(_desired, EvaluateSprintDesire(context), _lastMovingGait);
-            state.TrySetMoveState(move, gait);
+            // 先发布冲刺需求和 StopGait，再提交状态：状态事件的消费者看到的是同一次决策。
+            PublishGait(EvaluateSprintDesire(context), _lastMovingGait);
+            if (next is { } decided)
+            {
+                state.SetMoveState(decided.Move, decided.Gait);
+            }
         }
         finally
         {
@@ -106,58 +94,138 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
         }
     }
 
-    protected override bool RequestDesiredGait_Implementation(EWuwaGait newGait)
-    {
-        var context = ReadMovementContext();
-        InitializeFromContext(context);
-        if (!IsKnownGait(newGait) || !context.CanDriveState)
-        {
-            return false;
-        }
+    #region Pressing / Releasing
 
-        if (newGait == EWuwaGait.Sprint)
+    //原作 UpdateMovePressing
+    private (EWuwaMoveState, EWuwaGait)? UpdateMovePressing(FWuwaMovementStateContext context,
+        FWuwaUnifiedStateData current, EWuwaGait preferred)
+    {
+        switch (context.PositionState)
         {
-            if (!CanSampleSprint(context))
+            case EWuwaPositionState.Ground:
+                return context.IsCrouching ? (EWuwaMoveState.Other, preferred) : ResolveGroundMove(context, preferred);
+            case EWuwaPositionState.Water:
+                return current.MoveState is EWuwaMoveState.NormalSwim or EWuwaMoveState.FastSwim
+                    ? null : (EWuwaMoveState.NormalSwim, preferred);
+            case EWuwaPositionState.Climb:
+                return current.MoveState is EWuwaMoveState.NormalClimb or EWuwaMoveState.FastClimb
+                    ? null : (EWuwaMoveState.NormalClimb, preferred);
+            case EWuwaPositionState.Air:
+                return UpdateAirborne(context, current, preferred);
+            default:
+                return null;
+        }
+    }
+
+    //原作 UpdateMoveReleasing
+    private (EWuwaMoveState, EWuwaGait)? UpdateMoveReleasing(FWuwaMovementStateContext context,
+        FWuwaUnifiedStateData current, EWuwaGait preferred)
+    {
+        switch (context.PositionState)
+        {
+            case EWuwaPositionState.Ground:
+                // 原作：瞄准朝向时松开方向不改变移动状态。
+                if (current.DirectionState == EWuwaDirectionState.AimDirection)
+                {
+                    return null;
+                }
+
+                if (context.IsCrouching || !IsAllowed(EWuwaGait.Walk, context) && !IsAllowed(EWuwaGait.Run, context))
+                {
+                    return (EWuwaMoveState.Other, preferred);
+                }
+
+                var stopped = !float.IsFinite(context.GroundSpeed) || context.GroundSpeed <= StopSpeed;
+                switch (current.MoveState)
+                {
+                    case EWuwaMoveState.Walk:
+                    case EWuwaMoveState.Run:
+                    case EWuwaMoveState.Sprint:
+                        return stopped ? (EWuwaMoveState.Stand, preferred) : SetRunStop(current.MoveState);
+                    default:
+                        // 原作：其他状态（Dodge、Other、各 Stop 等）只在停稳后转 Stand；Stand 同时跟随走跑偏好。
+                        return stopped || current.MoveState == EWuwaMoveState.Stand
+                            ? (EWuwaMoveState.Stand, preferred) : null;
+                }
+            case EWuwaPositionState.Water:
+            case EWuwaPositionState.Climb:
+                return (EWuwaMoveState.Other, preferred);
+            case EWuwaPositionState.Air:
+                return UpdateAirborne(context, current, preferred);
+            default:
+                return null;
+        }
+    }
+
+    //原作 SetRunStop 按剩余速度在 RunStop/SprintStop 间选择；本项目按当前步态选择对应的 Stop
+    private static (EWuwaMoveState, EWuwaGait) SetRunStop(EWuwaMoveState current) => current switch
+    {
+        EWuwaMoveState.Walk => (EWuwaMoveState.WalkStop, EWuwaGait.Walk),
+        EWuwaMoveState.Sprint => (EWuwaMoveState.SprintStop, EWuwaGait.Sprint),
+        _ => (EWuwaMoveState.RunStop, EWuwaGait.Run)
+    };
+
+    //有方向输入时的地面步态：冲刺请求且 Sprint 未禁用 → Sprint；否则按走跑偏好，偏好被禁用时改用另一个
+    private (EWuwaMoveState, EWuwaGait) ResolveGroundMove(FWuwaMovementStateContext context, EWuwaGait preferred)
+    {
+        // 原作另有体力条件，本项目没有体力。
+        var gait = preferred;
+        if (EvaluateSprintDesire(context) != EWuwaSprintDesire.None && IsAllowed(EWuwaGait.Sprint, context))
+        {
+            gait = EWuwaGait.Sprint;
+        }
+        else if (!IsAllowed(gait, context))
+        {
+            gait = preferred == EWuwaGait.Walk ? EWuwaGait.Run : EWuwaGait.Walk;
+            if (!IsAllowed(gait, context))
             {
-                return false;
+                // Walk 与 Run 都被禁用（本项目规则）。
+                return (EWuwaMoveState.Other, gait);
             }
-            // Legacy SetDesiredGait(Sprint) becomes a request without overwriting Walk/Run preference.
-            _retained = context.HasMoveInput ? EWuwaSprintDesire.Sustained : EWuwaSprintDesire.None;
-            _temporaryExpiresAt = 0.0;
         }
-        else
+
+        _lastMovingGait = gait;
+        return (gait switch
         {
-            _desired = newGait;
-        }
-        RefreshPolicy();
-        return true;
+            EWuwaGait.Walk => EWuwaMoveState.Walk,
+            EWuwaGait.Sprint => EWuwaMoveState.Sprint,
+            _ => EWuwaMoveState.Run
+        }, gait);
     }
 
-    #region  WalkRunToggle
-
-    protected override bool RequestWalkRunToggle_Implementation()
+    //本项目扩展（原作没有 Jump/Fall）：只在普通空中状态之间切换，不覆盖 Dodge、Glide 等由动作写入的状态
+    private static (EWuwaMoveState, EWuwaGait)? UpdateAirborne(FWuwaMovementStateContext context,
+        FWuwaUnifiedStateData current, EWuwaGait preferred)
     {
-        if (!CanRequestWalkRun())
+        if (current.MoveState is not (EWuwaMoveState.Other or EWuwaMoveState.Jump
+            or EWuwaMoveState.Fall or EWuwaMoveState.Flying))
         {
-            return false;
+            return null;
         }
-        InitializeFromContext(ReadMovementContext());
-        _desired = _desired == EWuwaGait.Walk ? EWuwaGait.Run : EWuwaGait.Walk;
-        RefreshPolicy();
-        return true;
-    }
 
-    //从鸣潮来看这里后续要更改成为任意时刻之类的
-    protected override bool CanRequestWalkRun_Implementation()
-    {
-        var context = ReadMovementContext();
-        return context.CanDriveState && context.PositionState == EWuwaPositionState.Ground
-                                     && !context.IsCrouching;
+        var move = context.IsFlying ? EWuwaMoveState.Flying
+            : context.VerticalSpeed > 0f ? EWuwaMoveState.Jump : EWuwaMoveState.Fall;
+        return (move, preferred);
     }
-
 
     #endregion
-    
+
+    //旧 SetDesiredGait(Sprint) 的兼容入口：有移动输入时记为长期冲刺请求，不修改走跑偏好
+    protected override bool RequestSprint_Implementation()
+    {
+        var context = ReadMovementContext();
+        if (_endingPlay || !context.CanDriveState || !CanSampleSprint(context))
+        {
+            return false;
+        }
+
+        _retained = context.HasMoveInput ? EWuwaSprintDesire.Sustained : EWuwaSprintDesire.None;
+        _temporaryExpiresAt = 0.0;
+        RefreshPolicy();
+        return true;
+    }
+
+    //原作禁用步态的标签变化后立即 $in()；这里每个来源只能增删自己的限制
     protected override void SetGaitBlocked_Implementation(UObject source, EWuwaGait gait, bool blocked)
     {
         if (!source.IsValid() || !_blocked.TryGetValue(gait, out var sources))
@@ -176,13 +244,15 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
         RefreshPolicy();
     }
 
+    //原作 EnableRoleGaitState
     protected override bool IsGaitAllowed_Implementation(EWuwaGait gait) => IsAllowed(gait, ReadMovementContext());
+
+    #region Sprint Window
 
     protected override void OpenSprintWindow_Implementation(UObject source)
     {
         if (_endingPlay) return;
         var context = ReadMovementContext();
-        InitializeFromContext(context);
         if (!source.IsValid() || !CanSampleSprint(context))
         {
             return;
@@ -252,36 +322,16 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
 
     protected override EWuwaSprintDesire ReadSprintDesire_Implementation() => EvaluateSprintDesire(ReadMovementContext());
 
+    #endregion
+
     protected override void ResetRuntime_Implementation()
     {
-        var wasRefreshing = _refreshing;
-        _refreshing = true;
-        try
+        ClearSprintRuntime();
+        foreach (var sources in _blocked.Values)
         {
-            ClearSprintRuntime();
-            foreach (var sources in _blocked.Values)
-            {
-                sources.Clear();
-            }
-            GetUnifiedState()?.ResetActionStates();
-        }
-        finally
-        {
-            _refreshing = wasRefreshing;
+            sources.Clear();
         }
         RefreshPolicy();
-    }
-
-    private void InitializeFromContext(FWuwaMovementStateContext context)
-    {
-        if (_initialized)
-        {
-            return;
-        }
-        _desired = context.DefaultGait == EWuwaGait.Walk ? EWuwaGait.Walk : EWuwaGait.Run;
-        _lastMovingGait = _desired;
-        _lastPosition = context.PositionState;
-        _initialized = true;
     }
 
     public override void EndPlay(EEndPlayReason endPlayReason)
@@ -292,14 +342,17 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
         base.EndPlay(endPlayReason);
     }
 
+    //运动状态组件由角色组装时注入，不从角色身上查找
     private UWuwaUnifiedStateBridgeComponent? GetUnifiedState()
     {
-        if (Owner is not AWuwaCharacter character || !character.IsValid())
-        {
-            return null;
-        }
-        var state = character.UnifiedStateComponent;
-        return state.IsValid() ? state : null;
+        var state = UnifiedState;
+        return state is not null && state.IsValid() ? state : null;
+    }
+
+    //走跑偏好由运动状态组件保存（原作 IsWalkBaseMode）
+    private static EWuwaGait PreferredGait(UWuwaUnifiedStateBridgeComponent? state)
+    {
+        return state is not null && state.IsWalkPreferred() ? EWuwaGait.Walk : EWuwaGait.Run;
     }
 
     //清除跑步欲望
@@ -310,7 +363,7 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
         _temporaryExpiresAt = 0.0;
     }
 
-    //清理失效的GA留存以及重新判断冲刺状态
+    //清理失效的禁用来源，并重新判断冲刺需求是否仍然有效
     private void PruneRuntime(FWuwaMovementStateContext context)
     {
         foreach (var sources in _blocked.Values)
@@ -366,6 +419,7 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
         return result;
     }
 
+    //判断某种步态是否允许,现在一共就三种步态
     private bool IsAllowed(EWuwaGait gait, FWuwaMovementStateContext context)
     {
         return context.CanDriveState && context.PositionState == EWuwaPositionState.Ground
@@ -373,71 +427,10 @@ public partial class UWuwaRoleGaitComponent : UWuwaRoleGaitBridgeComponent
             && !sources.Any(source => source.IsValid);
     }
 
-    private static bool IsKnownGait(EWuwaGait gait) => gait is EWuwaGait.Walk or EWuwaGait.Run or EWuwaGait.Sprint;
-
+    //
     private static bool CanSampleSprint(FWuwaMovementStateContext context)
     {
         return context.CanDriveState && context.PositionState == EWuwaPositionState.Ground
             && !context.IsCrouching && double.IsFinite(context.GameTimeSeconds) && context.GameTimeSeconds >= 0.0;
-    }
-
-    private void ResolveGroundState(FWuwaMovementStateContext context, EWuwaMoveState current,
-        out EWuwaMoveState move, out EWuwaGait gait)
-    {
-        gait = _desired;
-        move = EWuwaMoveState.Other;
-        if (context.HasMoveInput)
-        {
-            if (EvaluateSprintDesire(context) != EWuwaSprintDesire.None && IsAllowed(EWuwaGait.Sprint, context))
-            {
-                gait = EWuwaGait.Sprint;
-            }
-            else if (!IsAllowed(gait, context))
-            {
-                gait = _desired == EWuwaGait.Walk ? EWuwaGait.Run : EWuwaGait.Walk;
-                if (!IsAllowed(gait, context))
-                {
-                    return;
-                }
-            }
-            _lastMovingGait = gait;
-            move = gait switch
-            {
-                EWuwaGait.Walk => EWuwaMoveState.Walk,
-                EWuwaGait.Sprint => EWuwaMoveState.Sprint,
-                _ => EWuwaMoveState.Run
-            };
-            return;
-        }
-
-        if (!IsAllowed(EWuwaGait.Walk, context) && !IsAllowed(EWuwaGait.Run, context))
-        {
-            return;
-        }
-        move = EWuwaMoveState.Stand;
-        if (!float.IsFinite(context.GroundSpeed) || context.GroundSpeed <= 2f)
-        {
-            return;
-        }
-
-        // Only an actual locomotion state can enter Stop; a finished Dodge cannot manufacture a stop.
-        switch (current)
-        {
-            case EWuwaMoveState.Walk:
-            case EWuwaMoveState.WalkStop:
-                move = EWuwaMoveState.WalkStop;
-                gait = EWuwaGait.Walk;
-                break;
-            case EWuwaMoveState.Run:
-            case EWuwaMoveState.RunStop:
-                move = EWuwaMoveState.RunStop;
-                gait = EWuwaGait.Run;
-                break;
-            case EWuwaMoveState.Sprint:
-            case EWuwaMoveState.SprintStop:
-                move = EWuwaMoveState.SprintStop;
-                gait = EWuwaGait.Sprint;
-                break;
-        }
     }
 }

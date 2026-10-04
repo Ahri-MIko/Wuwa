@@ -24,18 +24,13 @@ internal sealed class CombatInputBuffer
         return true;
     }
 
-    public void Prune(double nowSeconds, Action<WuwaBufferedCombatInput>? onExpired = null)
+    public void Prune(double nowSeconds)
     {
         if (!double.IsFinite(nowSeconds)) { Clear(); return; }
-        if (onExpired is not null)
-        {
-            foreach (var item in _items)
-                if (nowSeconds >= item.ExpiresAtSeconds) onExpired(item);
-        }
         _items.RemoveAll(item => nowSeconds >= item.ExpiresAtSeconds);
     }
 
-    // 只读快照：打印本身不清理或消费输入，remaining < 0 表示正在处理到期项。
+    // 只读描述，给屏幕调试显示用；不清理也不消费输入。
     public string Describe(double nowSeconds) => "[" + string.Join(", ", _items.Select(item =>
         FormattableString.Invariant($"{item.InputTag}@{item.InputTimeSeconds:F3} expires={item.ExpiresAtSeconds:F3} remaining={item.ExpiresAtSeconds - nowSeconds:F3}s"))) + "]";
 

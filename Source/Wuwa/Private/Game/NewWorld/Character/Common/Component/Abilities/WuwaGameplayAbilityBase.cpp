@@ -7,6 +7,7 @@
 #include "Animation/AnimMontage.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Skill/WuwaSkillBridgeComponent.h"
+#include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 
 bool UWuwaGameplayAbilityBase::IsSkillExecutionActive() const
@@ -27,34 +28,10 @@ bool UWuwaGameplayAbilityBase::CanEndSkillExecutionNow() const
 
 bool UWuwaGameplayAbilityBase::TryEndSkillExecution(int32 ExpectedHandle)
 {
-	if (ExpectedHandle <= 0 || SkillLeaseHandle != ExpectedHandle || !CanEndSkillExecutionNow()) return false;
+	if (ExpectedHandle <= 0 || FightStateHandle != ExpectedHandle || !CanEndSkillExecutionNow()) return false;
 	// 与原作 K2_EndAbility 的让位语义一致，不依赖 CancelAbilitiesWithTag 或 CanBeCanceled。
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-	return SkillLeaseHandle != ExpectedHandle;
-}
-
-bool UWuwaGameplayAbilityBase::SetSkillAcceptInput(bool bAcceptInput)
-{
-	return SkillLeaseOwner.IsValid() && SkillLeaseHandle > 0
-		&& SkillLeaseOwner->SetSkillAcceptInput(SkillLeaseHandle, bAcceptInput);
-}
-
-bool UWuwaGameplayAbilityBase::SetSkillReadyEnd(bool bReadyEnd)
-{
-	return SkillLeaseOwner.IsValid() && SkillLeaseHandle > 0
-		&& SkillLeaseOwner->SetMainSkillReadyEnd(SkillLeaseHandle, bReadyEnd);
-}
-
-bool UWuwaGameplayAbilityBase::CallAnimBreakPoint()
-{
-	return IsSkillExecutionActive() && SkillLeaseOwner.IsValid() && SkillLeaseHandle > 0
-		&& SkillLeaseOwner->CallAnimBreakPoint(SkillLeaseHandle);
-}
-
-bool UWuwaGameplayAbilityBase::ClearBufferedInput(FGameplayTag InputTag)
-{
-	return IsSkillExecutionActive() && SkillLeaseOwner.IsValid() && SkillLeaseHandle > 0
-		&& SkillLeaseOwner->RequestInputCacheClear(SkillLeaseHandle, InputTag);
+	return FightStateHandle != ExpectedHandle;
 }
 
 FWuwaPlayerInputState UWuwaGameplayAbilityBase::GetPlayerInputState() const
@@ -93,18 +70,18 @@ bool UWuwaGameplayAbilityBase::CanActivateAbility(const FGameplayAbilitySpecHand
 {
 	const AWuwaCharacter* Character = ActorInfo ? Cast<AWuwaCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
 	const UWuwaSkillBridgeComponent* Skills = IsValid(Character) ? Character->SkillComponent.Get() : nullptr;
-	if (bIsMainSkill && !IsValid(Skills) || !Skills->CanBeginSkill(const_cast<UWuwaGameplayAbilityBase*>(this)))
+	// 只有主技能需要经过技能组件的让位判断；非主技能不查询（括号不能省：&& 优先于 ||）。
+	if (bIsMainSkill && (!IsValid(Skills) || !Skills->CanBeginSkill(const_cast<UWuwaGameplayAbilityBase*>(this))))
 	{
 		return false;
 	}
 
-	if (bOverridesMoveState)
+	if (WritesStartMoveState())
 	{
 		// CDO 查询使用本次传入的 Avatar，不依赖实例 CurrentActorInfo。
-		// 在 GAS PreActivate 的标签/取消其他能力等副作用前拒绝已知不可接受的动作。
+		// 只检查要写入的动作状态在当前位置是否合法（原作 legalMoveStates），不占用、不比较优先级。
 		const UWuwaUnifiedStateBridgeComponent* State = IsValid(Character) ? Character->UnifiedStateComponent.Get() : nullptr;
-		UObject* ReleasingSource = bIsMainSkill ? Skills->GetCurrentSkillData().ActiveAbility.Get() : nullptr;
-		if (!IsValid(State)|| !State->CanAcquireMoveStateAfterRelease(ActionMoveState, ActionMoveStatePriority, ReleasingSource))
+		if (!IsValid(State) || !State->IsMoveStateLegal(State->GetStateData().PositionState, StartMoveState))
 		{
 			return false;
 		}
@@ -114,87 +91,60 @@ bool UWuwaGameplayAbilityBase::CanActivateAbility(const FGameplayAbilitySpecHand
 
 void UWuwaGameplayAbilityBase::PreActivate(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
 {
+	//只有使用策略为NonInstanced才会返回false其他的正常策略都是true
 	if (!IsInstantiated())
 	{
 		Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
 		return;
 	}
 
-	const uint64 ActivationSerial = ++MoveStateActivationSerial;
-	bMoveStateLeaseRequiredForActivation = bOverridesMoveState;
-	bSkillLeaseRequiredForActivation = bIsMainSkill;
+	//
+	const uint64 Serial = ++ActivationSerial;
 	Super::PreActivate(Handle, ActorInfo, ActivationInfo, OnGameplayAbilityEndedDelegate, TriggerEventData);
 	// Super 建立 GAS 上下文/活动计数；其 Tag 和激活通知可以重入并结束本次能力。
-	if (ActivationSerial != MoveStateActivationSerial || !IsActive() || bIsAbilityEnding)
-	{
-		return;
-	}
-
-	if (bSkillLeaseRequiredForActivation)
-	{
-		const AWuwaCharacter* Character = ActorInfo ? Cast<AWuwaCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
-		UWuwaSkillBridgeComponent* Skills = IsValid(Character) ? Character->SkillComponent.Get() : nullptr;
-		if (!IsValid(Skills)) return;
-		const TWeakObjectPtr<UWuwaSkillBridgeComponent> RequestedSkills(Skills);
-		const int32 NewSkillHandle = Skills->TryBeginSkill(this);
-		if (ActivationSerial != MoveStateActivationSerial || !IsSkillExecutionActive())
-		{
-			if (NewSkillHandle != 0 && RequestedSkills.IsValid()) RequestedSkills->EndSkill(NewSkillHandle);
-			return;
-		}
-		SkillLeaseOwner = RequestedSkills;
-		SkillLeaseHandle = NewSkillHandle;
-		if (NewSkillHandle == 0) return;
-	}
-
-	const TWeakObjectPtr<UWuwaUnifiedStateBridgeComponent> PreviousOwner = MoveStateLeaseOwner;
-	const int32 PreviousHandle = MoveStateLeaseHandle;
-	MoveStateLeaseOwner.Reset();
-	MoveStateLeaseHandle = 0;
-	if (PreviousHandle != 0 && PreviousOwner.IsValid())
-	{
-		PreviousOwner->ReleaseMoveState(PreviousHandle);
-	}
-	if (ActivationSerial != MoveStateActivationSerial || !IsActive() || bIsAbilityEnding|| !bMoveStateLeaseRequiredForActivation)
+	if (Serial != ActivationSerial || !IsActive() || bIsAbilityEnding)
 	{
 		return;
 	}
 
 	const AWuwaCharacter* Character = ActorInfo ? Cast<AWuwaCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
+	if (bIsMainSkill)
+	{
+		UWuwaSkillBridgeComponent* Skills = IsValid(Character) ? Character->SkillComponent.Get() : nullptr;
+		if (!IsValid(Skills)) return;
+		const TWeakObjectPtr<UWuwaSkillBridgeComponent> RequestedSkills(Skills);
+		const int32 NewSkillHandle = Skills->TryBeginSkill(this);
+		if (Serial != ActivationSerial || !IsSkillExecutionActive())
+		{
+			if (NewSkillHandle != 0 && RequestedSkills.IsValid()) RequestedSkills->EndSkill(NewSkillHandle);
+			return;
+		}
+		SkillOwner = RequestedSkills;
+		FightStateHandle = NewSkillHandle;
+		if (NewSkillHandle == 0) return;
+	}
+
+	if (!WritesStartMoveState())
+	{
+		return;
+	}
 	UWuwaUnifiedStateBridgeComponent* State = IsValid(Character) ? Character->UnifiedStateComponent.Get() : nullptr;
 	if (!IsValid(State))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[%s] Action state requested without an initialized UnifiedState component."), *GetName());
 		return;
 	}
-
-	const TWeakObjectPtr<UWuwaUnifiedStateBridgeComponent> RequestedOwner(State);
-	// CanActivate 的纯查询不是预留；此处由同一脚本规则复检竞争后的实际状态。
-	const int32 NewHandle = State->AcquireMoveState(this, ActionMoveState, ActionMoveStatePriority);
-	if (ActivationSerial != MoveStateActivationSerial || !IsActive() || bIsAbilityEnding)
-	{
-		// Acquire 广播时本 GA 可能已经结束/重新激活；不能把旧结果写入新一轮字段。
-		if (NewHandle != 0 && RequestedOwner.IsValid())
-		{
-			RequestedOwner->ReleaseMoveState(NewHandle);
-		}
-		return;
-	}
-
-	MoveStateLeaseOwner = RequestedOwner;
-	MoveStateLeaseHandle = NewHandle;
+	// 与原作的动作技能一样只在开始时写入一次，保留当前步态的速度配置；没有句柄，也不阻止之后的普通写入。
+	State->SetMoveState(StartMoveState, State->GetStateData().Gait);
 }
 
-void UWuwaGameplayAbilityBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-	const FGameplayEventData* TriggerEventData)
+void UWuwaGameplayAbilityBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,const FGameplayEventData* TriggerEventData)
 {
 	// CallActivateAbility 总会在 PreActivate 之后调用 ActivateAbility。
-	// 只在这里拦截本次占用失败，避免已拒绝的 Dash 仍进入蓝图播放蒙太奇。
-	if ((bIsMainSkill && (!IsInstantiated() || (bSkillLeaseRequiredForActivation
-		&& (SkillLeaseHandle == 0 || !SkillLeaseOwner.IsValid() || !IsActive()))))
-		|| (bOverridesMoveState && (!IsInstantiated() || (bMoveStateLeaseRequiredForActivation
-		&& (MoveStateLeaseHandle == 0 || !MoveStateLeaseOwner.IsValid() || !IsActive())))))
+	// 只在这里拦截本次主技能登记失败，避免已拒绝的技能仍进入蓝图播放蒙太奇。
+	// 动作状态只在实例化的 PreActivate 中写入，非实例化的 GA 不能配置它。
+	if ((bIsMainSkill && (!IsInstantiated() || FightStateHandle == 0 || !SkillOwner.IsValid() || !IsActive()))
+		|| (WritesStartMoveState() && !IsInstantiated()))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
@@ -205,7 +155,7 @@ void UWuwaGameplayAbilityBase::ActivateAbility(const FGameplayAbilitySpecHandle 
 
 void UWuwaGameplayAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handle,const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,bool bReplicateEndAbility, bool bWasCancelled)
 {
-	if (!IsInstantiated() || (MoveStateLeaseHandle == 0 && SkillLeaseHandle == 0))
+	if (!IsInstantiated() || (FightStateHandle == 0 && !WritesStartMoveState()))
 	{
 		Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 		return;
@@ -216,19 +166,19 @@ void UWuwaGameplayAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handl
 	}
 	if (ScopeLockCount > 0)
 	{
-		// 保持 GAS 的延迟结束语义；真正退出时才转交并释放句柄。
+		// 保持 GAS 的延迟结束语义；真正退出时才归还技能句柄并重算移动状态。
 		Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 		return;
 	}
 
-	const TWeakObjectPtr<UWuwaUnifiedStateBridgeComponent> EndingOwner = MoveStateLeaseOwner;
-	const int32 EndingHandle = MoveStateLeaseHandle;
-	const TWeakObjectPtr<UWuwaSkillBridgeComponent> EndingSkills = SkillLeaseOwner;
-	const int32 EndingSkillHandle = SkillLeaseHandle;
-	MoveStateLeaseOwner.Reset();
-	MoveStateLeaseHandle = 0;
-	SkillLeaseOwner.Reset();
-	SkillLeaseHandle = 0;
+	const TWeakObjectPtr<UWuwaSkillBridgeComponent> EndingSkills = SkillOwner;
+	const int32 EndingSkillHandle = FightStateHandle;
+	SkillOwner.Reset();
+	FightStateHandle = 0;
+	// 写过动作状态的 GA 结束后让 RoleGait 立即重算一次，不等下一次 CMC Tick。
+	const AWuwaCharacter* Character = ActorInfo ? Cast<AWuwaCharacter>(ActorInfo->AvatarActor.Get()) : nullptr;
+	const TWeakObjectPtr<UWuwaRoleGaitBridgeComponent> EndingGait = WritesStartMoveState() && IsValid(Character)
+		? Character->RoleGaitComponent.Get() : nullptr;
 
 	const TWeakObjectPtr<UAbilitySystemComponent> ASC = ActorInfo ? ActorInfo->AbilitySystemComponent.Get() : nullptr;
 	const TWeakObjectPtr<UAnimInstance> AnimInstance = ActorInfo ? ActorInfo->GetAnimInstance() : nullptr;
@@ -244,7 +194,7 @@ void UWuwaGameplayAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handl
 	}
 
 	// PlayMontageAndWait 等任务在 Super 的清理中请求停止，Notify/Ended 可同步重入。
-	// 原句柄已移出成员，回调中新激活的动作只会保存/释放它自己的句柄。
+	// 原句柄已移出成员，回调中新激活的技能只会保存/归还它自己的句柄。
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
 	// 若未来某个显式配置的动作没有 StopWhenAbilityEnds，补停仍属本次的播放。
@@ -261,12 +211,12 @@ void UWuwaGameplayAbilityBase::EndAbility(const FGameplayAbilitySpecHandle Handl
 
 	// 这里只保证停止请求/同步清理先于状态交接；Queued NotifyEnd 仍可能稍后执行。
 	// 不撤销 StopMontageForMovement 对旧实例的根运动禁用，也不改写角色速度。
-	if (EndingOwner.IsValid())
-	{
-		EndingOwner->ReleaseMoveState(EndingHandle);
-	}
 	if (EndingSkills.IsValid())
 	{
 		EndingSkills->EndSkill(EndingSkillHandle);
+	}
+	if (EndingGait.IsValid())
+	{
+		EndingGait->RefreshPolicy();
 	}
 }

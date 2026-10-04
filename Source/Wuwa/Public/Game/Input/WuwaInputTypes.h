@@ -17,7 +17,9 @@ enum class EWuwaInputPhase : uint8
 	Pressed,
 	Triggered,
 	Released,
-	Canceled
+	Canceled,
+	/** 按住达到 Hold 触发器阈值；每次按下只发一次。只有配置了 Hold 触发器的按键会有。 */
+	Held
 };
 
 USTRUCT(BlueprintType)

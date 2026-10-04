@@ -100,7 +100,7 @@ bool FWuwaFightStateAssemblyTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Fight transitions leave movement unchanged"), AfterMovement.MoveState == BeforeMovement.MoveState);
 	TestTrue(TEXT("Fight transitions leave direction unchanged"), AfterMovement.DirectionState == BeforeMovement.DirectionState);
 	TestTrue(TEXT("Fight transitions leave gait unchanged"), AfterMovement.Gait == BeforeMovement.Gait);
-	TestEqual(TEXT("Fight transitions do not take a movement lease"), AfterMovement.bHasActionOverride, BeforeMovement.bHasActionOverride);
+	TestEqual(TEXT("Fight transitions do not write an action move state"), AfterMovement.bHasActionOverride, BeforeMovement.bHasActionOverride);
 	TestEqual(TEXT("Fight transitions do not publish movement revisions"), AfterMovement.Revision, BeforeMovement.Revision);
 	return true;
 }

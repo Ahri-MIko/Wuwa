@@ -28,7 +28,7 @@ public partial class UAnimNotifyState_DesireToKeepSprint : UAnimNotifyState
             return true;
         }
 
-        character.WuwaMovementComponent.BeginSprintDesireWindow(this);
+        character.RoleGaitComponent.OpenSprintWindow(this);
         UpdateDesire(character);
         return true;
     }
@@ -44,7 +44,7 @@ public partial class UAnimNotifyState_DesireToKeepSprint : UAnimNotifyState
 
         if (!character.IsLocallyControlled())
         {
-            character.WuwaMovementComponent.ClearSprintDesire();
+            character.RoleGaitComponent.ResetSprintRequest();
             return true;
         }
 
@@ -63,13 +63,13 @@ public partial class UAnimNotifyState_DesireToKeepSprint : UAnimNotifyState
 
         if (!character.IsLocallyControlled())
         {
-            character.WuwaMovementComponent.ClearSprintDesire();
+            character.RoleGaitComponent.ResetSprintRequest();
             return true;
         }
 
-        // 补采样最后一帧，经 CMC 兼容入口交给 RoleGait 保留；迟到回调不会重新开窗。
+        // 补采样最后一帧，交给 RoleGait 保留；迟到回调不会重新开窗。
         UpdateDesire(character);
-        character.WuwaMovementComponent.EndSprintDesireWindow(this);
+        character.RoleGaitComponent.CloseSprintWindow(this);
         return true;
     }
 
@@ -77,14 +77,14 @@ public partial class UAnimNotifyState_DesireToKeepSprint : UAnimNotifyState
     {
         // 只消费项目的语义输入快照；键盘、手柄、触屏与改键由 IA/路由层处理。
         var input = character.PlayerInputState;
-        character.WuwaMovementComponent.UpdateSprintDesireWindow(
+        character.RoleGaitComponent.SampleSprintWindow(
             this, input.SprintHeld ? input.SprintHeldSeconds : 0f, HoldThresholdSeconds);
     }
 
     private static AWuwaCharacter? GetCharacter(USkeletalMeshComponent meshComp)
     {
         if (!meshComp.IsValid() || meshComp.Owner is not AWuwaCharacter character || !character.IsValid()
-            || character.Mesh != meshComp || !character.WuwaMovementComponent.IsValid())
+            || character.Mesh != meshComp || character.RoleGaitComponent is null || !character.RoleGaitComponent.IsValid())
         {
             return null;
         }

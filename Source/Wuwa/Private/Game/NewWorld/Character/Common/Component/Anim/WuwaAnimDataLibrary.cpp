@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "Game/NewWorld/Character/Role/WuwaCharacter.h"
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
+#include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
 
 bool UWuwaAnimDataLibrary::UpdateAnimationData(const UWuwaMovementComponent* Movement, UWuwaAnimLogicParams* Params)
 {
@@ -44,12 +45,14 @@ void UWuwaAnimDataLibrary::UpdateAnimInfoUnifiedState(const UWuwaMovementCompone
 	Data.CustomMovementMode = Movement.CustomMovementMode;
 	Data.DesiredGait = Movement.GetDesiredGait();
 	Data.AllowedGait = Movement.GetAllowedGait();
-	Data.SprintDesire = Movement.GetSprintDesire();
+	// 冲刺需求和停步步态属于 RoleGait，直接从角色身上的 RoleGait 读，不经 CMC 转发。
+	const AWuwaCharacter* Character = Cast<AWuwaCharacter>(Movement.GetCharacterOwner());
+	const UWuwaRoleGaitBridgeComponent* Gait = Character ? Character->RoleGaitComponent.Get() : nullptr;
+	Data.SprintDesire = IsValid(Gait) ? Gait->ReadSprintDesire() : EWuwaSprintDesire::None;
 	Data.bStateGround = Movement.IsMovingOnGround();
 	Data.bStateAir = Movement.IsFalling();
 	Data.bStateClimb = Movement.IsClimbing();
 	Data.bIsCrouching = Movement.IsCrouching();
-	const AWuwaCharacter* Character = Cast<AWuwaCharacter>(Movement.GetCharacterOwner());
 	Data.bHasUnifiedState = Character && IsValid(Character->UnifiedStateComponent);
 	if (Data.bHasUnifiedState)
 	{
@@ -58,7 +61,7 @@ void UWuwaAnimDataLibrary::UpdateAnimInfoUnifiedState(const UWuwaMovementCompone
 		Data.MoveState = State.MoveState;
 		Data.DirectionState = State.DirectionState;
 		Data.bHasActionOverride = State.bHasActionOverride;
-		Data.StopGait = Movement.GetStopGait();
+		Data.StopGait = IsValid(Gait) ? Gait->StopGait : EWuwaGait::Run;
 		Data.bStateGround = State.PositionState == EWuwaPositionState::Ground;
 		Data.bStateAir = State.PositionState == EWuwaPositionState::Air;
 		Data.bStateClimb = State.PositionState == EWuwaPositionState::Climb;

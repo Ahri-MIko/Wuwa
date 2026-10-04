@@ -3,19 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InputActionValue.h" 
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaPlayerInputState.h"
 #include"Game/NewWorld/Character/Common/WuwaCharactorBase.h"
 //所有头文件放于之上
 #include "WuwaCharacter.generated.h"
 
 class UWuwaMovementComponent;
-class UCameraComponent;
 class UWuwaUnifiedStateBridgeComponent;
 class UWuwaRoleGaitBridgeComponent;
 class UWuwaFightStateBridgeComponent;
 class UWuwaSkillBridgeComponent;
 class UWuwaInputCommandConfig;
+class UWuwaInputIntentComponent;
 UCLASS()
 class WUWA_API AWuwaCharacter : public AWuwaCharactorBase
 {
@@ -41,41 +40,23 @@ public:
 	
 #pragma region PlayerInput
 public:
-	/** 从已有输入缓存生成只读快照；需要最新输入时重新调用，不另外维护一份可写缓存。 */
+	/** 转发输入意图组件的组合快照（GA_Dash 等蓝图在用）。 */
 	UFUNCTION(BlueprintPure, Category = "Wuwa|Input")
 	FWuwaPlayerInputState GetPlayerInputState() const;
 
 	/** 输入被清空或切换控制角色时同步清理角色侧意图。 */
 	void ResetPlayerInputState();
 
-	/** 判断是否有移动意图的阈值，作用于 Enhanced Input 已处理过的轴值。 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wuwa|PlayerInput", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float MoveInputThreshold = 0.01f;
+	/** 角色的输入意图：输入来源写入，玩法系统读取。角色自己不依赖任何控制器。 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wuwa|Input")
+	TObjectPtr<UWuwaInputIntentComponent> InputIntent;
 
+	/** 已不再写入，移动轴在 InputIntent 中。只为 BP_WuwaCharacterBase 未被调用的 bCancelAttack 函数保留，删掉该函数后可移除。 */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Wuwa|PlayerInput")
 	FVector2D MoveInput;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Wuwa|PlayerInput")
-	FVector2D MoveInputDir;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Wuwa|PlayerInput")
-	FVector2D MouseMoveVec;
-
 #pragma  endregion
 	
-#pragma  region PlayerMovement
-	
-	UFUNCTION()
-	void HandleMoveInput(const FInputActionValue& Value);
-
-	void Move(const FInputActionValue& Value);
-	
-	void HabdleClimbInput(const FInputActionValue& Value);
-	
-	bool CanApplyMove();
-	
-	FVector2D GetInputDir(FVector2D PlayerInput) const {return  MoveInputDir;};
-#pragma endregion	
 //Component
 public:
 
@@ -123,23 +104,11 @@ public:
 #pragma endregion
 	
 	UFUNCTION(BlueprintCallable, Category="Wuwa|State") bool EnsureMovementStateSystem();
-	bool IsMovementStateEnding() const { return bMovementStateEnding; }
 
-public:	
-	
-#pragma region Tools
-	
-	/** 移动与 Dash 共用的视角方向；不依赖角色上的相机组件。 */
-	UFUNCTION(BlueprintPure, Category = "Wuwa|Input")
-	FVector2D GetCameraRelativeMoveDirection(FVector2D InputAxis) const;
-
-	/** 兼容旧调用；新逻辑应使用 GetCameraRelativeMoveDirection。 */
-	UFUNCTION(meta = (DeprecatedFunction, DeprecationMessage = "Use GetCameraRelativeMoveDirection instead."))
-	FVector2D Vector2ToCameraDirNormalized(const FVector2D InSource2D, const UCameraComponent* InCameraComp) const;
-
-#pragma endregion
 
 private:
+	void BindSkillDependencies();
+
 	//初始化保护句柄
 	bool bInitializingMovementState = false;
 	bool bInitializingSkill = false;

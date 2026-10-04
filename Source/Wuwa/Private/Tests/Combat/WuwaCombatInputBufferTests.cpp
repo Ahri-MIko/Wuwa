@@ -14,6 +14,7 @@
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaGameplayAbilityBase.h"
 #include "Game/NewWorld/Character/Common/Component/Input/UWuwaCombatInputRuntimeBridge.h"
 #include "Game/NewWorld/Character/Common/Component/Input/WuwaAbilityInputHandlerComponent.h"
+#include "Game/NewWorld/Character/Common/Component/Input/WuwaInputIntentComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
 #include "Game/NewWorld/Character/Common/Component/Skill/WuwaSkillBridgeComponent.h"
 #include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
@@ -36,7 +37,7 @@ namespace WuwaCombatInputBufferTests
 		const bool OriginalMainSkill = Defaults->bIsMainSkill;
 		const int32 OriginalInterruptLevel = Defaults->InterruptLevel;
 		const EWuwaSkillOverrideType OriginalOverrideType = Defaults->SkillOverrideType;
-		const bool OriginalMoveOverride = Defaults->bOverridesMoveState;
+		const EWuwaMoveState OriginalStartMoveState = Defaults->StartMoveState;
 		int32 Activations = 0;
 		const FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag(FName(TEXT("GAS.GA.Role.Attack1")));
 		const FGameplayTag OtherTag = FGameplayTag::RequestGameplayTag(FName(TEXT("GAS.GA.SpeedUpIteam")));
@@ -54,7 +55,7 @@ namespace WuwaCombatInputBufferTests
 			Defaults->bIsMainSkill = OriginalMainSkill;
 			Defaults->InterruptLevel = OriginalInterruptLevel;
 			Defaults->SkillOverrideType = OriginalOverrideType;
-			Defaults->bOverridesMoveState = OriginalMoveOverride;
+			Defaults->StartMoveState = OriginalStartMoveState;
 		}
 
 		AWuwaCharacter* SpawnCharacter() const
@@ -96,7 +97,7 @@ namespace WuwaCombatInputBufferTests
 			Defaults->bIsMainSkill = true;
 			Defaults->InterruptLevel = InterruptLevel;
 			Defaults->SkillOverrideType = EWuwaSkillOverrideType::None;
-			Defaults->bOverridesMoveState = false;
+			Defaults->StartMoveState = EWuwaMoveState::Other;
 		}
 
 		bool AttachLocalController(FAutomationTestBase& Test)
@@ -177,7 +178,7 @@ bool FWuwaCombatInputSingleSubmissionTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Both raw inputs are retained until selection"), F.Runtime->GetBufferedInputCount(), 2);
 	F.Runtime->ProcessPendingInput(F.ASC);
 	TestEqual(TEXT("A normal pending-input tick cannot replay before a breakpoint"), F.Activations, 1);
-	TestTrue(TEXT("Active skill opens its input window"), First->SetSkillAcceptInput(true));
+	TestTrue(TEXT("Active skill opens its input window"), F.Skills->SetSkillAcceptInput(First->GetSkillHandle(), true));
 	TestTrue(TEXT("Breakpoint submits the same spec for a fresh per-execution activation"),
 		F.Runtime->ProcessPendingInput(F.ASC) == EWuwaCombatInputResult::ActivationRequested);
 	TestEqual(TEXT("Two buffered presses produce exactly one additional activation"), F.Activations, 2);
@@ -186,7 +187,7 @@ bool FWuwaCombatInputSingleSubmissionTest::RunTest(const FString& Parameters)
 	if (!TestNotNull(TEXT("The replay has an active execution"), Second)) return false;
 	TestTrue(TEXT("The replay receives a newer ownership handle"), Second->GetSkillHandle() > FirstHandle);
 	TestFalse(TEXT("A replay does not inherit the old accept-input window"), F.Skills->GetCurrentSkillData().bSkillAcceptInput);
-	Second->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(Second->GetSkillHandle(), true);
 	F.Runtime->ProcessPendingInput(F.ASC);
 	TestEqual(TEXT("A later breakpoint cannot replay the already consumed second press"), F.Activations, 2);
 	return true;
@@ -220,11 +221,11 @@ bool FWuwaCombatInputExpiryAndOpportunityTest::RunTest(const FString& Parameters
 		F.Skills->SetSkillInterruptLevel(Old->GetSkillHandle(), 50));
 	TestEqual(TEXT("Changing priority alone is not an animation input breakpoint"),
 		F.Skills->GetCurrentSkillData().InputOpportunitySerial, Before);
-	TestTrue(TEXT("The cached candidate now passes the pure request check"), F.ASC->CanRequestAbilityFromInput(Candidate));
+	TestTrue(TEXT("The cached candidate now passes the pure request check"), F.ASC->IsSpecAvailableForActivation(Candidate));
 	F.Runtime->ProcessPendingInput(F.ASC);
 	TestEqual(TEXT("Eligibility alone does not trigger automatic frame-by-frame replay"), F.Activations, 1);
 	TestEqual(TEXT("The raw input stays pending until an explicit opportunity"), F.Runtime->GetBufferedInputCount(), 1);
-	Old->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), true);
 	TestTrue(TEXT("An explicit opportunity re-evaluates and submits the candidate"),
 		F.Runtime->ProcessPendingInput(F.ASC) == EWuwaCombatInputResult::ActivationRequested);
 	TestEqual(TEXT("The explicit opportunity causes only one activation"), F.Activations, 2);
@@ -254,7 +255,7 @@ bool FWuwaCombatInputPrioritySelectionTest::RunTest(const FString& Parameters)
 			F.Runtime->ProcessInput(F.ASC, F.Input(F.AttackTag), 1.0f) == EWuwaCombatInputResult::Buffered);
 		TestTrue(TEXT("Later candidate is buffered"),
 			F.Runtime->ProcessInput(F.ASC, F.Input(F.OtherTag), 1.0f) == EWuwaCombatInputResult::Buffered);
-		Old->SetSkillReadyEnd(true);
+		F.Skills->SetMainSkillReadyEnd(Old->GetSkillHandle(), true);
 		TestTrue(TEXT("Ready-end reselects one candidate from the batch"),
 			F.Runtime->ProcessPendingInput(F.ASC) == EWuwaCombatInputResult::ActivationRequested);
 		TestEqual(TEXT("Selection submits exactly once"), F.Activations, 2);
@@ -296,7 +297,7 @@ bool FWuwaCombatInputInvalidAndResetTest::RunTest(const FString& Parameters)
 		F.Runtime->ProcessInput(F.ASC, F.Input(F.OtherTag), 1.f) == EWuwaCombatInputResult::Buffered);
 	F.Runtime->ResetInput();
 	TestEqual(TEXT("Reset clears pending raw inputs"), F.Runtime->GetBufferedInputCount(), 0);
-	Old->SetSkillReadyEnd(true);
+	F.Skills->SetMainSkillReadyEnd(Old->GetSkillHandle(), true);
 	F.Runtime->ProcessPendingInput(F.ASC);
 	TestEqual(TEXT("Reset input cannot fire at a later ready-end point"), F.Activations, 1);
 	return true;
@@ -392,7 +393,7 @@ bool FWuwaCombatInputRoutedHandlerTest::RunTest(const FString& Parameters)
 		FWuwaInputEvent Event = F.Input(F.AttackTag);
 		Event.RouteTag = FWuwaGameTags::Get().Input_Route_Ability;
 		Event.SourceAction = Action;
-		return Router->DispatchInput(Event);
+		return F.Controller->RouteInputEvent(Event);
 	};
 	auto TickHandler = [&]()
 	{
@@ -405,18 +406,18 @@ bool FWuwaCombatInputRoutedHandlerTest::RunTest(const FString& Parameters)
 	Handler->DefaultBufferLifetimeSeconds = 1.f;
 	Handler->BufferLifetimeOverrides.Add(F.AttackTag, 0.f);
 	TestTrue(TEXT("The configured ability route accepts the press"), DispatchPress());
-	TestTrue(TEXT("The router records semantic hold independently of activation"), Router->GetInputActionState(F.AttackTag).bHeld);
-	Old->SetSkillAcceptInput(true);
+	TestTrue(TEXT("The character records semantic hold independently of activation"), F.Character->InputIntent->GetActionState(F.AttackTag).bHeld);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), true);
 	TickHandler();
 	TestEqual(TEXT("A per-tag zero lifetime disables replay despite a positive default"), F.Activations, 1);
-	Old->SetSkillAcceptInput(false);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), false);
 
 	Handler->DefaultBufferLifetimeSeconds = 0.f;
 	Handler->BufferLifetimeOverrides.Add(F.AttackTag, 1.f);
 	TestTrue(TEXT("A nonzero per-tag override enters the production buffer route"), DispatchPress());
 	TickHandler();
 	TestEqual(TEXT("The production tick leaves buffered input waiting before the window"), F.Activations, 1);
-	Old->SetSkillAcceptInput(true);
+	F.Skills->SetSkillAcceptInput(Old->GetSkillHandle(), true);
 	TickHandler();
 	TestEqual(TEXT("The production handler tick submits the buffered command at the window"), F.Activations, 2);
 	UWuwaGameplayAbilityBase* Next = F.Active(Spec);
@@ -426,8 +427,8 @@ bool FWuwaCombatInputRoutedHandlerTest::RunTest(const FString& Parameters)
 
 	TestTrue(TEXT("A new press buffers behind the replacement's closed window"), DispatchPress());
 	F.Controller->FlushPressedKeys();
-	TestFalse(TEXT("Focus-loss flushing clears the router's semantic hold"), Router->GetInputActionState(F.AttackTag).bHeld);
-	Next->SetSkillAcceptInput(true);
+	TestFalse(TEXT("Focus-loss flushing clears the character's semantic hold"), F.Character->InputIntent->GetActionState(F.AttackTag).bHeld);
+	F.Skills->SetSkillAcceptInput(Next->GetSkillHandle(), true);
 	TickHandler();
 	TestEqual(TEXT("FlushPressedKeys also prevents pending combat input from replaying"), F.Activations, 2);
 	return true;
@@ -509,7 +510,6 @@ bool FWuwaCombatInputImmediateSkillEventsTest::RunTest(const FString& Parameters
 	FFixture F;
 	if (!F.Initialize(*this) || !F.AttachLocalController(*this)) return false;
 	UWuwaAbilityInputHandlerComponent* Handler = F.Controller->AbilityInputHandler;
-	UWuwaInputRouterComponent* Router = F.Controller->GetInputRouter();
 	Handler->DefaultBufferLifetimeSeconds = 1.f;
 	UInputAction* AttackAction = NewObject<UInputAction>(F.Controller);
 	UInputAction* OtherAction = NewObject<UInputAction>(F.Controller);
@@ -518,7 +518,7 @@ bool FWuwaCombatInputImmediateSkillEventsTest::RunTest(const FString& Parameters
 		FWuwaInputEvent Event = F.Input(Tag);
 		Event.RouteTag = FWuwaGameTags::Get().Input_Route_Ability;
 		Event.SourceAction = Action;
-		return Router->DispatchInput(Event);
+		return F.Controller->RouteInputEvent(Event);
 	};
 	F.Configure(200);
 	UWuwaGameplayAbilityBase* Old = F.Start(*this, F.Grant());
@@ -529,16 +529,16 @@ bool FWuwaCombatInputImmediateSkillEventsTest::RunTest(const FString& Parameters
 	const FGameplayAbilitySpecHandle OtherSpec = F.Grant(F.OtherTag);
 	TestTrue(TEXT("Attack enters the real handler buffer"), Dispatch(F.AttackTag, AttackAction));
 	TestTrue(TEXT("Another tag enters the same handler buffer"), Dispatch(F.OtherTag, OtherAction));
-	TestTrue(TEXT("A live owner can request a standalone breakpoint"), Old->CallAnimBreakPoint());
+	TestTrue(TEXT("A live owner can request a standalone breakpoint"), F.Skills->CallAnimBreakPoint(Old->GetSkillHandle()));
 	TestEqual(TEXT("A standalone breakpoint cannot bypass closed interrupt permissions"), F.Activations, 1);
 	TestFalse(TEXT("The breakpoint does not open accept-input"), F.Skills->GetCurrentSkillData().bSkillAcceptInput);
 	TestFalse(TEXT("The breakpoint does not mark ready-end"), F.Skills->GetCurrentSkillData().bMainSkillReadyEnd);
-	TestTrue(TEXT("The owning GA can request exact-tag cache clearing"), Old->ClearBufferedInput(F.AttackTag));
+	TestTrue(TEXT("The owning GA can request exact-tag cache clearing"), F.Skills->RequestInputCacheClear(Old->GetSkillHandle(), F.AttackTag));
 	TestEqual(TEXT("The skill event already removed the matching buffered event"), Handler->ClearBufferedInput(F.AttackTag), 0);
-	TestTrue(TEXT("Clearing preinput leaves the attack key semantically held"), Router->GetInputActionState(F.AttackTag).bHeld);
-	TestTrue(TEXT("The other key remains semantically held too"), Router->GetInputActionState(F.OtherTag).bHeld);
-	Old->SetSkillReadyEnd(true);
-	TestTrue(TEXT("The owning GA broadcasts the new eligible breakpoint"), Old->CallAnimBreakPoint());
+	TestTrue(TEXT("Clearing preinput leaves the attack key semantically held"), F.Character->InputIntent->GetActionState(F.AttackTag).bHeld);
+	TestTrue(TEXT("The other key remains semantically held too"), F.Character->InputIntent->GetActionState(F.OtherTag).bHeld);
+	F.Skills->SetMainSkillReadyEnd(Old->GetSkillHandle(), true);
+	TestTrue(TEXT("The owning GA broadcasts the new eligible breakpoint"), F.Skills->CallAnimBreakPoint(Old->GetSkillHandle()));
 	TestEqual(TEXT("The skill event activates immediately without any handler tick"), F.Activations, 2);
 	TestNull(TEXT("The cleared attack event never activates"), F.Active(AttackSpec));
 	UWuwaGameplayAbilityBase* Next = F.Active(OtherSpec);
@@ -547,8 +547,8 @@ bool FWuwaCombatInputImmediateSkillEventsTest::RunTest(const FString& Parameters
 	TestFalse(TEXT("An old skill handle cannot clear the replacement's pending input"),
 		F.Skills->RequestInputCacheClear(OldHandle, F.OtherTag));
 	TestFalse(TEXT("An old skill handle cannot emit a new breakpoint"), F.Skills->CallAnimBreakPoint(OldHandle));
-	Next->SetSkillAcceptInput(true);
-	TestTrue(TEXT("The current skill can request its own breakpoint"), Next->CallAnimBreakPoint());
+	F.Skills->SetSkillAcceptInput(Next->GetSkillHandle(), true);
+	TestTrue(TEXT("The current skill can request its own breakpoint"), F.Skills->CallAnimBreakPoint(Next->GetSkillHandle()));
 	TestEqual(TEXT("Stale clear did not erase the new skill's pending same-spec replay"), F.Activations, 3);
 	return true;
 }

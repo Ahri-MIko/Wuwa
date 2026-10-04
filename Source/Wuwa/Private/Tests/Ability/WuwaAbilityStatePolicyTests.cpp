@@ -62,42 +62,35 @@ namespace WuwaAbilityStatePolicyTests
 	};
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaActionStatePreflightTest, "Wuwa.Ability.StatePolicy.PurePreflight",
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FWuwaActionStateLegalityTest, "Wuwa.Ability.StatePolicy.ActionStateLegality",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
-bool FWuwaActionStatePreflightTest::RunTest(const FString& Parameters)
+bool FWuwaActionStateLegalityTest::RunTest(const FString& Parameters)
 {
 	WuwaAbilityStatePolicyTests::FFixture F;
 	if (!F.Initialize(*this)) return false;
-	using M = EWuwaMoveState;
-	UObject* FirstOwner = NewObject<UInputAction>(F.Character);
-	UObject* NextOwner = NewObject<UInputAction>(F.Character);
-	const int32 FirstHandle = F.State->AcquireMoveState(FirstOwner, M::Dodge, 200);
-	if (!TestTrue(TEXT("High priority action is active"), FirstHandle > 0)) return false;
+	UWuwaGameplayAbilityBase* CDO = GetMutableDefault<UWuwaGameplayAbilityBase>();
+	// Restore native defaults on every return; no asset is loaded or modified.
+	TGuardValue<bool> MainGuard(CDO->bIsMainSkill, true);
+	TGuardValue<EWuwaMoveState> MoveGuard(CDO->StartMoveState, EWuwaMoveState::Dodge);
+	const FGameplayAbilityActorInfo* ActorInfo = F.ASC->AbilityActorInfo.Get();
+	TestTrue(TEXT("A legal action state passes the activation query"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
+	TestFalse(TEXT("A missing Avatar is rejected without consulting a stale instance context"),
+		CDO->CanActivateAbility(F.AbilityHandle, nullptr));
+
+	// As in the original, a written action state is not an occupation: it neither blocks nor ranks later actions.
+	if (!TestTrue(TEXT("Another action wrote Dodge"), F.State->SetMoveState(EWuwaMoveState::Dodge, EWuwaGait::Run))) return false;
 	const int32 Revision = F.State->GetStateData().Revision;
-
-	TestFalse(TEXT("Lower priority preflight is rejected"), F.State->CanAcquireMoveState(M::Dodge, 100));
-	TestTrue(TEXT("Equal priority may replace the action"), F.State->CanAcquireMoveState(M::Dodge, 200));
-	TestFalse(TEXT("Even higher priority cannot request an illegal ground state"), F.State->CanAcquireMoveState(M::Fall, 300));
-	TestFalse(TEXT("Unknown movement fails closed"), F.State->CanAcquireMoveState(static_cast<M>(255), 300));
-	TestEqual(TEXT("All preflight queries leave the state revision unchanged"), F.State->GetStateData().Revision, Revision);
-	TestTrue(TEXT("Preflight does not replace the current lease"), F.State->ReleaseMoveState(FirstHandle));
-
-	TestTrue(TEXT("An unoccupied state passes preflight"), F.State->CanAcquireMoveState(M::Dodge, 100));
-	const int32 RacingHandle = F.State->AcquireMoveState(FirstOwner, M::Dodge, 200);
-	TestEqual(TEXT("Acquire rechecks priority after a successful earlier preflight"), F.State->AcquireMoveState(NextOwner, M::Dodge, 100), 0);
-	TestTrue(TEXT("The intervening action keeps its lease"), F.State->ReleaseMoveState(RacingHandle));
-
-	const int32 DeadHandle = F.State->AcquireMoveState(FirstOwner, M::Dodge, 200);
-	FirstOwner->MarkAsGarbage();
-	const int32 BeforeDeadOwnerQuery = F.State->GetStateData().Revision;
-	TestTrue(TEXT("An invalid source cannot block a lower priority request"), F.State->CanAcquireMoveState(M::Dodge, 100));
-	TestEqual(TEXT("Querying an invalid source does not prune or publish"), F.State->GetStateData().Revision, BeforeDeadOwnerQuery);
-	TestTrue(TEXT("Pure query leaves the previously committed snapshot intact"), F.State->GetStateData().bHasActionOverride);
-	const int32 NewHandle = F.State->AcquireMoveState(NextOwner, M::Dodge, 100);
-	TestTrue(TEXT("Actual acquisition prunes the dead source and receives a new handle"), NewHandle > DeadHandle);
-	TestFalse(TEXT("Pruned old handle cannot release the replacement"), F.State->ReleaseMoveState(DeadHandle));
-	TestTrue(TEXT("Replacement can release normally"), F.State->ReleaseMoveState(NewHandle));
+	TestTrue(TEXT("An existing action state does not block another action"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
+	CDO->StartMoveState = EWuwaMoveState::Fall;
+	TestFalse(TEXT("An action state that is illegal in the current position is rejected"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
+	CDO->StartMoveState = static_cast<EWuwaMoveState>(255);
+	TestFalse(TEXT("An unknown action state fails closed"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
+	TestEqual(TEXT("Activation queries never publish movement state"), F.State->GetStateData().Revision, Revision);
+	CDO->StartMoveState = EWuwaMoveState::Other;
+	TestTrue(TEXT("Ordinary abilities retain the original GAS activation rules"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
+	CDO->bIsMainSkill = false;
+	TestTrue(TEXT("A non-main ability is not gated by the main-skill manager"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
 	return true;
 }
 
@@ -110,22 +103,13 @@ bool FWuwaAbilityStatePreflightTest::RunTest(const FString& Parameters)
 	if (!F.Initialize(*this)) return false;
 	UWuwaGameplayAbilityBase* CDO = GetMutableDefault<UWuwaGameplayAbilityBase>();
 	// Restore native defaults on every return; no asset is loaded or modified.
-	TGuardValue<bool> OverrideGuard(CDO->bOverridesMoveState, true);
-	TGuardValue<EWuwaMoveState> MoveGuard(CDO->ActionMoveState, EWuwaMoveState::Dodge);
-	TGuardValue<int32> PriorityGuard(CDO->ActionMoveStatePriority, 100);
-	if (!TestTrue(TEXT("The native ability supports instance-owned handles"),
+	TGuardValue<EWuwaMoveState> MoveGuard(CDO->StartMoveState, EWuwaMoveState::Fall);
+	if (!TestTrue(TEXT("The native ability writes its action state from an instance"),
 		CDO->GetInstancingPolicy() != EGameplayAbilityInstancingPolicy::NonInstanced)) return false;
 	const FGameplayAbilityActorInfo* ActorInfo = F.ASC->AbilityActorInfo.Get();
-	TestTrue(TEXT("CDO activation query accepts an available action"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
-	TestFalse(TEXT("A missing Avatar is rejected without consulting a stale instance context"),
-		CDO->CanActivateAbility(F.AbilityHandle, nullptr));
-
-	UObject* ExistingOwner = NewObject<UInputAction>(F.Character);
-	const int32 ExistingHandle = F.State->AcquireMoveState(ExistingOwner, EWuwaMoveState::Dodge, 200);
-	if (!TestTrue(TEXT("Competing action holds the state"), ExistingHandle > 0)) return false;
 	const int32 Revision = F.State->GetStateData().Revision;
 	const FGameplayTagContainer OwnedTags = F.ASC->GetOwnedGameplayTags();
-	TestFalse(TEXT("CDO activation query rejects lower priority on the provided Avatar"),
+	TestFalse(TEXT("CDO activation query rejects an action state that is illegal on the ground"),
 		CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
 	TestFalse(TEXT("The actual GAS request is rejected before activation"), F.ASC->TryActivateAbility(F.AbilityHandle, false));
 	TestEqual(TEXT("Rejected request emits no GAS activation notification"), F.ActivationNotifications, 0);
@@ -135,12 +119,9 @@ bool FWuwaAbilityStatePreflightTest::RunTest(const FString& Parameters)
 	if (!TestNotNull(TEXT("Rejected ability spec remains present"), Spec)) return false;
 	TestFalse(TEXT("Rejected spec is not active"), Spec->IsActive());
 	TestEqual(TEXT("No execution instance is created for the rejected action"), Spec->GetAbilityInstances().Num(), 0);
-	TestTrue(TEXT("The original action remains the valid owner"), F.State->ReleaseMoveState(ExistingHandle));
 
-	CDO->ActionMoveState = EWuwaMoveState::Fall;
-	TestFalse(TEXT("CDO activation query also rejects an illegal movement state"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
-	CDO->bOverridesMoveState = false;
-	TestTrue(TEXT("Ordinary abilities retain the original GAS activation rules"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
+	CDO->StartMoveState = EWuwaMoveState::Dodge;
+	TestTrue(TEXT("The same ability is accepted once its action state is legal"), CDO->CanActivateAbility(F.AbilityHandle, ActorInfo));
 	return true;
 }
 

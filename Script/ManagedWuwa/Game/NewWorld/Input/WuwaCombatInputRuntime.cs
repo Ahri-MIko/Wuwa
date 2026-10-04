@@ -10,60 +10,59 @@ namespace ManagedWuwa.Game.NewWorld.Input;
 [UClass]
 public partial class UWuwaCombatInputRuntime : UWuwaCombatInputRuntimeBridge
 {
+    // 预输入缓存：技能播放中按下、但当时出不了招的键，等到接招时机再出。
     private readonly CombatInputBuffer _buffer = new();
+
+    // 上次处理时的 ASC 和角色。任意一个变了（换了控制的角色、角色重生），之前的缓存全部作废。
     private TWeakObjectPtr<UWuwaAbilitySystemComponent> _asc;
     private TWeakObjectPtr<AWuwaCharacter> _avatar;
+
+    // 上次看到的"主技能开始次数"（SkillComponent 的 SkillStartSerial）。
+    // 变了说明开始了新的主技能，上一个技能期间存的预输入作废。
     private long _observedSkillStart;
+
+    // 已经处理过的"接招机会编号"（SkillComponent 的 InputOpportunitySerial；接招窗口打开、进入 ReadyEnd、动画断点、技能结束时各加一）。
+    // 和当前编号相同就跳过，保证同一个接招时机只处理一次缓存，不会每帧重复尝试。
     private long _observedOpportunity;
+
+    // 上次处理时的输入时间（ASC.InputTimeSeconds）。时间倒退（比如世界重新开始）时整体重置。
     private double _lastTime;
+
+    // 正在处理中。招式条件、GA 激活等扩展代码可能在处理过程中又触发输入，此时拒绝重入。
     private bool _processing;
+
+    // 输入批次编号：重置或清除缓存时加一。
+    // 处理开始时记下，判断完再比对；变了说明中途有人清过缓存或重置过，这次的判断结果作废。
     private long _inputGeneration;
 
     private readonly record struct Candidate(FGameplayAbilitySpecHandle Handle, UWuwaGameplayAbilityBase Definition);
 
-    //大多都是防止重入的操作
+    /// <summary>
+    /// 处理一次按下：能立刻出招就提交；暂时不能就存入预输入，等下一个接招时机。
+    /// 招式条件和许可检查可能执行扩展代码，做出决定前用 IsContextCurrent 确认技能、输入批次和战斗状态都没变，变了这次按下作废。
+    /// </summary>
     public override EWuwaCombatInputResult ProcessInput(UWuwaAbilitySystemComponent asc, FWuwaInputEvent input, float bufferLifetimeSeconds)
     {
-        //检查是否没有其他处理Input的函数正在执行,并且当前的Input是Pressed阶段
-        if (_processing || input.Phase != EWuwaInputPhase.Pressed || !input.InputTag.IsValid)
-        {
-            if (input.Phase == EWuwaInputPhase.Pressed)
-                CombatInputTrace.Write("PRESS_IGNORED", $"runtime={Name} input={input.InputTag} reentrant={_processing} validTag={input.InputTag.IsValid}");
-            return EWuwaCombatInputResult.Ignored;
-        }
-        _processing = true;//上锁
+        // 只处理按下；扩展代码里又触发输入时拒绝重入。
+        if (_processing || input.Phase != EWuwaInputPhase.Pressed || !input.InputTag.IsValid) return EWuwaCombatInputResult.Ignored;
+        _processing = true;
         try
         {
-            //读取当前的技能信息
             if (!ReadContext(asc, out var skills, out var state, out double now)) return EWuwaCombatInputResult.Ignored;
-            Trace("PRESS", now, state, $"input={input.InputTag} timestamp={input.Timestamp:F3} lifetime={bufferLifetimeSeconds:F3}s");
             long generation = _inputGeneration;
             int fightHandle = asc.InputAvatar.FightStateComponent.StateData.Handle;
-            var resolution = Resolve(asc, state, input.InputTag, out var candidate);
-            if (!IsContextCurrent(asc, skills!, state, generation, fightHandle))
-            {
-                Trace("CONTEXT_CHANGED", now, state, $"during=PressResolve input={input.InputTag}");
-                return EWuwaCombatInputResult.Ignored;
-            }
-            // 已配置但暂时没有条件命中，也保存原始意图，断点时可能已满足派生条件。
-            if (resolution == EWuwaCombatInputResult.NoMatchingRule)
-                return Store(input, now, bufferLifetimeSeconds, state, "NoMatchingRule") ? EWuwaCombatInputResult.Buffered : resolution;
-            if (resolution != EWuwaCombatInputResult.ActivationRequested)
-            {
-                Trace("RESOLVE_REJECT", now, state, $"input={input.InputTag} result={resolution}");
-                return resolution;
-            }
-            bool canCreate = CanCreateCommand(asc, skills!, candidate, out var gate);
-            Trace("RESOLVE", now, state, $"input={input.InputTag} target={candidate.Definition.OriginalTag} ga={CombatInputTrace.Name(candidate.Definition)} gate={gate}");
-            if (!IsContextCurrent(asc, skills!, state, generation, fightHandle))
-            {
-                Trace("CONTEXT_CHANGED", now, state, $"during=PressEligibility input={input.InputTag}");
-                return EWuwaCombatInputResult.Ignored;
-            }
-            if (canCreate) return Submit(asc, candidate, now, state, "Pressed");
 
-            // 缓存原始按下输入，不保存此刻解析出的 GA 或 Spec。
-            return candidate.Definition.IsMainSkill && Store(input, now, bufferLifetimeSeconds, state, gate)
+            var resolution = Resolve(asc, state, input.InputTag, out var candidate);
+            bool canCreate = resolution == EWuwaCombatInputResult.ActivationRequested && CanCreateCommand(asc, skills!, candidate);
+            if (!IsContextCurrent(asc, skills!, state, generation, fightHandle)) return EWuwaCombatInputResult.Ignored;
+
+            if (canCreate) return Submit(asc, candidate);
+            // 有配置但条件暂未命中：也存下原始按下，到接招时机条件可能已满足。
+            if (resolution == EWuwaCombatInputResult.NoMatchingRule)
+                return _buffer.Store(input, now, bufferLifetimeSeconds) ? EWuwaCombatInputResult.Buffered : resolution;
+            if (resolution != EWuwaCombatInputResult.ActivationRequested) return resolution;
+            // 主技能暂时不能开始：存下原始按下，不存此刻解析出的 GA 或 Spec。
+            return candidate.Definition.IsMainSkill && _buffer.Store(input, now, bufferLifetimeSeconds)
                 ? EWuwaCombatInputResult.Buffered : EWuwaCombatInputResult.Rejected;
         }
         finally { _processing = false; }
@@ -71,19 +70,16 @@ public partial class UWuwaCombatInputRuntime : UWuwaCombatInputRuntimeBridge
 
     public override EWuwaCombatInputResult ProcessPendingInput(UWuwaAbilitySystemComponent asc)
     {
-        //同一帧的事件触发多次可能会造成重复触发
-        if (_processing)
-        {
-            CombatInputTrace.Write("CHECK_DEFER", $"runtime={Name} reason=RuntimeReentrant count={_buffer.Count}");
-            return EWuwaCombatInputResult.Ignored;
-        }
+        // 断点事件和帧末 Tick 共用此入口；正在处理时（同一帧多次触发）拒绝重入。
+        if (_processing) return EWuwaCombatInputResult.Ignored;
         _processing = true;
         try
         {
             if (!ReadContext(asc, out var skills, out var state, out double now)) return EWuwaCombatInputResult.Ignored;
-            // 通知事件和帧末共用此入口；同一个机会只处理一次，不轮询重试激活。
+            // 帧末每帧都会走到这里：顺便刷新屏幕上的技能状态和预输入缓存。
+            CombatInputDebug.Show(state, _buffer.Describe(now));
+            // 同一个接招机会只处理一次，不轮询重试激活。
             if (_observedOpportunity == state.InputOpportunitySerial) return EWuwaCombatInputResult.Ignored;
-            Trace("CHECK", now, state, $"previousOpportunity={_observedOpportunity} count={_buffer.Count}");
             _observedOpportunity = state.InputOpportunitySerial;
             long generation = _inputGeneration;
             int fightHandle = asc.InputAvatar.FightStateComponent.StateData.Handle;
@@ -92,32 +88,16 @@ public partial class UWuwaCombatInputRuntime : UWuwaCombatInputRuntimeBridge
             foreach (var input in _buffer.Snapshot(now))
             {
                 var resolution = Resolve(asc, state, input.InputTag, out var candidate);
-                if (!IsContextCurrent(asc, skills!, state, generation, fightHandle))
-                {
-                    Trace("CONTEXT_CHANGED", now, state, $"during=PendingResolve input={input.InputTag}");
-                    return EWuwaCombatInputResult.Ignored;
-                }
-                if (resolution != EWuwaCombatInputResult.ActivationRequested)
-                {
-                    Trace("CANDIDATE_REJECT", now, state, $"input={input.InputTag} result={resolution}");
-                    continue;
-                }
-                bool canCreate = CanCreateCommand(asc, skills!, candidate, out var gate);
-                Trace("CANDIDATE", now, state, $"input={input.InputTag} target={candidate.Definition.OriginalTag} ga={CombatInputTrace.Name(candidate.Definition)} gate={gate} remaining={input.ExpiresAtSeconds - now:F3}s");
-                if (!IsContextCurrent(asc, skills!, state, generation, fightHandle))
-                {
-                    Trace("CONTEXT_CHANGED", now, state, $"during=PendingEligibility input={input.InputTag}");
-                    return EWuwaCombatInputResult.Ignored;
-                }
+                bool canCreate = resolution == EWuwaCombatInputResult.ActivationRequested && CanCreateCommand(asc, skills!, candidate);
+                // 条件和许可检查可能执行扩展代码；上下文变了，这一批作废。
+                if (!IsContextCurrent(asc, skills!, state, generation, fightHandle)) return EWuwaCombatInputResult.Ignored;
                 if (!canCreate) continue;
 
                 // 严格大于：同优先级保留较早到达的输入。
                 if (best is null || candidate.Definition.InterruptLevel > best.Value.Definition.InterruptLevel)
                     best = candidate;
             }
-            if (best is { } selected) return Submit(asc, selected, now, state, "Buffered");
-            Trace("NO_COMMAND", now, state, $"reason={(_buffer.Count == 0 ? "BufferEmpty" : "NoEligibleCandidate")}");
-            return EWuwaCombatInputResult.Ignored;
+            return best is { } selected ? Submit(asc, selected) : EWuwaCombatInputResult.Ignored;
         }
         finally { _processing = false; }
     }
@@ -127,16 +107,12 @@ public partial class UWuwaCombatInputRuntime : UWuwaCombatInputRuntimeBridge
     protected override int ClearBufferedInput_Implementation(FGameplayTag inputTag)
     {
         ++_inputGeneration;
-        int removed = _buffer.Remove(inputTag);
-        CombatInputTrace.Write("CLEAR_REQUEST", $"runtime={Name} t={_lastTime:F3} tag={inputTag} removed={removed} remaining={_buffer.Count}");
-        return removed;
+        return _buffer.Remove(inputTag);
     }
 
     
     public override void ResetInput()
     {
-        if (_buffer.Count > 0 || _asc.Object is not null)
-            CombatInputTrace.Write("RESET", $"runtime={Name} t={_lastTime:F3} reason=InputContextReset dropping={_buffer.Count} cache={_buffer.Describe(_lastTime)}");
         //在这之前的所有缓存和判断结果,全部作废 因为编号加一
         ++_inputGeneration;
         _buffer.Clear();
@@ -167,33 +143,18 @@ public partial class UWuwaCombatInputRuntime : UWuwaCombatInputRuntimeBridge
             _asc = new(asc);
             _avatar = new(avatar);
             _observedOpportunity = state.InputOpportunitySerial;
-            Trace("CONTEXT", now, state, $"traceVersion=1 asc={CombatInputTrace.Name(asc)}");
         }
 
         // 新技能即使在两次采样之间已经开始并结束，也必须使旧批次失效。
         // 原技能正常结束不增加 StartSerial，仍允许在结束断点消费。
-        if (state.SkillStartSerial != _observedSkillStart)
-        {
-            if (_buffer.Count > 0) Trace("CLEAR", now, state, $"reason=NewSkill previousStart={_observedSkillStart} dropping={_buffer.Count}");
-            _buffer.Clear();
-        }
+        if (state.SkillStartSerial != _observedSkillStart) _buffer.Clear();
         _observedSkillStart = state.SkillStartSerial;
         _lastTime = now;
-        if (CombatInputTrace.Enabled && _buffer.Count > 0)
-        {
-            double pruneTime = now;
-            FWuwaSkillData pruneState = state;
-            _buffer.Prune(now, item => Trace("EXPIRE", pruneTime, pruneState, $"input={item.InputTag} pressed={item.InputTimeSeconds:F3} expires={item.ExpiresAtSeconds:F3} overdue={pruneTime - item.ExpiresAtSeconds:F3}s"));
-        }
-        else _buffer.Prune(now);
+        _buffer.Prune(now);
 
         // 外部受击等接管后，不继续执行上一技能留下的预输入。
         var fight = avatar.FightStateComponent;
-        if (fight.IsValid() && fight.StateData.Handle != 0 && fight.StateData.Handle != state.FightStateHandle)
-        {
-            if (_buffer.Count > 0) Trace("CLEAR", now, state, $"reason=ExternalFightState fightHandle={fight.StateData.Handle} dropping={_buffer.Count}");
-            _buffer.Clear();
-        }
+        if (fight.IsValid() && fight.StateData.Handle != 0 && fight.StateData.Handle != state.FightStateHandle) _buffer.Clear();
         return true;
     }
 
@@ -229,52 +190,23 @@ public partial class UWuwaCombatInputRuntime : UWuwaCombatInputRuntimeBridge
             && avatar.FightStateComponent.StateData.Handle == fightHandle;
     }
 
-    private static bool CanCreateCommand(UWuwaAbilitySystemComponent asc, UWuwaSkillBridgeComponent skills, Candidate candidate, out string gate)
+    // 两道检查：GAS 是否允许激活（冷却、消耗、Tag）；主技能还要当前技能肯让位（SkillComponent.CanBeginSkill）。
+    private static bool CanCreateCommand(UWuwaAbilitySystemComponent asc, UWuwaSkillBridgeComponent skills, Candidate candidate)
     {
-        //asc组件层允不允许
-        if (!asc.CanRequestAbilityFromInput(candidate.Handle))
-        {
-            gate = "ASC.CanRequestAbilityFromInput=false";
-            return false;
-        }
-        
-        //自己的优先级机制等等,允不允许
-        if (candidate.Definition.IsMainSkill && !skills.CanBeginSkill(candidate.Definition))
-        {
-            gate = "Skill.CanBeginSkill=false";
-            return false;
-        }
-        gate = "Allowed";
-        return true;
+        return asc.IsSpecAvailableForActivation(candidate.Handle)
+            && (!candidate.Definition.IsMainSkill || skills.CanBeginSkill(candidate.Definition));
     }
 
-    private EWuwaCombatInputResult Submit(UWuwaAbilitySystemComponent asc, Candidate candidate, double now, FWuwaSkillData state, string source)
+    private EWuwaCombatInputResult Submit(UWuwaAbilitySystemComponent asc, Candidate candidate)
     {
-        Trace("SUBMIT", now, state, $"source={source} target={candidate.Definition.OriginalTag} ga={CombatInputTrace.Name(candidate.Definition)} consumeBatch={_buffer.Count}");
         // 一批只提交一次：即便 GAS 因冷却/消耗拒绝，也不再尝试第二候选。
         // 原作提交后清批；这里提前清批，避免同步回调再次消费同一份输入。
         _buffer.Clear();
-        var result = asc.RequestAbilityActivation(candidate.Handle) switch
+        return asc.RequestAbilityActivation(candidate.Handle) switch
         {
             EWuwaAbilityRequestResult.ActivationRequested => EWuwaCombatInputResult.ActivationRequested,
             EWuwaAbilityRequestResult.AlreadyActive => EWuwaCombatInputResult.AlreadyActive,
             _ => EWuwaCombatInputResult.Rejected
         };
-        if (CombatInputTrace.Enabled)
-            CombatInputTrace.Write("RESULT", $"runtime={Name} result={result} target={candidate.Definition.OriginalTag} current=[{CombatInputTrace.Context(asc)}] cache={_buffer.Describe(now)}");
-        return result;
-    }
-
-    private bool Store(FWuwaInputEvent input, double now, float lifetime, FWuwaSkillData state, string reason)
-    {
-        bool stored = _buffer.Store(input, now, lifetime);
-        Trace(stored ? "STORE" : "STORE_REJECT", now, state, $"input={input.InputTag} reason={reason} lifetime={lifetime:F3}s expires={now + lifetime:F3}");
-        return stored;
-    }
-
-    private void Trace(string stage, double now, FWuwaSkillData state, FormattableString details)
-    {
-        if (!CombatInputTrace.Enabled) return;
-        CombatInputTrace.Write(stage, $"t={now:F3} runtime={Name} avatar={CombatInputTrace.Name(_avatar.Object)} {CombatInputTrace.Describe(state)} cache={_buffer.Describe(now)} {details.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
     }
 }

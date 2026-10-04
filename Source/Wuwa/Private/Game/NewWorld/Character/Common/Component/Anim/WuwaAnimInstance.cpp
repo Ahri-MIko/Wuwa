@@ -6,6 +6,8 @@
 #include "Game/NewWorld/Character/Common/Component/Anim/WuwaLocomotionMath.h"
 #include "Game/NewWorld/Character/Common/Component/Move/WuwaMovementComponent.h"
 #include "GameFramework/Character.h"
+#include "Game/NewWorld/Character/Role/WuwaCharacter.h"
+#include "Game/NewWorld/Character/Role/Component/WuwaRoleGaitBridgeComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 void UWuwaAnimInstance::NativeInitializeAnimation()
@@ -79,9 +81,11 @@ void UWuwaAnimInstance::ResetSprintDesire()
 	ACharacter* Character = Cast<ACharacter>(TryGetPawnOwner());
 	UWuwaMovementComponent* Movement = IsValid(Character)
 		? Cast<UWuwaMovementComponent>(Character->GetCharacterMovement()) : nullptr;
-	if (IsValid(Movement))
+	// 冲刺需求由 RoleGait 保存，直接让它清掉。
+	const AWuwaCharacter* WuwaCharacter = Cast<AWuwaCharacter>(Character);
+	if (WuwaCharacter && IsValid(WuwaCharacter->RoleGaitComponent))
 	{
-		Movement->ClearSprintDesire();
+		WuwaCharacter->RoleGaitComponent->ResetSprintRequest();
 	}
 	LocomotionData.SprintDesire = EWuwaSprintDesire::None;
 	if (AnimLogicParams)

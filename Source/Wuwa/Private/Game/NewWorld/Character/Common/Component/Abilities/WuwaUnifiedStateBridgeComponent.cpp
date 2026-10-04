@@ -1,36 +1,63 @@
 #include "Game/NewWorld/Character/Common/Component/Abilities/WuwaUnifiedStateBridgeComponent.h"
+#include "GameFramework/Actor.h"
 
 // C++ 基类不复制脚本规则。未装配托管子类时请求失败，而不是偷偷运行另一套状态机。
 //初始化
-void UWuwaUnifiedStateBridgeComponent::InitializeState_Implementation() {}
-//切换状态（请求型，可能失败，所以返回 bool）
-bool UWuwaUnifiedStateBridgeComponent::TrySetMoveState_Implementation(EWuwaMoveState, EWuwaGait) { return false; }//请求切换移动状态和步态，比如"跑步，快速"
-bool UWuwaUnifiedStateBridgeComponent::ChangePositionState_Implementation(EWuwaPositionState) { return false; }//切换位置状态，比如地面、空中、游泳
-bool UWuwaUnifiedStateBridgeComponent::ChangeDirectionState_Implementation(EWuwaDirectionState) { return false; }//切换朝向模式，比如跟随速度方向或者锁定目标，或者任务时切换
+void UWuwaUnifiedStateBridgeComponent::InitializeState_Implementation(EWuwaPositionState, EWuwaGait) {}
+//三个维度的设置（原作 SetPositionState / SetMoveState / SetDirectionState）
+bool UWuwaUnifiedStateBridgeComponent::SetPositionState_Implementation(EWuwaPositionState) { return false; }//切换位置状态，比如地面、空中、攀爬、水中
+bool UWuwaUnifiedStateBridgeComponent::SetMoveState_Implementation(EWuwaMoveState, EWuwaGait) { return false; }//切换移动状态和步态，比如"跑步，Run 配置"
+bool UWuwaUnifiedStateBridgeComponent::SetDirectionState_Implementation(EWuwaDirectionState) { return false; }//切换朝向模式，比如跟随速度方向或者锁定目标
 //合法性检查（const，只查询不修改）
-bool UWuwaUnifiedStateBridgeComponent::IsMoveStateLegal_Implementation(EWuwaPositionState, EWuwaMoveState) const { return false; }//某个位置状态下，是否允许某个移动状态。比如在空中时不允许"冲刺起步"。
-bool UWuwaUnifiedStateBridgeComponent::CanAcquireMoveState_Implementation(EWuwaMoveState, int32) const { return false; }//以当前优先级，能不能抢占这个移动状态。
-bool UWuwaUnifiedStateBridgeComponent::CanAcquireMoveStateAfterRelease_Implementation(EWuwaMoveState, int32, UObject*) const { return false; }
-//占用 / 释放（带所有权的状态）
-int32 UWuwaUnifiedStateBridgeComponent::AcquireMoveState_Implementation(UObject*, EWuwaMoveState, int32) { return 0; }//某个对象（比如一个技能）以某个优先级占用一个移动状态，返回一个句柄（int32）。
-bool UWuwaUnifiedStateBridgeComponent::ReleaseMoveState_Implementation(int32) { return false; }//用这个句柄释放占用。
-//清理
-void UWuwaUnifiedStateBridgeComponent::ResetActionStates_Implementation() {}//清空所有动作类的状态覆盖，对应 StateData 里的 bHasActionOverride。
-void UWuwaUnifiedStateBridgeComponent::PruneStateOwners_Implementation() {}//清理失效的占用者。比如一个技能在销毁时没有调用 Release，它的占用就会一直残留。这个函数会把 Owner 已经失效的占用记录删除，防止状态被永久卡住。
+bool UWuwaUnifiedStateBridgeComponent::IsMoveStateLegal_Implementation(EWuwaPositionState, EWuwaMoveState) const { return false; }//某个位置状态下，是否允许某个移动状态。比如在空中时不允许 Sprint。
+//物理移动模式变化（原作 CharMovementModeChanged 的监听）
+void UWuwaUnifiedStateBridgeComponent::HandleMovementModeChanged_Implementation(EWuwaPositionState, EMovementMode) {}
+//走跑偏好
+bool UWuwaUnifiedStateBridgeComponent::IsWalkPreferred_Implementation() const { return false; }
+bool UWuwaUnifiedStateBridgeComponent::SetWalkPreference_Implementation(bool) { return false; }
+bool UWuwaUnifiedStateBridgeComponent::ToggleWalkPreference_Implementation() { return false; }
 
-void UWuwaUnifiedStateBridgeComponent::PublishState(FWuwaUnifiedStateData NewState)
+bool UWuwaUnifiedStateBridgeComponent::CanDriveState() const
+{
+	const AActor* OwningActor = GetOwner();
+	return IsValid(OwningActor) && OwningActor->GetLocalRole() != ROLE_SimulatedProxy;
+}
+
+void UWuwaUnifiedStateBridgeComponent::CommitStateData(FWuwaUnifiedStateData NewState)
 {
 	check(IsInGameThread());
-	//如果和之前的状态一样就不播报了
+	//如果和之前的状态一样就不写入，也不增加版本
 	if (StateData.PositionState == NewState.PositionState && StateData.MoveState == NewState.MoveState
 		&& StateData.DirectionState == NewState.DirectionState && StateData.Gait == NewState.Gait
 		&& StateData.bHasActionOverride == NewState.bHasActionOverride)
 	{
 		return;
 	}
-	const FWuwaUnifiedStateData OldState = StateData;
 	NewState.Revision = StateData.Revision + 1;
 	StateData = NewState;
-	// 使用局部副本，订阅者重入导致另一次提交时，不改变本次事件的参数。
-	OnStateChanged.Broadcast(OldState, NewState);
+}
+
+void UWuwaUnifiedStateBridgeComponent::BroadcastPositionStateChanged(EWuwaPositionState OldState, EWuwaPositionState NewState)
+{
+	OnPositionStateChanged.Broadcast(OldState, NewState);
+}
+
+void UWuwaUnifiedStateBridgeComponent::BroadcastMoveStateChanged(EWuwaMoveState OldState, EWuwaMoveState NewState)
+{
+	OnMoveStateChanged.Broadcast(OldState, NewState);
+}
+
+void UWuwaUnifiedStateBridgeComponent::BroadcastGaitChanged(EWuwaGait OldGait, EWuwaGait NewGait)
+{
+	OnGaitChanged.Broadcast(OldGait, NewGait);
+}
+
+void UWuwaUnifiedStateBridgeComponent::BroadcastDirectionStateChanged(EWuwaDirectionState OldState, EWuwaDirectionState NewState)
+{
+	OnDirectionStateChanged.Broadcast(OldState, NewState);
+}
+
+void UWuwaUnifiedStateBridgeComponent::BroadcastWalkPreferenceChanged(bool bWasWalk, bool bIsWalk)
+{
+	OnWalkPreferenceChanged.Broadcast(bWasWalk, bIsWalk);
 }

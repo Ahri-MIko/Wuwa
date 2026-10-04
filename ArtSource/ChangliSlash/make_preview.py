@@ -12,7 +12,7 @@ def main():
     args = parser.parse_args()
     files = sorted(args.directory.glob("DA_Attack01_01_character_*ms.png"))
     if len(files) < 2:
-        raise RuntimeError("Render a frame sequence with WuwaSlashFxPreview first")
+        raise RuntimeError("First export at least two UE-rendered frames to the specified directory as DA_Attack01_01_character_<milliseconds>ms.png")
     images = [Image.open(file).convert("RGB") for file in files]
     times = [int(file.stem.rsplit("_", 1)[1][:-2]) for file in files]
     durations = [max(10, end - start) for start, end in zip(times, times[1:])] + [600]
